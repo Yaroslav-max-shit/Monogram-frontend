@@ -97,7 +97,7 @@ interface NewDeviceInfo {
 }
 
 // Константы
-const FRONTEND_URL = import.meta.env.VITE_APP_URL || 'https://monograme.netlify.app/';
+const FRONTEND_URL = import.meta.env.VITE_APP_URL || 'https://f1w6ggb2-5174.euw.devtunnels.ms/';
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com/';
 
 const App: React.FC = () => {
@@ -1093,7 +1093,7 @@ const App: React.FC = () => {
     return (
       <ConnectPage
         code={connectCode}
-        onConnected={() => { window.location.href = 'https://f1w6ggb2-5174.euw.devtunnels.ms/'; }}
+        onConnected={() => { window.location.href = 'https://f1w6ggb2-5174.euw.devtunnels.ms'; }}
       />
     );
   }
@@ -1443,7 +1443,7 @@ const App: React.FC = () => {
             </ul>
             <div style={{display: 'flex', gap: 12, justifyContent: 'center'}}>
               <button className="btn-secondary" onClick={() => setShowQuarkPayConnect(false)}>Позже</button>
-              <a href="https://f1w6ggb2-5174.euw.devtunnels.ms/" target="_blank" rel="noopener" className="btn-primary" style={{textDecoration: 'none', padding: '12px 24px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', borderRadius: 12, fontWeight: 600, border: 'none', cursor: 'pointer'}}>Подключить</a>
+              <a href="https://f1w6ggb2-5174.euw.devtunnels.ms" target="_blank" rel="noopener" className="btn-primary" style={{textDecoration: 'none', padding: '12px 24px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', borderRadius: 12, fontWeight: 600, border: 'none', cursor: 'pointer'}}>Подключить</a>
             </div>
           </div>
         </div>
