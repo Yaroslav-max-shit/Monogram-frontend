@@ -824,7 +824,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <QRCodeSVG 
 
-                value={`https://f1w6ggb2-5173.euw.devtunnels.ms/invite/${userData.id || userData.username}`}
+                value={`https://monograme.netlify.app/invite/${userData.id || userData.username}`}
 
                 size={200}
 

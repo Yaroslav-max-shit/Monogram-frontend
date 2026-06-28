@@ -22,7 +22,7 @@ export function useWebRTC({ userId, peerId, chatId, onStateChange }: WebRTCOptio
   }, [onStateChange]);
 
   const connectWebSocket = useCallback(() => {
-    const wsUrl = `wss://f1w6ggb2-8000.euw.devtunnels.ms/ws/${userId}`;
+    const wsUrl = `wss://monogram-backend-dxv4.onrender.com/ws/${userId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

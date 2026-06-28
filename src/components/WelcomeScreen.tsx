@@ -29,7 +29,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onLogin, onRegister, onOp
       } catch (error) {
         console.error('Failed to get QR link:', error);
         const fakeSessionId = Math.random().toString(36).substring(2, 15);
-        setQrLink(`https://f1w6ggb2-5173.euw.devtunnels.ms/qr/register/${fakeSessionId}`);
+        setQrLink(`https://monograme.netlify.app/qr/register/${fakeSessionId}`);
         setError('Не удалось подключиться к серверу, но QR код работает');
       } finally {
         setQrLoading(false);

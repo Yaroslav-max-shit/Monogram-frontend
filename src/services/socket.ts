@@ -6,7 +6,8 @@ let currentUserId: number | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 let authToken: string | null = null;
 
-const WS_URL = `wss://${window.location.hostname}/ws`;
+const WS_BACKEND = import.meta.env.VITE_API_URL || '';
+const WS_URL = WS_BACKEND.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws';
 
 export const connectToServer = async (userId: number) => {
     currentUserId = userId;

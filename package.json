@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "start": "concurrently \"cd ../backend && python main.py\" \"vite\"",
     "dev-start": "concurrently \"cd ../backend && python main.py\" \"vite\"",
-    "generate-api": "npx openapi-typescript https://f1w6ggb2-8000.euw.devtunnels.ms/openapi.json -o src/api/schema.ts"
+    "generate-api": "npx openapi-typescript https://monogram-backend-dxv4.onrender.com/openapi.json -o src/api/schema.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",
