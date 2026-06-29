@@ -334,11 +334,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 20px;
+  padding: 8px 16px;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border-color);
   flex-shrink: 0;
   position: relative;
+  margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .chat-input-action {

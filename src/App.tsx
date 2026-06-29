@@ -31,7 +31,7 @@ import ResetPassword from './pages/ResetPassword';
 
 // Сервисы
 import { getSession, clearSession, saveSession } from './services/cookies';
-import { disconnect } from './services/socket';
+import { connectToServer, onMessage, disconnect } from './services/socket';
 import { initE2EE, isE2EEEnabled, loadE2EESettings, setE2EEEnabled, resetE2EEKeys } from './services/e2ee';
 import { checkPremium, PREMIUM_FEATURES } from './services/premium';
 import { useAdaptiveLayout } from './hooks/useAdaptiveLayout';
@@ -740,6 +740,12 @@ const App: React.FC = () => {
         setUserData(session.user);
         
         await initE2EE(session.user.id);
+        connectToServer(session.user.id);
+        onMessage((msg) => {
+          if (msg.type === 'new_message') {
+            loadUserChats();
+          }
+        });
           await loadUserChats();
         await loadPremiumStatus();
         await checkNewDevice();
@@ -816,13 +822,7 @@ const App: React.FC = () => {
   }, [savedChats]);
 
   // Polling: refresh chat list every 5 seconds
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    const interval = setInterval(() => {
-      loadUserChats();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [isLoggedIn]);
+  // Real-time updates via WebSocket - no polling needed
 
   // URL-based chat loading
   useEffect(() => {

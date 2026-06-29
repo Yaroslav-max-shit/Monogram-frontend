@@ -235,8 +235,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                 if (action) onArchiveChat(chat.id);
               }}
             >
-              <div className="chat-avatar" style={{ background: color }}>
-                <span className="chat-avatar-letter">{letter}</span>
+              <div className="chat-avatar" style={{ background: color, overflow: 'hidden' }}>
+                {chat.avatar_url ? (
+                  <img src={chat.avatar_url} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                ) : (
+                  <span className="chat-avatar-letter">{letter}</span>
+                )}
               </div>
               <div className="chat-info">
                 <span className="chat-name">
