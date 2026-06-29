@@ -353,36 +353,36 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     loadMessages();
   }, [loadMessages]);
 
-  // Real-time: listen for new messages via WebSocket
+  // Real-time: polling for new messages every 3 seconds
   useEffect(() => {
     if (!chatId || !currentUserId) return;
-    
-    const handler = (msg: any) => {
-      if (msg.type === 'new_message' && msg.chat_id === chatId && msg.sender_id !== currentUserId) {
-        const content = msg.content || '';
-        if (isEncrypted(content)) {
-          decryptMessage(content).then(decrypted => {
-            try {
-              const parsed = JSON.parse(decrypted);
-              if (parsed.text) {
-                setMessages(prev => [...prev, { id: msg.message_id, content: parsed.text, sender_id: msg.sender_id, chat_id: msg.chat_id, timestamp: msg.timestamp, edited: false, status: 'delivered' }]);
-              } else {
-                setMessages(prev => [...prev, { id: msg.message_id, content: decrypted, sender_id: msg.sender_id, chat_id: msg.chat_id, timestamp: msg.timestamp, edited: false, status: 'delivered' }]);
-              }
-            } catch {
-              setMessages(prev => [...prev, { id: msg.message_id, content: decrypted, sender_id: msg.sender_id, chat_id: msg.chat_id, timestamp: msg.timestamp, edited: false, status: 'delivered' }]);
+    let lastMsgId = 0;
+    const poll = async () => {
+      try {
+        const res = await apiClient.get(`/messages/chat/${chatId}`);
+        const msgs = res.data || [];
+        if (msgs.length > 0) {
+          const newest = msgs[msgs.length - 1];
+          if (lastMsgId === 0) { lastMsgId = newest.id; return; }
+          if (newest.id > lastMsgId) {
+            const newMsgs = msgs.filter((m: any) => m.id > lastMsgId && m.sender_id !== currentUserId);
+            if (newMsgs.length > 0) {
+              const decrypted = await Promise.all(newMsgs.map(async (m: any) => {
+                if (isEncrypted(m.content)) {
+                  try { const dec = await decryptMessage(m.content); return { ...m, content: dec }; } catch { return m; }
+                }
+                return m;
+              }));
+              setMessages(prev => { const ids = new Set(prev.map(m => m.id)); const fresh = decrypted.filter((m: any) => !ids.has(m.id)); return fresh.length > 0 ? [...prev, ...fresh] : prev; });
+              scrollToBottom();
             }
-            scrollToBottom();
-          });
-        } else {
-          setMessages(prev => [...prev, { id: msg.message_id, content: content, sender_id: msg.sender_id, chat_id: msg.chat_id, timestamp: msg.timestamp, edited: false, status: 'delivered' }]);
-          scrollToBottom();
+            lastMsgId = newest.id;
+          }
         }
-      }
+      } catch {}
     };
-    
-    onMessage(handler);
-    return () => onMessage(() => {});
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
   }, [chatId, currentUserId]);
 
   // Load chat members for mentions and slash commands
