@@ -130,6 +130,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [wsConnected, setWsConnected] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -215,6 +218,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setScrollPosition(pos);
     const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
     setShowScrollButton(!atBottom);
+    if (container.scrollTop < 50 && hasMore && !loadingMore && !isLoading) {
+      const prevHeight = container.scrollHeight;
+      loadMessages(true).then(() => {
+        requestAnimationFrame(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight - prevHeight;
+          }
+        });
+      });
+    }
   };
 
   const handleDoubleClick = (messageId: number) => {
@@ -312,40 +325,44 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  const loadMessages = useCallback(async () => {
+  const loadMessages = useCallback(async (loadMore = false) => {
     try {
-      const response = await apiClient.get(`/messages/chat/${chatId}`);
-      let msgs = response.data;
-      
-      // Always try to decrypt if content looks encrypted
-      msgs = await Promise.all(msgs.map(async (msg: Message) => {
-        if (!msg.is_deleted && isEncrypted(msg.content)) {
-          try {
-            const decrypted = await decryptMessage(msg.content);
-            try {
-              const parsed = JSON.parse(decrypted);
-              if (parsed.text) {
-                return { ...msg, content: parsed.text };
-              }
-            } catch {}
-            return { ...msg, content: decrypted };
-          } catch {
-            return msg;
+      if (loadMore && messages.length > 0) {
+        setLoadingMore(true);
+        const beforeId = messages[0]?.id;
+        const response = await apiClient.get(`/messages/chat/${chatId}`, { params: { limit: 50, before_id: beforeId } });
+        const newMsgs = response.data;
+        if (newMsgs.length === 0) { setHasMore(false); return; }
+        const decrypted = await Promise.all(newMsgs.map(async (msg: Message) => {
+          if (!msg.is_deleted && isEncrypted(msg.content)) {
+            try { const d = await decryptMessage(msg.content); try { const p = JSON.parse(d); if (p.text) return { ...msg, content: p.text }; } catch {} return { ...msg, content: d }; } catch { return msg; }
           }
-        }
-        return msg;
-      }));
-      
-      msgs = msgs.map((msg: Message) => ({
-        ...msg,
-        status: msg.sender_id === currentUserId ? 'read' : 'delivered'
-      }));
-      
-      setMessages(msgs);
+          return msg;
+        }));
+        setMessages(prev => [...decrypted.reverse(), ...prev]);
+      } else {
+        setIsLoading(true);
+        const response = await apiClient.get(`/messages/chat/${chatId}`, { params: { limit: 50 } });
+        let msgs = response.data;
+        msgs = await Promise.all(msgs.map(async (msg: Message) => {
+          if (!msg.is_deleted && isEncrypted(msg.content)) {
+            try {
+              const decrypted = await decryptMessage(msg.content);
+              try { const parsed = JSON.parse(decrypted); if (parsed.text) return { ...msg, content: parsed.text }; } catch {}
+              return { ...msg, content: decrypted };
+            } catch { return msg; }
+          }
+          return msg;
+        }));
+        msgs = msgs.map((msg: Message) => ({ ...msg, status: msg.sender_id === currentUserId ? 'read' : 'delivered' }));
+        setMessages(msgs);
+        setHasMore(msgs.length >= 50);
+      }
     } catch (error) {
       console.error('Ошибка загрузки сообщений:', error);
     } finally {
       setIsLoading(false);
+      setLoadingMore(false);
     }
   }, [chatId, currentUserId]);
 
@@ -1231,7 +1248,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
           <div className="chat-header-details">
             <div className="chat-header-name">{chatName}</div>
-            {typingUsers.size > 0 && (
+            {loadingMore && <div className="chat-header-typing">Подключение...</div>}
+            {!loadingMore && !wsConnected && <div className="chat-header-typing">Подключение...</div>}
+            {!loadingMore && wsConnected && typingUsers.size > 0 && (
               <div className="chat-header-typing">печатает...</div>
             )}
           </div>
@@ -1347,6 +1366,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               <Icon name="upload" size={48} />
               <p>Drop files here</p>
             </div>
+          </div>
+        )}
+        {loadingMore && (
+          <div style={{textAlign: 'center', padding: 12, color: 'var(--text-secondary)', fontSize: '0.85rem'}}>
+            <span className="loader" style={{width: 20, height: 20, fontSize: '0.5rem'}}></span>
           </div>
         )}
         {messages.length === 0 && (

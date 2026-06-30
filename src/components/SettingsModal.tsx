@@ -718,11 +718,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <div className="settings-modal-header">
 
-            <button className="settings-close-btn" onClick={onClose}>✕</button>
+            <div style={{ width: 36 }} />
 
             <h2>Настройки</h2>
 
-            <div style={{ width: 36 }} />
+            <button className="settings-close-btn" onClick={onClose}>✕</button>
 
           </div>
 
