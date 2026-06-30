@@ -1212,9 +1212,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
         <div className="chat-messages">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="message-skeleton">
-              <div className="skeleton"></div>
+          {[80, 55, 90, 40, 70, 60, 85, 45].map((w, i) => (
+            <div key={i} className="message-skeleton" style={{marginLeft: i % 2 === 0 ? 0 : 'auto', marginRight: i % 2 === 0 ? 'auto' : 0}}>
+              <div className="skeleton" style={{width: `${w}%`, height: 16 + (i % 3) * 4}}></div>
             </div>
           ))}
         </div>

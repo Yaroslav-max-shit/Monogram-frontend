@@ -1154,9 +1154,10 @@ const App: React.FC = () => {
   if (isLoading) {
     const savedAvatar = localStorage.getItem('avatar_drawing');
     if (savedAvatar && !showAvatarDrawer) {
-      return <div className="loading-screen">
+      return <div className="loading-screen" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20}}>
+        <img src="/assets/images/icon.svg" alt="Monogram" style={{width: 64, height: 64, marginBottom: 8}} />
+        <span style={{fontSize: '1.5rem', fontWeight: 700, color: 'white'}}>Monogram</span>
         <span className="loader"></span>
-        <p style={{color: 'white', marginTop: 16}}>Загрузка...</p>
       </div>;
     }
     if (showAvatarDrawer) {
@@ -1171,9 +1172,10 @@ const App: React.FC = () => {
         />
       </React.Suspense>;
     }
-    return <div className="loading-screen">
+    return <div className="loading-screen" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20}}>
+      <img src="/assets/images/icon.svg" alt="Monogram" style={{width: 64, height: 64, marginBottom: 8}} />
+      <span style={{fontSize: '1.5rem', fontWeight: 700, color: 'white'}}>Monogram</span>
       <span className="loader"></span>
-      <p style={{color: 'white', marginTop: 16}}>Загрузка...</p>
     </div>;
   }
 
