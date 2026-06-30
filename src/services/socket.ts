@@ -10,7 +10,7 @@ let pongTimeout: ReturnType<typeof setTimeout> | null = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_DELAY = 30000;
 
-const WS_BACKEND = import.meta.env.VITE_API_URL || '';
+const WS_BACKEND = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com';
 const WS_URL = WS_BACKEND.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws';
 
 export const connectToServer = async (userId: number) => {

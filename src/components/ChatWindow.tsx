@@ -1030,11 +1030,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     
     let isFile = false;
     let fileData = null;
+    let isBotCommand = false;
+    let botButtons: any[] = [];
     try {
       const parsed = JSON.parse(content);
       if (parsed.type === 'file') {
         isFile = true;
         fileData = parsed;
+      }
+      if (parsed.type === 'bot_command') {
+        isBotCommand = true;
+        botButtons = parsed.buttons || [];
       }
     } catch {}
     
@@ -1046,7 +1052,33 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
       );
     }
-    
+
+    if (isBotCommand && botButtons.length > 0) {
+      return (
+        <div key={msg.id} data-message-id={msg.id} className={`message ${isOwn ? 'own' : 'other'}`}>
+          <div className="message-bubble">
+            {content.split('\n').map((line, i) => <p key={i} style={{margin: '4px 0'}}>{line}</p>)}
+            <div style={{display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap'}}>
+              {botButtons.map((btn: any, i: number) => (
+                <button key={i} onClick={() => {
+                  if (btn.action === 'open_url' && btn.url) {
+                    window.open(btn.url, '_blank');
+                  } else if (btn.action === 'toggle_docs') {
+                    const autoOpen = localStorage.getItem('auto_open_docs') === 'true';
+                    localStorage.setItem('auto_open_docs', String(!autoOpen));
+                    btn.text = !autoOpen ? '⚙️ Автооткрытие: вкл' : '⚙️ Автооткрытие: выкл';
+                  }
+                }} style={{padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: '#58a6ff', cursor: 'pointer', fontSize: 13}}>
+                  {btn.text}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="message-time">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>
+      );
+    }
+
     const urls = extractUrls(content);
     const hasLinks = urls.length > 0;
     
@@ -1256,7 +1288,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
         <div className="chat-header-actions">
-          <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); onStartCall?.(currentUserId === 1 ? 2 : 1, chatName); }} title="Звонок">
+          <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); const peer = chatMembers.find((m: any) => m.id !== currentUserId); if (peer) onStartCall?.(peer.id, chatName); }} title="Звонок">
             <Icon name="phone" size={20} />
           </button>
           <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); setShowChatSearch(!showChatSearch); }}>

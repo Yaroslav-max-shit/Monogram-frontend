@@ -28,6 +28,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import VerifyPage from './pages/VerifyPage';
 import ConnectPage from './pages/ConnectPage';
 import ResetPassword from './pages/ResetPassword';
+const BotDocsPage = React.lazy(() => import('./pages/BotDocsPage'));
 
 // Сервисы
 import { getSession, clearSession, saveSession } from './services/cookies';
@@ -1101,6 +1102,10 @@ const App: React.FC = () => {
 
   if (window.location.pathname === '/reset-password') {
     return <ResetPassword />;
+  }
+
+  if (window.location.pathname === '/docs/bot-api') {
+    return <React.Suspense fallback={<div className="loading-screen"><span className="loader"></span></div>}><BotDocsPage /></React.Suspense>;
   }
 
   const registerMatch = window.location.pathname === '/register-username';

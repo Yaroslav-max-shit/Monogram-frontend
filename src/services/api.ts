@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getSession, saveSession } from './cookies';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com';
 
 const apiClient = axios.create({
     baseURL: API_URL,
