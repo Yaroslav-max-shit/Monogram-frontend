@@ -1021,6 +1021,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       }
     } catch {}
     
+    if (isFile && fileData) {
+      return (
+        <div key={msg.id} data-message-id={msg.id} className={`message ${isOwn ? 'own' : 'other'}`}>
+          <FileMessage file={fileData} onMediaClick={(url) => { setMediaViewerUrl(url); setShowMediaViewer(true); }} />
+          <div className="message-time">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+        </div>
+      );
+    }
+    
     const urls = extractUrls(content);
     const hasLinks = urls.length > 0;
     
@@ -1228,7 +1237,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
         <div className="chat-header-actions">
-          <button className="chat-header-action anim-move" onClick={(e) => { e.stopPropagation(); onStartCall?.(currentUserId === 1 ? 2 : 1, chatName); }} title="Звонок">
+          <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); onStartCall?.(currentUserId === 1 ? 2 : 1, chatName); }} title="Звонок">
             <Icon name="phone" size={20} />
           </button>
           <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); setShowChatSearch(!showChatSearch); }}>

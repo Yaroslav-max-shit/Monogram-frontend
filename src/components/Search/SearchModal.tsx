@@ -52,8 +52,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ onClose, onChatSelect }) => {
     switch (activeTab) {
       case 'chats': return results.chats;
       case 'messages': return results.messages;
-      case 'users': return results.users;
-      default: return [...results.chats, ...results.messages, ...results.users];
+      case 'users': return [...(results.users || []), ...(results.bots || [])];
+      default: return [...(results.chats || []), ...(results.messages || []), ...(results.users || []), ...(results.bots || [])];
     }
   };
 
@@ -183,6 +183,30 @@ const SearchModal: React.FC<SearchModalProps> = ({ onClose, onChatSelect }) => {
                           <div className="result-info">
                             <div className="result-title">{user.first_name} {user.last_name}</div>
                             <div className="result-subtitle">@{user.username}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {results.bots && results.bots.length > 0 && (
+                    <div className="results-section">
+                      <div className="section-title">Боты</div>
+                      {results.bots.map((bot: any) => (
+                        <div key={bot.id} className="result-item bot" onClick={() => onChatSelect(bot.id, bot.name)}>
+                          <div className="result-avatar" style={{background: '#667eea'}}>
+                            {bot.avatar_url ? (
+                              <img src={bot.avatar_url} alt="" />
+                            ) : (
+                              <span>B</span>
+                            )}
+                          </div>
+                          <div className="result-info">
+                            <div className="result-title">
+                              {bot.name}
+                              {bot.is_verified && <Icon name="check" size={14} style={{marginLeft: 4, color: '#10b981'}} />}
+                            </div>
+                            <div className="result-subtitle">@{bot.username}</div>
                           </div>
                         </div>
                       ))}

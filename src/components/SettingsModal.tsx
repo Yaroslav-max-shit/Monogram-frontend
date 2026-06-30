@@ -1294,7 +1294,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   <div className="settings-divider" />
 
-                  <div className="settings-main-item premium" onClick={() => setActiveSection('premium')} style={{animation: 'moveAround 3s ease-in-out infinite'}}>
+                  <div className="settings-main-item premium" onClick={() => setActiveSection('premium')}>
 
                     <div className="settings-item-icon">
 
