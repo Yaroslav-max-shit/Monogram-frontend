@@ -842,11 +842,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
             
 
+            {isMobile && (
             <button className="scan-qr-btn" onClick={() => { setShowQR(false); setTimeout(() => setShowScanner(true), 100); }}>
 
               <Icon name="camera" size={18} /> Сканировать QR-код
 
             </button>
+            )}
 
             
 

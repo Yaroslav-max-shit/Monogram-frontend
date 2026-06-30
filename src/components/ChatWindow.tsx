@@ -353,36 +353,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     loadMessages();
   }, [loadMessages]);
 
-  // Real-time: polling for new messages every 3 seconds
+  // Real-time: listen for new messages via WebSocket
   useEffect(() => {
     if (!chatId || !currentUserId) return;
-    let lastMsgId = 0;
-    const poll = async () => {
-      try {
-        const res = await apiClient.get(`/messages/chat/${chatId}`);
-        const msgs = res.data || [];
-        if (msgs.length > 0) {
-          const newest = msgs[msgs.length - 1];
-          if (lastMsgId === 0) { lastMsgId = newest.id; return; }
-          if (newest.id > lastMsgId) {
-            const newMsgs = msgs.filter((m: any) => m.id > lastMsgId && m.sender_id !== currentUserId);
-            if (newMsgs.length > 0) {
-              const decrypted = await Promise.all(newMsgs.map(async (m: any) => {
-                if (isEncrypted(m.content)) {
-                  try { const dec = await decryptMessage(m.content); return { ...m, content: dec }; } catch { return m; }
-                }
-                return m;
-              }));
-              setMessages(prev => { const ids = new Set(prev.map(m => m.id)); const fresh = decrypted.filter((m: any) => !ids.has(m.id)); return fresh.length > 0 ? [...prev, ...fresh] : prev; });
-              scrollToBottom();
+    const handler = (msg: any) => {
+      if (msg.type === 'new_message' && msg.chat_id === chatId && msg.sender_id !== currentUserId) {
+        const content = msg.content || '';
+        if (isEncrypted(content)) {
+          decryptMessage(content).then(decrypted => {
+            try {
+              const parsed = JSON.parse(decrypted);
+              setMessages(prev => [...prev, { id: msg.message_id, content: parsed.text || decrypted, sender_id: msg.sender_id, chat_id: msg.chat_id, timestamp: msg.timestamp, edited: false, status: 'delivered' }]);
+            } catch {
+              setMessages(prev => [...prev, { id: msg.message_id, content: decrypted, sender_id: msg.sender_id, chat_id: msg.chat_id, timestamp: msg.timestamp, edited: false, status: 'delivered' }]);
             }
-            lastMsgId = newest.id;
-          }
+            scrollToBottom();
+          });
+        } else {
+          setMessages(prev => [...prev, { id: msg.message_id, content, sender_id: msg.sender_id, chat_id: msg.chat_id, timestamp: msg.timestamp, edited: false, status: 'delivered' }]);
+          scrollToBottom();
         }
-      } catch {}
+      }
     };
-    const interval = setInterval(poll, 3000);
-    return () => clearInterval(interval);
+    onMessage(handler);
+    return () => onMessage(() => {});
   }, [chatId, currentUserId]);
 
   // Load chat members for mentions and slash commands
@@ -553,13 +547,24 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleDeleteForEveryone = async (messageId: number) => {
+    setShowContextMenu(false);
     try {
       await apiClient.delete(`/messages/${messageId}`);
       setMessages(prev => prev.map(msg =>
         msg.id === messageId ? { ...msg, content: "🗑 Сообщение удалено", is_deleted: true } : msg
       ));
     } catch (error) {
-      console.error('Ошибка удаления:', error);
+      console.error('Delete error:', error);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: number) => {
+    setShowContextMenu(false);
+    try {
+      await apiClient.delete(`/messages/${messageId}`);
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    } catch (error) {
+      console.error('Delete error:', error);
     }
   };
 
@@ -579,7 +584,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       setSelectedMessages([]);
       setShowForwardSelector(false);
     } catch (error) {
-      console.error('Ошибка пересылки:', error);
+      console.error('Forward error:', error);
     }
   };
 
@@ -590,16 +595,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         msg.id === messageId ? { ...msg, content: newText, edited: true } : msg
       ));
     } catch (error) {
-      console.error('Ошибка редактирования:', error);
-    }
-  };
-
-  const handleDeleteMessage = async (messageId: number) => {
-    try {
-      await apiClient.delete(`/messages/${messageId}`);
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-    } catch (error) {
-      console.error('Ошибка удаления:', error);
+      console.error('Edit error:', error);
     }
   };
 
@@ -895,8 +891,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleContextMenu = (e: React.MouseEvent, message: Message) => {
     e.preventDefault();
+    e.stopPropagation();
     setSelectedMessage(message);
-    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+    const msgRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const isOwn = message.sender_id === currentUserId;
+    let posX = isOwn ? msgRect.left - 10 : msgRect.right + 10;
+    let posY = msgRect.top;
+    if (posX + 200 > window.innerWidth) posX = msgRect.left - 210;
+    if (posX < 0) posX = 10;
+    if (posY + 250 > window.innerHeight) posY = window.innerHeight - 260;
+    if (posY < 0) posY = 10;
+    setContextMenuPosition({ x: posX, y: posY });
     setShowContextMenu(true);
   };
 
@@ -1576,8 +1581,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               setEditingText(selectedMessage.content);
             }
           }} 
-          onDelete={() => handleDeleteMessage(selectedMessage.id)} 
-          onDeleteForEveryone={() => handleDeleteForEveryone(selectedMessage.id)} 
+          onDelete={() => handleDeleteMessage(selectedMessage.id)}
+          onDeleteForEveryone={() => handleDeleteForEveryone(selectedMessage.id)}
+          onAutoDelete={async (seconds: number) => {
+            try {
+              await apiClient.post(`/messages/${selectedMessage.id}/auto-delete`, { seconds });
+              setMessages(prev => prev.map(msg => 
+                msg.id === selectedMessage.id ? { ...msg, auto_delete: true } : msg
+              ));
+            } catch (e) {
+              console.error('Auto-delete error:', e);
+            }
+            setShowContextMenu(false);
+          }} 
           onCopy={() => handleCopyMessage(selectedMessage.content)} 
           onForward={() => {
             if (onForwardMessage) {

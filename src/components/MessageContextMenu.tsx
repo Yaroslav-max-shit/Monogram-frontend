@@ -24,6 +24,7 @@ interface MessageContextMenuProps {
   onCopy: () => void;
   onForward: () => void;
   onWhoForwarded?: () => void;
+  onAutoDelete?: (seconds: number) => void;
 }
 
 const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
@@ -41,6 +42,7 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   onCopy,
   onForward,
   onWhoForwarded,
+  onAutoDelete,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [selectedText, setSelectedText] = React.useState('');
@@ -137,6 +139,27 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
             <Icon name="edit" size={18} />
             <span>Редактировать</span>
           </div>
+          {onAutoDelete && (
+            <>
+              <div className="context-menu-divider" />
+              <div className="context-menu-item" onClick={() => { onAutoDelete(5); onClose(); }}>
+                <Icon name="clock" size={18} />
+                <span>Самоуничтожение: 5 сек</span>
+              </div>
+              <div className="context-menu-item" onClick={() => { onAutoDelete(60); onClose(); }}>
+                <Icon name="clock" size={18} />
+                <span>Самоуничтожение: 1 мин</span>
+              </div>
+              <div className="context-menu-item" onClick={() => { onAutoDelete(3600); onClose(); }}>
+                <Icon name="clock" size={18} />
+                <span>Самоуничтожение: 1 час</span>
+              </div>
+              <div className="context-menu-item" onClick={() => { onAutoDelete(86400); onClose(); }}>
+                <Icon name="clock" size={18} />
+                <span>Самоуничтожение: 1 день</span>
+              </div>
+            </>
+          )}
           <div className="context-menu-divider" />
           <div className="context-menu-item" onClick={onDelete}>
             <Icon name="delete" size={18} />

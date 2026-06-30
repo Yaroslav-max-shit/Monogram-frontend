@@ -180,6 +180,7 @@ const App: React.FC = () => {
     userId: number;
     peerId: number;
     peerName: string;
+    isVideo?: boolean;
   } | null>(null);
 
   // Group call state
@@ -1406,11 +1407,10 @@ const App: React.FC = () => {
       {activeCall && (
         <React.Suspense fallback={<div className="loading-spinner" />}>
           <CallScreen
-            chatId={activeCall.chatId}
-            userId={activeCall.userId}
-            peerId={activeCall.peerId}
             peerName={activeCall.peerName}
+            isVideo={activeCall.isVideo || false}
             onEnd={() => setActiveCall(null)}
+            onMinimize={() => {}}
           />
         </React.Suspense>
       )}

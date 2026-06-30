@@ -38,7 +38,7 @@
         <p>Юзернейм бота должен заканчиваться на <code>Bot</code> или <code>_bot</code>.</p>
 
         <h2>Базовый URL</h2>
-        <code>https://f1w6ggb2-5173.euw.devtunnels.ms</code> (или <code>https://f1w6ggb2-8000.euw.devtunnels.ms/</code> для локальной разработки)
+        <code>https://monograme.netlify.app</code> (или <code>https://monogram-backend-dxv4.onrender.com/</code> для локальной разработки)
 
         <h2>Методы API</h2>
 
@@ -56,7 +56,7 @@
             <h3>Пример</h3>
             <pre><code>import requests
 
-requests.post("https://f1w6ggb2-8000.euw.devtunnels.ms//bots/1/send", params={
+requests.post("https://monogram-backend-dxv4.onrender.com//bots/1/send", params={
     "api_key": "ваш_ключ",
     "chat_id": 1,
     "content": "Привет от бота!"
@@ -111,7 +111,7 @@ last_update = 0
 
 while True:
     updates = requests.get(
-        f"https://f1w6ggb2-8000.euw.devtunnels.ms/bots/{BOT_ID}/updates",
+        f"https://monogram-backend-dxv4.onrender.com/bots/{BOT_ID}/updates",
         params={"api_key": API_KEY, "offset": last_update}
     ).json()
     
@@ -122,7 +122,7 @@ while True:
         
         # Ответ пользователю
         requests.post(
-            f"https://f1w6ggb2-8000.euw.devtunnels.ms/bots/{BOT_ID}/send",
+            f"https://monogram-backend-dxv4.onrender.com/bots/{BOT_ID}/send",
             params={
                 "api_key": API_KEY,
                 "chat_id": chat_id,
