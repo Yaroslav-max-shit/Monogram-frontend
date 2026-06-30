@@ -126,7 +126,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ onClose, onChatSelect }) => {
         <div className="search-results">
           {loading ? (
             <div className="search-loading">
-              <div className="loading-spinner" />
+              <span className="loader"></span>
               <p>Поиск...</p>
             </div>
           ) : getVisibleResults().length === 0 ? (

@@ -239,7 +239,7 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
         </p>
 
         {error && (
-          <div className="error-message">
+          <div className="error-message anim-shake">
             <Icon name="note" size={14} /> {error}
           </div>
         )}

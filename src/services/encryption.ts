@@ -39,12 +39,23 @@ export const decryptMessage = async (encryptedBase64: string): Promise<string> =
   if (!encryptedBase64) return encryptedBase64;
   try {
     const key = await getKey();
-    const bytes = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+    const binaryString = atob(encryptedBase64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    if (bytes.length < 13) {
+      console.error('Decrypt: data too short');
+      return encryptedBase64;
+    }
     const iv = bytes.slice(0, 12);
     const data = bytes.slice(12);
     const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data.buffer);
     return new TextDecoder().decode(decrypted);
-  } catch (e) { console.error('Decrypt error:', e); return encryptedBase64; }
+  } catch (e) {
+    console.error('Decrypt failed:', e);
+    return encryptedBase64;
+  }
 };
 
 export const encryptData = (data: string, password: string): string => {

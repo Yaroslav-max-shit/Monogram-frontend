@@ -175,7 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button className="add-chat-btn" onClick={handleAddClick} title="Добавить чат">
+          <button className="add-chat-btn anim-move" onClick={handleAddClick} title="Добавить чат">
             <Icon name="plus" size={18} />
           </button>
           {showAddMenu && (
@@ -269,7 +269,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
         <button className="sidebar-action-btn" onClick={onSettingsClick}><Icon name="settings" size={16} /> Настройки</button>
-        {isPremium && <button className="sidebar-action-btn premium" onClick={onPremiumClick}><Icon name="crown" size={16} /> Premium</button>}
+        {isPremium && <button className="sidebar-action-btn premium" onClick={onPremiumClick} style={{animation: 'moveAround 3s ease-in-out infinite'}}><Icon name="crown" size={16} /> Premium</button>}
         {isAdmin && <button className="sidebar-action-btn" onClick={onAdminClick}><Icon name="shield" size={16} /> Админка</button>}
       </div>
 

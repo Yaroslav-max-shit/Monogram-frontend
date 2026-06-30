@@ -91,7 +91,7 @@ const QRLogin: React.FC<QRLoginProps> = ({ onClose }) => {
             <button className="modal-close-btn" onClick={onClose}>✕</button>
           </div>
           <div className="qr-login-body">
-            <div className="loading-spinner" />
+            <span className="loader"></span>
             <p>Создание QR-кода...</p>
           </div>
         </div>

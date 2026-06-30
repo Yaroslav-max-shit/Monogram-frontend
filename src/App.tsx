@@ -1115,7 +1115,7 @@ const App: React.FC = () => {
   const shareMatch = window.location.pathname === '/share';
   if (shareMatch) {
     return (
-      <React.Suspense fallback={<div className="loading-spinner" />}>
+      <React.Suspense fallback={<span className="loader"></span>}>
         <SharePage />
       </React.Suspense>
     );
@@ -1146,22 +1146,22 @@ const App: React.FC = () => {
         </div>
       );
     }
-    return <React.Suspense fallback={<div className="loading-spinner" />}><AdminPanel onBack={() => { window.location.href = '/'; setShowAdmin(false); }} onLogout={() => setShowLogoutConfirm(true)} /></React.Suspense>;
+    return <React.Suspense fallback={<span className="loader"></span>}><AdminPanel onBack={() => { window.location.href = '/'; setShowAdmin(false); }} onLogout={() => setShowLogoutConfirm(true)} /></React.Suspense>;
   }
 
   if (showAdmin && !isLoggedIn) return <Login onLogin={handleLogin} />;
-  if (notFound) return <React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="404" message="Такой страницы не существует" description="Страница не найдена." onClose={() => { setNotFound(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense>;
+  if (notFound) return <React.Suspense fallback={<span className="loader"></span>}><NotFound title="404" message="Такой страницы не существует" description="Страница не найдена." onClose={() => { setNotFound(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense>;
   if (isLoading) {
     const savedAvatar = localStorage.getItem('avatar_drawing');
     if (savedAvatar && !showAvatarDrawer) {
       return <div className="loading-screen">
-        <div className="loading-spinner"></div>
+        <span className="loader"></span>
         <p style={{color: 'white', marginTop: 16}}>Загрузка...</p>
       </div>;
     }
     if (showAvatarDrawer) {
       const AvatarDrawer = React.lazy(() => import('./components/AvatarDrawer'));
-      return <React.Suspense fallback={<div className="loading-spinner" />}>
+      return <React.Suspense fallback={<span className="loader"></span>}>
         <AvatarDrawer
           onSave={(avatar) => {
             localStorage.setItem('avatar_drawing', avatar);
@@ -1172,7 +1172,7 @@ const App: React.FC = () => {
       </React.Suspense>;
     }
     return <div className="loading-screen">
-      <div className="loading-spinner"></div>
+      <span className="loader"></span>
       <p style={{color: 'white', marginTop: 16}}>Загрузка...</p>
     </div>;
   }
@@ -1193,7 +1193,7 @@ const App: React.FC = () => {
       
       {/* Приглашения и ошибки */}
       {inviteError && !isLoggedIn && (
-        <React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="Ошибка" message="Чат не найден" description="Ссылка недействительна." onClose={() => { setInviteError(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense>
+        <React.Suspense fallback={<span className="loader"></span>}><NotFound title="Ошибка" message="Чат не найден" description="Ссылка недействительна." onClose={() => { setInviteError(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense>
       )}
       {inviteUsername && isLoggedIn && !inviteError && (
         <InviteModal
@@ -1347,7 +1347,7 @@ const App: React.FC = () => {
         />
       )}
       {showSettings && (
-        <React.Suspense fallback={<div className="loading-spinner" />}>
+        <React.Suspense fallback={<span className="loader"></span>}>
           <SettingsModal 
             onClose={() => setShowSettings(false)} 
             e2eeEnabled={e2eeEnabled}
@@ -1389,12 +1389,12 @@ const App: React.FC = () => {
       {showScanner && <QRScanner onClose={() => setShowScanner(false)} onScanSuccess={(result) => console.debug('Scanned:', result)} />}
       {showQRLogin && <QRLogin onClose={() => setShowQRLogin(false)} />}
       {showPremium && (
-        <React.Suspense fallback={<div className="loading-spinner" />}>
+        <React.Suspense fallback={<span className="loader"></span>}>
           <PremiumModal onClose={() => setShowPremium(false)} />
         </React.Suspense>
       )}
       {forwardMessageId && (
-        <React.Suspense fallback={<div className="loading-spinner" />}>
+        <React.Suspense fallback={<span className="loader"></span>}>
           <ForwardDialog
             messageId={forwardMessageId}
             onClose={() => setForwardMessageId(null)}
@@ -1405,7 +1405,7 @@ const App: React.FC = () => {
 
       {/* Call Screen */}
       {activeCall && (
-        <React.Suspense fallback={<div className="loading-spinner" />}>
+        <React.Suspense fallback={<span className="loader"></span>}>
           <CallScreen
             peerName={activeCall.peerName}
             isVideo={activeCall.isVideo || false}
@@ -1417,7 +1417,7 @@ const App: React.FC = () => {
 
       {/* Group Call Screen */}
       {groupCall && (
-        <React.Suspense fallback={<div className="loading-spinner" />}>
+        <React.Suspense fallback={<span className="loader"></span>}>
           <GroupCallScreen
             roomId={groupCall.roomId}
             userId={groupCall.userId}

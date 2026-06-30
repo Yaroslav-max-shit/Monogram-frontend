@@ -66,7 +66,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onLogin, onRegister, onOp
     return (
       <div className="welcome-telegram">
         <div className="welcome-telegram-content">
-          <div className="loading-spinner"></div>
+          <span className="loader"></span>
           <p style={{ color: '#9ca3af', marginTop: '16px' }}>Загрузка QR кода...</p>
         </div>
       </div>
