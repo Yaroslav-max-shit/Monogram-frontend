@@ -5,6 +5,10 @@ let globalHandler: ((msg: any) => void) | null = null;
 let currentUserId: number | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 let authToken: string | null = null;
+let pingInterval: ReturnType<typeof setInterval> | null = null;
+let pongTimeout: ReturnType<typeof setTimeout> | null = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_DELAY = 30000;
 
 const WS_BACKEND = import.meta.env.VITE_API_URL || '';
 const WS_URL = WS_BACKEND.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws';
@@ -24,6 +28,7 @@ export const connectToServer = async (userId: number) => {
         clearTimeout(reconnectTimeout);
         reconnectTimeout = null;
     }
+    clearPing();
     
     const url = `${WS_URL}/${userId}?token=${encodeURIComponent(authToken)}`;
     
@@ -32,11 +37,20 @@ export const connectToServer = async (userId: number) => {
         
         ws.onopen = () => {
             console.log('WebSocket connected');
+            reconnectAttempts = 0;
+            startPing();
         };
         
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                if (data.type === 'pong') {
+                    if (pongTimeout) {
+                        clearTimeout(pongTimeout);
+                        pongTimeout = null;
+                    }
+                    return;
+                }
                 if (globalHandler) {
                     globalHandler(data);
                 }
@@ -46,6 +60,7 @@ export const connectToServer = async (userId: number) => {
         };
         
         ws.onclose = (event) => {
+            clearPing();
             if (event.code !== 1000) {
                 console.log('WebSocket disconnected, reconnecting...');
                 scheduleReconnect();
@@ -61,13 +76,40 @@ export const connectToServer = async (userId: number) => {
     }
 };
 
+const startPing = () => {
+    clearPing();
+    pingInterval = setInterval(() => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping' }));
+            pongTimeout = setTimeout(() => {
+                console.log('WS pong timeout, reconnecting...');
+                if (ws) ws.close();
+            }, 5000);
+        }
+    }, 30000);
+};
+
+const clearPing = () => {
+    if (pingInterval) {
+        clearInterval(pingInterval);
+        pingInterval = null;
+    }
+    if (pongTimeout) {
+        clearTimeout(pongTimeout);
+        pongTimeout = null;
+    }
+};
+
 const scheduleReconnect = () => {
     if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    const delay = Math.min(3000 * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY);
+    reconnectAttempts++;
+    console.log(`WS reconnect in ${delay}ms (attempt ${reconnectAttempts})`);
     reconnectTimeout = setTimeout(() => {
         if (currentUserId) {
             connectToServer(currentUserId);
         }
-    }, 3000);
+    }, delay);
 };
 
 export const onMessage = (handler: (msg: any) => void) => {
@@ -81,6 +123,7 @@ export const sendMessage = (type: string, data: any) => {
 };
 
 export const disconnect = () => {
+    clearPing();
     if (ws) {
         ws.close(1000);
         ws = null;
@@ -90,4 +133,5 @@ export const disconnect = () => {
         reconnectTimeout = null;
     }
     currentUserId = null;
+    reconnectAttempts = 0;
 };
