@@ -11,6 +11,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: scaleIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .settings-modal-header {
@@ -54,6 +55,21 @@
   border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
+  animation: settingsItemIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.settings-main-item:nth-child(1) { animation-delay: 0.03s; }
+.settings-main-item:nth-child(2) { animation-delay: 0.06s; }
+.settings-main-item:nth-child(3) { animation-delay: 0.09s; }
+.settings-main-item:nth-child(4) { animation-delay: 0.12s; }
+.settings-main-item:nth-child(5) { animation-delay: 0.15s; }
+.settings-main-item:nth-child(6) { animation-delay: 0.18s; }
+.settings-main-item:nth-child(7) { animation-delay: 0.21s; }
+.settings-main-item:nth-child(8) { animation-delay: 0.24s; }
+
+@keyframes settingsItemIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .settings-main-item:hover {

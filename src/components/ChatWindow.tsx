@@ -155,7 +155,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [chatSearchQuery, setChatSearchQuery] = useState('');
   const [chatSearchResults, setChatSearchResults] = useState<number[]>([]);
   const [currentSearchIdx, setCurrentSearchIdx] = useState(0);
-  
+
+  // Scroll animations
+  const visibleMessages = useRef(new Set<number>());
+  const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
   // @Mentions
   const [showMentions, setShowMentions] = useState(false);
   const [mentionFilter, setMentionFilter] = useState('');
@@ -397,7 +401,53 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return () => clearInterval(interval);
   }, [chatId, currentUserId]);
 
-  // Load chat members for mentions and slash commands
+  // IntersectionObserver for message scroll animations
+  useEffect(() => {
+    if (isLoading) return;
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          const id = Number(entry.target.getAttribute('data-message-id'));
+          if (!id) return;
+          if (entry.isIntersecting) {
+            if (!visibleMessages.current.has(id)) {
+              visibleMessages.current.add(id);
+              const el = messageRefs.current.get(id);
+              if (el) {
+                const msg = messages.find(m => m.id === id);
+                const isOwn = msg?.sender_id === currentUserId;
+                el.classList.remove('msg-exit-right', 'msg-exit-left');
+                el.classList.add(isOwn ? 'msg-enter-right' : 'msg-enter-left');
+              }
+            }
+          } else {
+            if (visibleMessages.current.has(id)) {
+              visibleMessages.current.delete(id);
+              const el = messageRefs.current.get(id);
+              if (el) {
+                const msg = messages.find(m => m.id === id);
+                const isOwn = msg?.sender_id === currentUserId;
+                el.classList.remove('msg-enter-right', 'msg-enter-left');
+                el.classList.add(isOwn ? 'msg-exit-right' : 'msg-exit-left');
+              }
+            }
+          }
+        });
+      },
+      {
+        root: container,
+        threshold: 0.4,
+      }
+    );
+
+    const msgElements = container.querySelectorAll('[data-message-id]');
+    msgElements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [isLoading, messages, currentUserId, chatId]);
   const loadChatMembers = useCallback(async () => {
     try {
       const res = await apiClient.get(`/chats/${chatId}/members`);
@@ -1034,6 +1084,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     return (
       <div
         key={msg.id}
+        ref={(el) => { if (el) messageRefs.current.set(msg.id, el); else messageRefs.current.delete(msg.id); }}
         data-message-id={msg.id}
         className={`message ${isOwn ? 'own' : 'other'} ${forwardMode ? 'selectable' : ''} ${selectedMessages.includes(msg.id) ? 'selected' : ''} ${chatSearchResults.includes(messages.indexOf(msg)) ? 'search-match' : ''} ${chatSearchResults.length > 0 && chatSearchResults[currentSearchIdx] === messages.indexOf(msg) ? 'search-current' : ''} ${isSelectionMode ? 'message-selectable' : ''} ${selectedIds.has(msg.id) ? 'message-selected' : ''}`}
         onDoubleClick={() => handleDoubleClick(msg.id)}
