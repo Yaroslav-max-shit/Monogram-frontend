@@ -824,7 +824,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <QRCodeSVG 
 
-                value={`https://monograme.netlify.app/invite/${userData.id || userData.username}`}
+                value={`https://monogram-one-mu.vercel.app/invite/${userData.id || userData.username}`}
 
                 size={200}
 

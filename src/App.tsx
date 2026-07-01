@@ -98,7 +98,7 @@ interface NewDeviceInfo {
 }
 
 // Константы
-const FRONTEND_URL = import.meta.env.VITE_APP_URL || 'https://monograme.netlify.app';
+const FRONTEND_URL = import.meta.env.VITE_APP_URL || 'https://monogram-one-mu.vercel.app';
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com/';
 
 const App: React.FC = () => {
