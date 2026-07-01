@@ -439,7 +439,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       },
       {
         root: container,
-        threshold: 0.4,
+        threshold: 0,
       }
     );
 
@@ -1257,13 +1257,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         <div className="chat-header">
           <div className="chat-header-info">
             <div className="chat-header-avatar skeleton"></div>
-            <div className="chat-header-name skeleton"></div>
+            <div>
+              <div className="chat-header-name skeleton" style={{width: 120, height: 14}}></div>
+              <div className="skeleton" style={{width: 80, height: 10, marginTop: 6}}></div>
+            </div>
           </div>
         </div>
         <div className="chat-messages">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="message-skeleton">
-              <div className="skeleton"></div>
+          {[85, 50, 95, 35, 70, 55, 80, 40].map((w, i) => (
+            <div key={i} className="message-skeleton" style={{alignSelf: i % 2 === 0 ? 'flex-start' : 'flex-end'}}>
+              <div className="skeleton" style={{width: `${w}%`, height: 14 + (i % 3) * 4, borderRadius: i % 2 === 0 ? '16px 16px 16px 4px' : '16px 16px 4px 16px'}}></div>
             </div>
           ))}
         </div>

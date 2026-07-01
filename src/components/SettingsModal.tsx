@@ -718,19 +718,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <div className="settings-modal-header">
 
-            <button className="settings-close-btn" onClick={onClose}>✕</button>
+            <div style={{ width: 36 }} />
 
             <h2>Настройки</h2>
 
-            <div style={{ width: 36 }} />
+            <button className="settings-close-btn" onClick={onClose}>✕</button>
 
           </div>
 
-          <div className="settings-loading">
+          <div className="settings-modal-body" style={{padding: 24}}>
 
-            <div className="loading-spinner" />
-
-            <p>Загрузка настроек...</p>
+            {[1, 2, 3, 4, 5, 6, 7].map(i => (
+              <div key={i} style={{display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', marginBottom: 8}}>
+                <div className="skeleton" style={{width: 22, height: 22, borderRadius: 8, flexShrink: 0}}></div>
+                <div style={{flex: 1}}>
+                  <div className="skeleton" style={{width: `${60 + (i % 3) * 15}%`, height: 12, borderRadius: 6}}></div>
+                  <div className="skeleton" style={{width: `${40 + (i % 2) * 20}%`, height: 8, borderRadius: 4, marginTop: 6}}></div>
+                </div>
+              </div>
+            ))}
 
           </div>
 
