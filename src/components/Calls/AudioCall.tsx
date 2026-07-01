@@ -130,7 +130,7 @@ const AudioCall: React.FC<AudioCallProps> = ({
       }}>
         <div className="call-avatar" style={{
           width: '120px', height: '120px', borderRadius: '60px',
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          background: 'var(--gradient-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '3rem', fontWeight: 'bold', marginBottom: '24px'
         }}>
@@ -202,7 +202,7 @@ const AudioCall: React.FC<AudioCallProps> = ({
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
         <div className="audio-visualizer" style={{
           width: '200px', height: '200px', borderRadius: '100px',
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          background: 'var(--gradient-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: '32px', position: 'relative'
         }}>

@@ -11,7 +11,7 @@
   width: 100%;
   padding: 80px 20px 60px;
   text-align: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   color: white;
 }
 
@@ -65,7 +65,7 @@
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,7 +92,7 @@
 .install-badge {
   display: inline-block;
   padding: 4px 12px;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
   color: var(--accent);
   border-radius: 20px;
   font-size: 0.8rem;
@@ -126,7 +126,7 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,7 +168,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-primary);
   color: white;
   display: flex;
   align-items: center;

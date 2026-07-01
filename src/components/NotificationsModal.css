@@ -31,7 +31,7 @@
   background: var(--hover-bg);
   border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 8px 24px rgba(199, 110, 0, 0.2);
 }
 
 .notification-btn:active {
@@ -175,7 +175,7 @@
 }
 
 .mark-all-read-btn:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
 }
 
 .notifications-settings-btn {
@@ -221,7 +221,7 @@
 }
 
 .notification-item.unread {
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(199, 110, 0, 0.05);
   border-left: 3px solid var(--accent);
 }
 
@@ -248,7 +248,7 @@
 }
 
 .notification-icon-wrapper.message {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
 }
 
 .notification-icon-wrapper.system {
@@ -311,7 +311,7 @@
 }
 
 .view-all-btn:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
 }
 
 /* Пустые уведомления */
@@ -382,7 +382,7 @@ button {
 button:focus,
 button:focus-visible {
   outline: none !important;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(199, 110, 0, 0.3) !important;
   border-color: var(--accent) !important;
 }
 
@@ -415,11 +415,11 @@ img, svg {
   border-color: var(--accent);
   color: var(--accent);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 12px rgba(199, 110, 0, 0.2);
 }
 
 .icon-btn.active {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -461,7 +461,7 @@ img, svg {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(199, 110, 0, 0.3);
 }
 
 .filter-badge {
@@ -564,7 +564,7 @@ img, svg {
   border-color: var(--accent);
   color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 6px 16px rgba(199, 110, 0, 0.2);
 }
 
 /* ============================================ */
@@ -698,7 +698,7 @@ body.dark-mode .settings-action-btn:hover {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(199, 110, 0, 0.3);
 }
 
 .filter-badge {
@@ -771,7 +771,7 @@ body.dark-mode .settings-action-btn:hover {
 }
 
 .icon-btn.active {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
   border-color: var(--accent);
   color: var(--accent);
 }

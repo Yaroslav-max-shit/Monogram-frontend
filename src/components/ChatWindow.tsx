@@ -130,9 +130,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [wsConnected, setWsConnected] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -218,16 +215,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setScrollPosition(pos);
     const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
     setShowScrollButton(!atBottom);
-    if (container.scrollTop < 50 && hasMore && !loadingMore && !isLoading) {
-      const prevHeight = container.scrollHeight;
-      loadMessages(true).then(() => {
-        requestAnimationFrame(() => {
-          if (messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight - prevHeight;
-          }
-        });
-      });
-    }
   };
 
   const handleDoubleClick = (messageId: number) => {
@@ -325,44 +312,40 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  const loadMessages = useCallback(async (loadMore = false) => {
+  const loadMessages = useCallback(async () => {
     try {
-      if (loadMore && messages.length > 0) {
-        setLoadingMore(true);
-        const beforeId = messages[0]?.id;
-        const response = await apiClient.get(`/messages/chat/${chatId}`, { params: { limit: 50, before_id: beforeId } });
-        const newMsgs = response.data;
-        if (newMsgs.length === 0) { setHasMore(false); return; }
-        const decrypted = await Promise.all(newMsgs.map(async (msg: Message) => {
-          if (!msg.is_deleted && isEncrypted(msg.content)) {
-            try { const d = await decryptMessage(msg.content); try { const p = JSON.parse(d); if (p.text) return { ...msg, content: p.text }; } catch {} return { ...msg, content: d }; } catch { return msg; }
-          }
-          return msg;
-        }));
-        setMessages(prev => [...decrypted.reverse(), ...prev]);
-      } else {
-        setIsLoading(true);
-        const response = await apiClient.get(`/messages/chat/${chatId}`, { params: { limit: 50 } });
-        let msgs = response.data;
-        msgs = await Promise.all(msgs.map(async (msg: Message) => {
-          if (!msg.is_deleted && isEncrypted(msg.content)) {
+      const response = await apiClient.get(`/messages/chat/${chatId}`);
+      let msgs = response.data;
+      
+      // Always try to decrypt if content looks encrypted
+      msgs = await Promise.all(msgs.map(async (msg: Message) => {
+        if (!msg.is_deleted && isEncrypted(msg.content)) {
+          try {
+            const decrypted = await decryptMessage(msg.content);
             try {
-              const decrypted = await decryptMessage(msg.content);
-              try { const parsed = JSON.parse(decrypted); if (parsed.text) return { ...msg, content: parsed.text }; } catch {}
-              return { ...msg, content: decrypted };
-            } catch { return msg; }
+              const parsed = JSON.parse(decrypted);
+              if (parsed.text) {
+                return { ...msg, content: parsed.text };
+              }
+            } catch {}
+            return { ...msg, content: decrypted };
+          } catch {
+            return msg;
           }
-          return msg;
-        }));
-        msgs = msgs.map((msg: Message) => ({ ...msg, status: msg.sender_id === currentUserId ? 'read' : 'delivered' }));
-        setMessages(msgs);
-        setHasMore(msgs.length >= 50);
-      }
+        }
+        return msg;
+      }));
+      
+      msgs = msgs.map((msg: Message) => ({
+        ...msg,
+        status: msg.sender_id === currentUserId ? 'read' : 'delivered'
+      }));
+      
+      setMessages(msgs);
     } catch (error) {
       console.error('Ошибка загрузки сообщений:', error);
     } finally {
       setIsLoading(false);
-      setLoadingMore(false);
     }
   }, [chatId, currentUserId]);
 
@@ -370,30 +353,48 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     loadMessages();
   }, [loadMessages]);
 
-  // Real-time: listen for new messages via WebSocket
+  // Real-time: polling for new messages every 2 seconds
   useEffect(() => {
     if (!chatId || !currentUserId) return;
-    const handler = (msg: any) => {
-      if (msg.type === 'new_message' && msg.chat_id === chatId && msg.sender_id !== currentUserId) {
-        const content = msg.content || '';
-        if (isEncrypted(content)) {
-          decryptMessage(content).then(decrypted => {
-            try {
-              const parsed = JSON.parse(decrypted);
-              setMessages(prev => [...prev, { id: msg.message_id, content: parsed.text || decrypted, sender_id: msg.sender_id, chat_id: msg.chat_id, timestamp: msg.timestamp, edited: false, status: 'delivered' }]);
-            } catch {
-              setMessages(prev => [...prev, { id: msg.message_id, content: decrypted, sender_id: msg.sender_id, chat_id: msg.chat_id, timestamp: msg.timestamp, edited: false, status: 'delivered' }]);
+    let lastMsgId = 0;
+    const poll = async () => {
+      try {
+        const res = await apiClient.get(`/messages/chat/${chatId}`);
+        const msgs = res.data || [];
+        if (msgs.length > 0) {
+          const newest = msgs[msgs.length - 1];
+          if (lastMsgId === 0) {
+            lastMsgId = newest.id;
+            return;
+          }
+          if (newest.id > lastMsgId) {
+            const newMsgs = msgs.filter((m: any) => m.id > lastMsgId && m.sender_id !== currentUserId);
+            if (newMsgs.length > 0) {
+              // Decrypt new messages
+              const decrypted = await Promise.all(newMsgs.map(async (m: any) => {
+                if (isEncrypted(m.content)) {
+                  try {
+                    const dec = await decryptMessage(m.content);
+                    try { const p = JSON.parse(dec); if (p.text) return { ...m, content: p.text }; } catch {}
+                    return { ...m, content: dec };
+                  } catch { return m; }
+                }
+                return m;
+              }));
+              setMessages(prev => {
+                const existingIds = new Set(prev.map(m => m.id));
+                const fresh = decrypted.filter((m: any) => !existingIds.has(m.id));
+                return fresh.length > 0 ? [...prev, ...fresh] : prev;
+              });
+              scrollToBottom();
             }
-            scrollToBottom();
-          });
-        } else {
-          setMessages(prev => [...prev, { id: msg.message_id, content, sender_id: msg.sender_id, chat_id: msg.chat_id, timestamp: msg.timestamp, edited: false, status: 'delivered' }]);
-          scrollToBottom();
+            lastMsgId = newest.id;
+          }
         }
-      }
+      } catch {}
     };
-    onMessage(handler);
-    return () => onMessage(() => {});
+    const interval = setInterval(poll, 2000);
+    return () => clearInterval(interval);
   }, [chatId, currentUserId]);
 
   // Load chat members for mentions and slash commands
@@ -564,24 +565,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   };
 
   const handleDeleteForEveryone = async (messageId: number) => {
-    setShowContextMenu(false);
     try {
       await apiClient.delete(`/messages/${messageId}`);
       setMessages(prev => prev.map(msg =>
         msg.id === messageId ? { ...msg, content: "🗑 Сообщение удалено", is_deleted: true } : msg
       ));
     } catch (error) {
-      console.error('Delete error:', error);
-    }
-  };
-
-  const handleDeleteMessage = async (messageId: number) => {
-    setShowContextMenu(false);
-    try {
-      await apiClient.delete(`/messages/${messageId}`);
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-    } catch (error) {
-      console.error('Delete error:', error);
+      console.error('Ошибка удаления:', error);
     }
   };
 
@@ -601,7 +591,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       setSelectedMessages([]);
       setShowForwardSelector(false);
     } catch (error) {
-      console.error('Forward error:', error);
+      console.error('Ошибка пересылки:', error);
     }
   };
 
@@ -612,7 +602,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         msg.id === messageId ? { ...msg, content: newText, edited: true } : msg
       ));
     } catch (error) {
-      console.error('Edit error:', error);
+      console.error('Ошибка редактирования:', error);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: number) => {
+    try {
+      await apiClient.delete(`/messages/${messageId}`);
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
     }
   };
 
@@ -908,17 +907,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleContextMenu = (e: React.MouseEvent, message: Message) => {
     e.preventDefault();
-    e.stopPropagation();
     setSelectedMessage(message);
-    const msgRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const isOwn = message.sender_id === currentUserId;
-    let posX = isOwn ? msgRect.left - 10 : msgRect.right + 10;
-    let posY = msgRect.top;
-    if (posX + 200 > window.innerWidth) posX = msgRect.left - 210;
-    if (posX < 0) posX = 10;
-    if (posY + 250 > window.innerHeight) posY = window.innerHeight - 260;
-    if (posY < 0) posY = 10;
-    setContextMenuPosition({ x: posX, y: posY });
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
     setShowContextMenu(true);
   };
 
@@ -1030,55 +1020,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     
     let isFile = false;
     let fileData = null;
-    let isBotCommand = false;
-    let botButtons: any[] = [];
     try {
       const parsed = JSON.parse(content);
       if (parsed.type === 'file') {
         isFile = true;
         fileData = parsed;
       }
-      if (parsed.type === 'bot_command') {
-        isBotCommand = true;
-        botButtons = parsed.buttons || [];
-      }
     } catch {}
     
-    if (isFile && fileData) {
-      return (
-        <div key={msg.id} data-message-id={msg.id} className={`message ${isOwn ? 'own' : 'other'}`}>
-          <FileMessage file={fileData} onMediaClick={(url) => { setMediaViewerUrl(url); setShowMediaViewer(true); }} />
-          <div className="message-time">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
-      );
-    }
-
-    if (isBotCommand && botButtons.length > 0) {
-      return (
-        <div key={msg.id} data-message-id={msg.id} className={`message ${isOwn ? 'own' : 'other'}`}>
-          <div className="message-bubble">
-            {content.split('\n').map((line, i) => <p key={i} style={{margin: '4px 0'}}>{line}</p>)}
-            <div style={{display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap'}}>
-              {botButtons.map((btn: any, i: number) => (
-                <button key={i} onClick={() => {
-                  if (btn.action === 'open_url' && btn.url) {
-                    window.open(btn.url, '_blank');
-                  } else if (btn.action === 'toggle_docs') {
-                    const autoOpen = localStorage.getItem('auto_open_docs') === 'true';
-                    localStorage.setItem('auto_open_docs', String(!autoOpen));
-                    btn.text = !autoOpen ? '⚙️ Автооткрытие: вкл' : '⚙️ Автооткрытие: выкл';
-                  }
-                }} style={{padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: '#58a6ff', cursor: 'pointer', fontSize: 13}}>
-                  {btn.text}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="message-time">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-        </div>
-      );
-    }
-
     const urls = extractUrls(content);
     const hasLinks = urls.length > 0;
     
@@ -1261,9 +1210,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
         <div className="chat-messages">
-          {[80, 55, 90, 40, 70, 60, 85, 45].map((w, i) => (
-            <div key={i} className="message-skeleton" style={{marginLeft: i % 2 === 0 ? 0 : 'auto', marginRight: i % 2 === 0 ? 'auto' : 0}}>
-              <div className="skeleton" style={{width: `${w}%`, height: 16 + (i % 3) * 4}}></div>
+          {[1, 2, 3].map(i => (
+            <div key={i} className="message-skeleton">
+              <div className="skeleton"></div>
             </div>
           ))}
         </div>
@@ -1280,15 +1229,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
           <div className="chat-header-details">
             <div className="chat-header-name">{chatName}</div>
-            {loadingMore && <div className="chat-header-typing">Подключение...</div>}
-            {!loadingMore && !wsConnected && <div className="chat-header-typing">Подключение...</div>}
-            {!loadingMore && wsConnected && typingUsers.size > 0 && (
+            {typingUsers.size > 0 && (
               <div className="chat-header-typing">печатает...</div>
             )}
           </div>
         </div>
         <div className="chat-header-actions">
-          <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); const peer = chatMembers.find((m: any) => m.id !== currentUserId); if (peer) onStartCall?.(peer.id, chatName); }} title="Звонок">
+          <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); onStartCall?.(currentUserId === 1 ? 2 : 1, chatName); }} title="Звонок">
             <Icon name="phone" size={20} />
           </button>
           <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); setShowChatSearch(!showChatSearch); }}>
@@ -1398,11 +1345,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               <Icon name="upload" size={48} />
               <p>Drop files here</p>
             </div>
-          </div>
-        )}
-        {loadingMore && (
-          <div style={{textAlign: 'center', padding: 12, color: 'var(--text-secondary)', fontSize: '0.85rem'}}>
-            <span className="loader" style={{width: 20, height: 20, fontSize: '0.5rem'}}></span>
           </div>
         )}
         {messages.length === 0 && (
@@ -1646,19 +1588,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               setEditingText(selectedMessage.content);
             }
           }} 
-          onDelete={() => handleDeleteMessage(selectedMessage.id)}
-          onDeleteForEveryone={() => handleDeleteForEveryone(selectedMessage.id)}
-          onAutoDelete={async (seconds: number) => {
-            try {
-              await apiClient.post(`/messages/${selectedMessage.id}/auto-delete`, { seconds });
-              setMessages(prev => prev.map(msg => 
-                msg.id === selectedMessage.id ? { ...msg, auto_delete: true } : msg
-              ));
-            } catch (e) {
-              console.error('Auto-delete error:', e);
-            }
-            setShowContextMenu(false);
-          }} 
+          onDelete={() => handleDeleteMessage(selectedMessage.id)} 
+          onDeleteForEveryone={() => handleDeleteForEveryone(selectedMessage.id)} 
           onCopy={() => handleCopyMessage(selectedMessage.content)} 
           onForward={() => {
             if (onForwardMessage) {

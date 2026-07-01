@@ -88,7 +88,7 @@ const VoiceWaveform: React.FC<VoiceWaveformProps> = ({
         const barW = Math.max(barWidth * 0.7, 2);
         const y = (h - barHeight) / 2;
 
-        const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#667eea';
+        const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || 'var(--accent)';
 
         ctx.fillStyle = i <= activeBar ? accentColor : 'rgba(255,255,255,0.25)';
         ctx.beginPath();

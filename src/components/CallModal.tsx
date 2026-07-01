@@ -61,7 +61,7 @@ const CallModal: React.FC<CallModalProps> = ({ chatName, type, onClose }) => {
           <div style={{ textAlign: 'center' }}>
             <div style={{
               width: '120px', height: '120px', borderRadius: '50%',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              background: 'var(--gradient-primary)',
               margin: '0 auto 20px', display: 'flex', alignItems: 'center',
               justifyContent: 'center', fontSize: '3rem', fontWeight: 700
             }}>

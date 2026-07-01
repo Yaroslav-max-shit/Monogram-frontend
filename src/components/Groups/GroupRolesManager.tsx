@@ -251,7 +251,7 @@ const GroupRolesManager: React.FC<GroupRolesManagerProps> = ({ chatId, currentUs
           width: 44px;
           height: 44px;
           border-radius: 50%;
-          background: linear-gradient(135deg, var(--accent), #764ba2);
+          background: var(--gradient-avatar);
           display: flex;
           align-items: center;
           justify-content: center;

@@ -29,7 +29,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onLogin, onRegister, onOp
       } catch (error) {
         console.error('Failed to get QR link:', error);
         const fakeSessionId = Math.random().toString(36).substring(2, 15);
-        setQrLink(`https://monogram-one-mu.vercel.app/qr/register/${fakeSessionId}`);
+        setQrLink(`https://f1w6ggb2-5173.euw.devtunnels.ms/qr/register/${fakeSessionId}`);
         setError('Не удалось подключиться к серверу, но QR код работает');
       } finally {
         setQrLoading(false);
@@ -66,7 +66,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onLogin, onRegister, onOp
     return (
       <div className="welcome-telegram">
         <div className="welcome-telegram-content">
-          <span className="loader"></span>
+          <div className="loading-spinner"></div>
           <p style={{ color: '#9ca3af', marginTop: '16px' }}>Загрузка QR кода...</p>
         </div>
       </div>

@@ -115,7 +115,7 @@
   text-align: center;
 }
 .welcome-telegram-btn.primary {
-  background: #667eea !important;
+  background: var(--accent) !important;
   color: #f3f3f3 !important;
   border: none !important;
 }

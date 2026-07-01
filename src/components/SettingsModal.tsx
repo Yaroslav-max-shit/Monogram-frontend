@@ -454,7 +454,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
     const builtIn = [
 
-      { id: 'default', name: 'По умолчанию', preview: 'linear-gradient(135deg, #667eea, #764ba2)', type: 'gradient' },
+      { id: 'default', name: 'По умолчанию', preview: 'var(--gradient-primary)', type: 'gradient' },
 
       { id: 'dark', name: 'Тёмный', preview: '#1a1a2e', type: 'color' },
 
@@ -718,17 +718,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <div className="settings-modal-header">
 
-            <div style={{ width: 36 }} />
+            <button className="settings-close-btn" onClick={onClose}>✕</button>
 
             <h2>Настройки</h2>
 
-            <button className="settings-close-btn" onClick={onClose}>✕</button>
+            <div style={{ width: 36 }} />
 
           </div>
 
           <div className="settings-loading">
 
-            <span className="loader"></span>
+            <div className="loading-spinner" />
 
             <p>Загрузка настроек...</p>
 
@@ -824,7 +824,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
               <QRCodeSVG 
 
-                value={`https://monogram-one-mu.vercel.app/invite/${userData.id || userData.username}`}
+                value={`https://f1w6ggb2-5173.euw.devtunnels.ms/invite/${userData.id || userData.username}`}
 
                 size={200}
 
@@ -842,13 +842,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
             
 
-            {isMobile && (
             <button className="scan-qr-btn" onClick={() => { setShowQR(false); setTimeout(() => setShowScanner(true), 100); }}>
 
               <Icon name="camera" size={18} /> Сканировать QR-код
 
             </button>
-            )}
 
             
 
@@ -1710,7 +1708,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   {[
 
-                    { name: 'Синий', color: '#667eea' },
+                    { name: 'Синий', color: 'var(--accent)' },
 
                     { name: 'Зелёный', color: '#4CAF50' },
 

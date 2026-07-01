@@ -14,11 +14,12 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  font-family: 'Inter', 'Manrope', system-ui, -apple-system, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.5;
   font-size: 14px;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 img, svg {
@@ -34,11 +35,11 @@ button, input, textarea, select {
   font-family: inherit;
 }
 
-button:focus-visible, 
-input:focus-visible, 
-textarea:focus-visible, 
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
 select:focus-visible {
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 0 0 3px rgba(199, 110, 0, 0.25);
   border-color: var(--accent);
 }
 
@@ -166,67 +167,6 @@ button {
   to { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0) scale(1.05); }
-  25% { transform: translateX(-5px) scale(1.05); }
-  75% { transform: translateX(5px) scale(1.05); }
-}
-
-@keyframes moveAround {
-  0% { transform: translate(0, 0) scale(1.05); }
-  25% { transform: translate(5px, -5px) scale(1.05); }
-  50% { transform: translate(0, 0) scale(1.05); }
-  75% { transform: translate(-5px, 5px) scale(1.05); }
-  100% { transform: translate(0, 0) scale(1.05); }
-}
-
-.anim-shake { animation: shake 0.5s ease-in-out; }
-.anim-move { animation: moveAround 2s ease-in-out infinite; }
-
-.loader {
-  --color-1: #FFFFFF;
-  --color-2: #de3500;
-  --size: 1px;
-  position: relative;
-  font-size: calc(16 * var(--size));
-  width: 5.5em;
-  height: 5.5em;
-}
-.loader:before {
-  content: '';
-  position: absolute;
-  transform: translate(-50%, -50%) rotate(45deg);
-  height: 100%;
-  width: calc(4 * var(--size));
-  background: var(--color-1);
-  left: 50%;
-  top: 50%;
-}
-.loader:after {
-  content: '';
-  position: absolute;
-  left: 0.2em;
-  bottom: 0.18em;
-  width: 1em;
-  height: 1em;
-  background-color: var(--color-2);
-  border-radius: 15%;
-  animation: rollingRock 2.5s cubic-bezier(0.79, 0, 0.47, 0.97) infinite;
-}
-@keyframes rollingRock {
-  0% { transform: translate(0, -1em) rotate(-45deg); }
-  5% { transform: translate(0, -1em) rotate(-50deg); }
-  20% { transform: translate(1em, -2em) rotate(47deg); }
-  25% { transform: translate(1em, -2em) rotate(45deg); }
-  30% { transform: translate(1em, -2em) rotate(40deg); }
-  45% { transform: translate(2em, -3em) rotate(137deg); }
-  50% { transform: translate(2em, -3em) rotate(135deg); }
-  55% { transform: translate(2em, -3em) rotate(130deg); }
-  70% { transform: translate(3em, -4em) rotate(217deg); }
-  75% { transform: translate(3em, -4em) rotate(220deg); }
-  100% { transform: translate(0, -1em) rotate(-225deg); }
-}
-
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -267,7 +207,7 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   z-index: 99999;
   transition: opacity 0.6s ease;
 }
@@ -504,11 +444,12 @@ button {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 10px 20px;
   border-radius: 10px;
+  font-family: 'Manrope', sans-serif;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -516,7 +457,7 @@ button {
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 16px rgba(199, 110, 0, 0.35);
 }
 
 .input-group {
@@ -551,7 +492,7 @@ button {
 .input-group textarea:focus,
 .input-group select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  box-shadow: 0 0 0 3px rgba(199, 110, 0, 0.15);
 }
 
 .input-group input::placeholder,
@@ -780,13 +721,13 @@ input[type="range"] {
 }
 
 .info-message {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
   color: var(--accent);
   padding: 12px 16px;
   border-radius: 10px;
   margin: 0 0 16px;
   font-size: 0.88rem;
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  border: 1px solid rgba(199, 110, 0, 0.2);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1251,7 +1192,7 @@ a, .copy-link-btn, .invite-link-text {
   width: 56px;
   height: 56px;
   border-radius: 28px;
-  background: linear-gradient(135deg, var(--accent), #764ba2);
+  background: var(--gradient-avatar);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1349,7 +1290,7 @@ a, .copy-link-btn, .invite-link-text {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #764ba2);
+  background: var(--gradient-avatar);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1429,7 +1370,7 @@ body.dark-mode .chat-window {
   background: var(--bg-primary) !important;
 }
 body.dark-mode .message.own {
-  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  background: var(--gradient-primary) !important;
   color: white !important;
 }
 body.dark-mode .message.other {
@@ -1523,7 +1464,7 @@ body.dark-mode button.btn-primary,
 body.dark-mode button.submit-btn,
 body.dark-mode button.send-button,
 body.dark-mode button.modal-btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  background: var(--gradient-primary) !important;
   border: none !important;
   color: white !important;
 }

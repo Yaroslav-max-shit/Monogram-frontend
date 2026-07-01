@@ -71,8 +71,8 @@
   margin-bottom: 12px;
 }
 .input-field:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(199, 110, 0, 0.15);
 }
 .input-field::placeholder {
   color: var(--text-tertiary, #aaa);
@@ -81,7 +81,7 @@
   width: 100%;
   padding: 16px;
   margin: 24px 0 12px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   border-radius: 14px;
@@ -107,7 +107,7 @@
 }
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 25px rgba(199, 110, 0, 0.4);
 }
 .submit-btn:active:not(:disabled) {
   transform: translateY(0);
@@ -130,8 +130,8 @@
   transition: color 0.2s ease, background 0.2s ease;
 }
 .forgot-password-btn:hover {
-  color: var(--accent, #667eea);
-  background: rgba(102, 126, 234, 0.05);
+  color: var(--accent, var(--accent));
+  background: rgba(199, 110, 0, 0.05);
   text-decoration: underline;
 }
 .auth-divider {
@@ -164,9 +164,9 @@
   transition: all 0.3s ease;
 }
 .toggle-btn:hover {
-  border-color: var(--accent, #667eea);
-  color: var(--accent, #667eea);
-  background: rgba(102, 126, 234, 0.05);
+  border-color: var(--accent, var(--accent));
+  color: var(--accent, var(--accent));
+  background: rgba(199, 110, 0, 0.05);
   transform: translateY(-1px);
 }
 .error-message {

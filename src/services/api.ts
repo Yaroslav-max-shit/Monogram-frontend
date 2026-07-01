@@ -1,11 +1,7 @@
 import axios from 'axios';
 import { getSession, saveSession } from './cookies';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com';
-
-const apiClient = axios.create({
-    baseURL: API_URL,
-});
+const apiClient = axios.create();
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
 
@@ -52,7 +48,7 @@ apiClient.interceptors.response.use(
                     throw new Error('No token');
                 }
                 
-                const response = await axios.post(`${API_URL}/auth/refresh`, {}, {
+                const response = await axios.post('/auth/refresh', {}, {
                     headers: { Authorization: `Bearer ${session.token}` }
                 });
                 

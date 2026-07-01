@@ -363,7 +363,7 @@
     z-index: 1000 !important;
     width: 56px !important;
     height: 56px !important;
-    background: linear-gradient(135deg, var(--accent), #764ba2) !important;
+    background: var(--gradient-avatar) !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
     border-radius: 28px !important;
   }

@@ -60,7 +60,7 @@ const ResetPassword: React.FC = () => {
       }}>
         <div style={{
           width: 56, height: 56, borderRadius: 14,
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          background: 'var(--gradient-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 14px', fontSize: '1.5rem', color: '#fff',
         }}>🔐</div>
@@ -121,7 +121,7 @@ const ResetPassword: React.FC = () => {
 
             <button onClick={handleReset} style={{
               width: '100%', padding: '12px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              background: 'var(--gradient-primary)',
               color: 'white', border: 'none', borderRadius: 12,
               fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
             }}>
@@ -147,7 +147,7 @@ const ResetPassword: React.FC = () => {
             </p>
             <button onClick={() => window.location.href = '/'} style={{
               width: '100%', padding: '12px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              background: 'var(--gradient-primary)',
               color: 'white', border: 'none', borderRadius: 12,
               fontWeight: 600, fontSize: '0.95rem', cursor: 'pointer',
             }}>

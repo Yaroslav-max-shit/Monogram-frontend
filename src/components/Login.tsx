@@ -239,7 +239,7 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
         </p>
 
         {error && (
-          <div className="error-message anim-shake">
+          <div className="error-message">
             <Icon name="note" size={14} /> {error}
           </div>
         )}
@@ -357,7 +357,7 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
           Войти через Google
         </button>
 
-        <button onClick={() => { window.location.href = `${import.meta.env.VITE_API_URL || ''}/auth/yandex` }} className="yandex-login-btn" disabled={loading}>
+        <button onClick={() => { window.location.href = `${window.location.origin}/auth/yandex` }} className="yandex-login-btn" disabled={loading}>
           <img src="/assets/images/Yandex_icon.svg" alt="Я" style={{ width: 20, height: 20 }} />
           Войти через Яндекс
         </button>

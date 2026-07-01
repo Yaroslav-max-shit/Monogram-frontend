@@ -122,7 +122,7 @@
 
 .input-group input:focus, .input-group textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 0 0 2px rgba(199, 110, 0, 0.2);
 }
 
 .input-hint { font-size: 0.7rem; color: var(--text-tertiary); display: block; margin-top: 3px; }
@@ -453,7 +453,7 @@
 }
 
 .profile-avatar-large.placeholder {
-  background: linear-gradient(135deg, var(--accent), #764ba2);
+  background: var(--gradient-avatar);
   display: flex;
   align-items: center;
   justify-content: center;

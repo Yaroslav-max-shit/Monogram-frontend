@@ -126,7 +126,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
       }}>
         <div className="call-avatar" style={{
           width: '120px', height: '120px', borderRadius: '60px',
-          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          background: 'var(--gradient-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '3rem', fontWeight: 'bold', marginBottom: '24px'
         }}>

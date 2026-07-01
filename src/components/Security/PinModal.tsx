@@ -67,7 +67,7 @@ const PinModal: React.FC<PinModalProps> = ({ onSubmit, onCancel, title = 'Вве
           </svg>
         </div>
         <h3 style={{margin: '0 0 20px', fontSize: '1.1rem', fontWeight: 600}}>{title}</h3>
-        <div style={{display: 'flex', gap: 10, justifyContent: 'center', marginBottom: error ? 12 : 20}} className={error ? 'anim-shake' : ''}>
+        <div style={{display: 'flex', gap: 10, justifyContent: 'center', marginBottom: error ? 12 : 20}}>
           {digits.map((digit, i) => (
             <input
               key={i}

@@ -1,160 +1,207 @@
 /* ============================================ */
-/* СВЕТЛАЯ ТЕМА (по умолчанию)                  */
+/* MONOGRAM "EMBER" DESIGN SYSTEM               */
+/* ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+/* ============================================ */
+/* СВЕТЛАЯ ТЕМА                                 */
 /* ============================================ */
 :root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f5f7fa;
-  --bg-tertiary: #e5e7eb;
-  --bg-hover: #f3f4f6;
-  --text-primary: #1f2937;
-  --text-secondary: #4b5563;
-  --text-tertiary: #6b7280;
-  --border-color: #e5e7eb;
-  --hover-bg: #f3f4f6;
-  --active-bg: #e5e7eb;
-  --received-bg: #f1f3f4;
-  --sent-bg: #3b82f6;
-  --danger: #ef4444;
-  --success: #10b981;
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.12);
+  --bg-primary: #FAF7F2;
+  --bg-secondary: #F0EBE3;
+  --bg-tertiary: #E4DDD3;
+  --bg-hover: #EDE8DF;
+  --text-primary: #1C1712;
+  --text-secondary: #5C5248;
+  --text-tertiary: #8A7E72;
+  --border-color: #DDD6CC;
+  --hover-bg: #EDE8DF;
+  --active-bg: #E0D9CF;
+  --received-bg: #F0EBE3;
+  --sent-bg: #C76E00;
+  --accent: #C76E00;
+  --accent-light: #E8960A;
+  --accent-hover: #A85C00;
+  --danger: #D94F04;
+  --danger-bg: #FDE8E0;
+  --success: #2D8A4E;
+  --glass-bg: rgba(199, 110, 0, 0.06);
+  --glass-border: rgba(199, 110, 0, 0.12);
+  --gradient-primary: linear-gradient(135deg, #C76E00, #D94F04);
+  --gradient-avatar: linear-gradient(135deg, #C76E00, #E8960A, #D94F04);
+  --shadow-sm: 0 1px 3px rgba(28, 23, 18, 0.06);
+  --shadow-md: 0 4px 12px rgba(28, 23, 18, 0.08);
+  --shadow-lg: 0 8px 32px rgba(28, 23, 18, 0.12);
 }
 
 /* ============================================ */
-/* ТЁМНАЯ ТЕМА                                 */
+/* ТЁМНАЯ ТЕМА                                  */
 /* ============================================ */
 body.dark-mode {
-  --bg-primary: #111827;
-  --bg-secondary: #1f2937;
-  --bg-tertiary: #374151;
-  --bg-hover: #374151;
-  --text-primary: #f9fafb;
-  --text-secondary: #d1d5db;
-  --text-tertiary: #9ca3af;
-  --border-color: #374151;
-  --hover-bg: #374151;
-  --active-bg: #374151;
-  --received-bg: #1f2937;
-  --sent-bg: #3b82f6;
-  --danger: #f87171;
-  --success: #34d399;
-  --glass-bg: rgba(0, 0, 0, 0.25);
-  --glass-border: rgba(255, 255, 255, 0.06);
+  --bg-primary: #141210;
+  --bg-secondary: #1E1B18;
+  --bg-tertiary: #2A2622;
+  --bg-hover: #2A2622;
+  --text-primary: #F5EDE4;
+  --text-secondary: #C4B8A8;
+  --text-tertiary: #8A7E72;
+  --border-color: #332E28;
+  --hover-bg: #2A2622;
+  --active-bg: #332E28;
+  --received-bg: #1E1B18;
+  --sent-bg: #C76E00;
+  --accent: #E8960A;
+  --accent-light: #F0A820;
+  --accent-hover: #C76E00;
+  --danger: #D94F04;
+  --danger-bg: #3D1A0A;
+  --success: #3DAF62;
+  --glass-bg: rgba(232, 150, 10, 0.06);
+  --glass-border: rgba(232, 150, 10, 0.12);
+  --gradient-primary: linear-gradient(135deg, #C76E00, #D94F04);
+  --gradient-avatar: linear-gradient(135deg, #C76E00, #E8960A, #D94F04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* ============================================ */
-/* AMOLED ТЕМА (чёрный + зелёный акцент)        */
+/* AMOLED ТЕМА                                  */
 /* ============================================ */
 body.amoled-mode {
   --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #1a1a1a;
-  --bg-hover: #1a1a1a;
-  --text-primary: #ffffff;
-  --text-secondary: #cccccc;
-  --text-tertiary: #888888;
-  --border-color: #2a2a2a;
-  --hover-bg: #1a1a1a;
-  --active-bg: #222222;
-  --received-bg: #0a0a0a;
-  --sent-bg: #00e676;
-  --accent: #00e676;
-  --danger: #ff5252;
-  --success: #00e676;
-  --glass-bg: rgba(0, 230, 118, 0.05);
-  --glass-border: rgba(0, 230, 118, 0.15);
+  --bg-secondary: #0A0A08;
+  --bg-tertiary: #161410;
+  --bg-hover: #161410;
+  --text-primary: #F5EDE4;
+  --text-secondary: #C4B8A8;
+  --text-tertiary: #6A5E50;
+  --border-color: #1E1B18;
+  --hover-bg: #161410;
+  --active-bg: #222018;
+  --received-bg: #0A0A08;
+  --sent-bg: #C76E00;
+  --accent: #E8960A;
+  --accent-light: #F0A820;
+  --danger: #D94F04;
+  --danger-bg: #2A0A00;
+  --success: #3DAF62;
+  --glass-bg: rgba(232, 150, 10, 0.04);
+  --glass-border: rgba(232, 150, 10, 0.1);
+  --gradient-primary: linear-gradient(135deg, #C76E00, #D94F04);
+  --gradient-avatar: linear-gradient(135deg, #C76E00, #E8960A, #D94F04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
 /* ============================================ */
 /* NORD ТЕМА                                    */
 /* ============================================ */
 body.nord-mode {
-  --bg-primary: #2e3440;
-  --bg-secondary: #3b4252;
-  --bg-tertiary: #434c5e;
-  --bg-hover: #434c5e;
-  --text-primary: #eceff4;
-  --text-secondary: #d8dee9;
-  --text-tertiary: #a0a8b8;
-  --border-color: #4c566a;
-  --hover-bg: #434c5e;
-  --active-bg: #4c566a;
-  --received-bg: #3b4252;
-  --sent-bg: #88c0d0;
-  --accent: #88c0d0;
-  --danger: #bf616a;
-  --success: #a3be8c;
-  --glass-bg: rgba(136, 192, 208, 0.08);
-  --glass-border: rgba(136, 192, 208, 0.15);
+  --bg-primary: #2E3440;
+  --bg-secondary: #3B4252;
+  --bg-tertiary: #434C5E;
+  --bg-hover: #434C5E;
+  --text-primary: #ECEFF4;
+  --text-secondary: #D8DEE9;
+  --text-tertiary: #A0A8B8;
+  --border-color: #4C566A;
+  --hover-bg: #434C5E;
+  --active-bg: #4C566A;
+  --received-bg: #3B4252;
+  --sent-bg: #88C0D0;
+  --accent: #C76E00;
+  --accent-light: #E8960A;
+  --danger: #BF616A;
+  --danger-bg: #3D2024;
+  --success: #A3BE8C;
+  --glass-bg: rgba(199, 110, 0, 0.08);
+  --glass-border: rgba(199, 110, 0, 0.15);
+  --gradient-primary: linear-gradient(135deg, #C76E00, #D94F04);
+  --gradient-avatar: linear-gradient(135deg, #C76E00, #E8960A, #D94F04);
 }
 
 /* ============================================ */
 /* DRACULA ТЕМА                                 */
 /* ============================================ */
 body.dracula-mode {
-  --bg-primary: #282a36;
+  --bg-primary: #282A36;
   --bg-secondary: #343746;
-  --bg-tertiary: #44475a;
-  --bg-hover: #44475a;
-  --text-primary: #f8f8f2;
-  --text-secondary: #ccc;
-  --text-tertiary: #9090a0;
-  --border-color: #6272a4;
-  --hover-bg: #44475a;
-  --active-bg: #6272a4;
+  --bg-tertiary: #44475A;
+  --bg-hover: #44475A;
+  --text-primary: #F8F8F2;
+  --text-secondary: #CCC;
+  --text-tertiary: #9090A0;
+  --border-color: #6272A4;
+  --hover-bg: #44475A;
+  --active-bg: #6272A4;
   --received-bg: #343746;
-  --sent-bg: #bd93f9;
-  --accent: #bd93f9;
-  --danger: #ff5555;
-  --success: #50fa7b;
-  --glass-bg: rgba(189, 147, 249, 0.08);
-  --glass-border: rgba(189, 147, 249, 0.15);
+  --sent-bg: #C76E00;
+  --accent: #E8960A;
+  --accent-light: #F0A820;
+  --danger: #FF5555;
+  --danger-bg: #3D1A1A;
+  --success: #50FA7B;
+  --glass-bg: rgba(232, 150, 10, 0.08);
+  --glass-border: rgba(232, 150, 10, 0.15);
+  --gradient-primary: linear-gradient(135deg, #C76E00, #D94F04);
+  --gradient-avatar: linear-gradient(135deg, #C76E00, #E8960A, #D94F04);
 }
 
 /* ============================================ */
 /* LAVENDER ТЕМА                                */
 /* ============================================ */
 body.lavender-mode {
-  --bg-primary: #1a1625;
-  --bg-secondary: #231e30;
-  --bg-tertiary: #2d2740;
-  --bg-hover: #2d2740;
-  --text-primary: #e8e0f0;
-  --text-secondary: #c0b0d8;
-  --text-tertiary: #8878a0;
-  --border-color: #3d3550;
-  --hover-bg: #2d2740;
-  --active-bg: #3d3550;
-  --received-bg: #231e30;
-  --sent-bg: #b08aff;
-  --accent: #b08aff;
-  --danger: #ff6b9d;
-  --success: #7dd3a0;
-  --glass-bg: rgba(176, 138, 255, 0.08);
-  --glass-border: rgba(176, 138, 255, 0.15);
+  --bg-primary: #1A1625;
+  --bg-secondary: #231E30;
+  --bg-tertiary: #2D2740;
+  --bg-hover: #2D2740;
+  --text-primary: #E8E0F0;
+  --text-secondary: #C0B0D8;
+  --text-tertiary: #8878A0;
+  --border-color: #3D3550;
+  --hover-bg: #2D2740;
+  --active-bg: #3D3550;
+  --received-bg: #231E30;
+  --sent-bg: #C76E00;
+  --accent: #E8960A;
+  --accent-light: #F0A820;
+  --danger: #FF6B9D;
+  --danger-bg: #3D1A28;
+  --success: #7DD3A0;
+  --glass-bg: rgba(232, 150, 10, 0.08);
+  --glass-border: rgba(232, 150, 10, 0.15);
+  --gradient-primary: linear-gradient(135deg, #C76E00, #D94F04);
+  --gradient-avatar: linear-gradient(135deg, #C76E00, #E8960A, #D94F04);
 }
 
 /* ============================================ */
 /* OCEAN ТЕМА                                   */
 /* ============================================ */
 body.ocean-mode {
-  --bg-primary: #0d1b2a;
-  --bg-secondary: #1b2838;
+  --bg-primary: #0D1B2A;
+  --bg-secondary: #1B2838;
   --bg-tertiary: #253545;
   --bg-hover: #253545;
-  --text-primary: #e0e8f0;
-  --text-secondary: #a0b0c0;
+  --text-primary: #E0E8F0;
+  --text-secondary: #A0B0C0;
   --text-tertiary: #607080;
   --border-color: #304050;
   --hover-bg: #253545;
   --active-bg: #304050;
-  --received-bg: #1b2838;
-  --sent-bg: #4fc3f7;
-  --accent: #4fc3f7;
-  --danger: #ef5350;
-  --success: #66bb6a;
-  --glass-bg: rgba(79, 195, 247, 0.08);
-  --glass-border: rgba(79, 195, 247, 0.15);
+  --received-bg: #1B2838;
+  --sent-bg: #C76E00;
+  --accent: #E8960A;
+  --accent-light: #F0A820;
+  --danger: #EF5350;
+  --danger-bg: #3D1A10;
+  --success: #66BB6A;
+  --glass-bg: rgba(232, 150, 10, 0.08);
+  --glass-border: rgba(232, 150, 10, 0.15);
+  --gradient-primary: linear-gradient(135deg, #C76E00, #D94F04);
+  --gradient-avatar: linear-gradient(135deg, #C76E00, #E8960A, #D94F04);
 }
 
 /* ============================================ */
@@ -163,19 +210,23 @@ body.ocean-mode {
 body.high-contrast {
   --bg-primary: #000000;
   --bg-secondary: #000000;
-  --bg-tertiary: #1a1a1a;
+  --bg-tertiary: #1A1A1A;
   --bg-hover: #333333;
-  --text-primary: #ffffff;
-  --text-secondary: #ffffff;
-  --text-tertiary: #cccccc;
-  --border-color: #ffffff;
+  --text-primary: #FFFFFF;
+  --text-secondary: #FFFFFF;
+  --text-tertiary: #CCCCCC;
+  --border-color: #FFFFFF;
   --hover-bg: #333333;
   --active-bg: #555555;
-  --received-bg: #1a1a1a;
-  --sent-bg: #ffff00;
-  --accent: #ffff00;
-  --danger: #ff0000;
-  --success: #00ff00;
+  --received-bg: #1A1A1A;
+  --sent-bg: #E8960A;
+  --accent: #E8960A;
+  --accent-light: #F0A820;
+  --danger: #FF0000;
+  --danger-bg: #330000;
+  --success: #00FF00;
   --glass-bg: rgba(255, 255, 255, 0.1);
   --glass-border: rgba(255, 255, 255, 0.3);
+  --gradient-primary: linear-gradient(135deg, #E8960A, #FF6600);
+  --gradient-avatar: linear-gradient(135deg, #E8960A, #FF6600);
 }

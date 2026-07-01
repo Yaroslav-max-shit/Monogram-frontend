@@ -246,7 +246,7 @@ const TransferModal: React.FC<TransferModalProps> = ({
 
               <button onClick={handleSendProposal} disabled={loading} style={{
                 width: '100%', padding: '12px',
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                background: 'var(--gradient-primary)',
                 color: 'white', border: 'none', borderRadius: 12,
                 fontWeight: 600, fontSize: '0.95rem', cursor: loading ? 'wait' : 'pointer',
                 opacity: loading ? 0.7 : 1,
@@ -260,7 +260,7 @@ const TransferModal: React.FC<TransferModalProps> = ({
             <div style={{ textAlign: 'center', padding: '30px 0' }}>
               <div style={{
                 width: 40, height: 40, border: '3px solid var(--border-color)',
-                borderTopColor: '#667eea', borderRadius: '50%',
+                borderTopColor: 'var(--accent)', borderRadius: '50%',
                 animation: 'spin 1s linear infinite', margin: '0 auto 12px',
               }} />
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Отправка предложения...</p>

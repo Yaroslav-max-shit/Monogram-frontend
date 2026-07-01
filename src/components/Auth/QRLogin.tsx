@@ -68,7 +68,7 @@ const QRLogin: React.FC<QRLoginProps> = ({ onClose }) => {
       bottom: 30px;
       left: 50%;
       transform: translateX(-50%);
-      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#667eea'};
+      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : 'var(--accent)'};
       color: white;
       padding: 12px 24px;
       border-radius: 50px;
@@ -91,7 +91,7 @@ const QRLogin: React.FC<QRLoginProps> = ({ onClose }) => {
             <button className="modal-close-btn" onClick={onClose}>✕</button>
           </div>
           <div className="qr-login-body">
-            <span className="loader"></span>
+            <div className="loading-spinner" />
             <p>Создание QR-кода...</p>
           </div>
         </div>

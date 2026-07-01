@@ -208,7 +208,7 @@
 
 .premium-plan.featured {
   border-color: var(--accent);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+  background: linear-gradient(135deg, rgba(199, 110, 0, 0.08), rgba(118, 75, 162, 0.08));
 }
 
 .plan-badge {
@@ -264,7 +264,7 @@
 }
 
 .plan-btn.primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-primary);
   color: white;
   border: none;
 }
@@ -526,7 +526,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #764ba2);
+  background: var(--gradient-avatar);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -686,7 +686,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #764ba2);
+  background: var(--gradient-avatar);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -742,7 +742,7 @@
 
 .theme-card.selected {
   border-color: var(--accent);
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(199, 110, 0, 0.05);
 }
 
 .theme-card-icon {
@@ -785,7 +785,7 @@
 }
 
 .sound-option.selected {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
 }
 
 /* Языки */
@@ -801,7 +801,7 @@
 }
 
 .language-option.selected {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
 }
 
 .language-flag {
@@ -839,7 +839,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(199, 110, 0, 0.1);
   color: var(--accent);
 }
 
@@ -1266,14 +1266,14 @@
 .scanner-btn:hover {
   border-color: var(--accent);
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+  box-shadow: 0 8px 24px rgba(199, 110, 0, 0.15);
 }
 
 .scanner-btn-icon {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #764ba2);
+  background: var(--gradient-avatar);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1610,7 +1610,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #764ba2);
+  background: var(--gradient-avatar);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1734,7 +1734,7 @@
 
 .theme-option.selected {
   border-color: var(--accent);
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(199, 110, 0, 0.05);
 }
 
 .theme-preview {
@@ -1901,7 +1901,7 @@
 
 .sound-option.selected {
   border-color: var(--accent);
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(199, 110, 0, 0.05);
 }
 
 .check-icon {
@@ -1928,7 +1928,7 @@
 
 .language-option.selected {
   border-color: var(--accent);
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(199, 110, 0, 0.05);
 }
 
 .language-flag {
@@ -2099,7 +2099,7 @@
 }
 
 .premium-plan.featured {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  background: linear-gradient(135deg, rgba(199, 110, 0, 0.1), rgba(118, 75, 162, 0.1));
   border-color: var(--accent);
 }
 
@@ -2266,7 +2266,7 @@
 }
 
 .toggle input:checked + .toggle-slider {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-primary);
 }
 
 /* Селекты */
@@ -2281,7 +2281,7 @@
 
 .settings-select select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(199, 110, 0, 0.1);
 }
 
 /* Кнопки в настройках */
@@ -2299,18 +2299,18 @@
 
 /* Профиль секция */
 .profile-header {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+  background: linear-gradient(135deg, rgba(199, 110, 0, 0.05), rgba(118, 75, 162, 0.05));
   border-radius: 20px;
   padding: 24px;
   margin-bottom: 24px;
 }
 
 .profile-avatar-large {
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(199, 110, 0, 0.3);
 }
 
 .avatar-edit-overlay {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-primary);
   transition: transform 0.2s;
 }
 
@@ -2325,7 +2325,7 @@
 }
 
 .theme-option.selected {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  background: linear-gradient(135deg, rgba(199, 110, 0, 0.1), rgba(118, 75, 162, 0.1));
 }
 
 .theme-preview {
@@ -2364,7 +2364,7 @@
 }
 
 .wallpaper-check {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-primary);
   animation: checkPop 0.3s ease;
 }
 

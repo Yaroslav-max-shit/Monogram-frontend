@@ -16,7 +16,7 @@
 .btn-primary:hover, .start-button:hover {
   background: #5a6fd8;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(199, 110, 0, 0.3);
 }
 
 .btn-secondary, .signup-button {

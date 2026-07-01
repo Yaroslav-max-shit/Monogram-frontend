@@ -33,8 +33,8 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose, onScanSuccess }) => {
   const animationRef = useRef<number>();
 
   const OUR_DOMAINS = [
-    'monogram-one-mu.vercel.app',
-    'monogram-one-mu.vercel.app'
+    'f1w6ggb2-5173.euw.devtunnels.ms',
+    'f1w6ggb2-5173.euw.devtunnels.ms'
   ];
 
   const stopCamera = () => {
@@ -88,9 +88,9 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose, onScanSuccess }) => {
     ctx.globalCompositeOperation = 'source-over';
     
     // Р РёСЃСѓРµРј Р·РµР»С‘РЅСѓСЋ СЂР°РјРєСѓ РІРѕРєСЂСѓРі QR-РєРѕРґР°
-    ctx.strokeStyle = isFound ? '#10b981' : '#667eea';
+    ctx.strokeStyle = isFound ? '#10b981' : 'var(--accent)';
     ctx.lineWidth = 4;
-    ctx.shadowColor = isFound ? 'rgba(16, 185, 129, 0.5)' : 'rgba(102, 126, 234, 0.5)';
+    ctx.shadowColor = isFound ? 'rgba(16, 185, 129, 0.5)' : 'rgba(199, 110, 0, 0.5)';
     ctx.shadowBlur = 10;
     
     ctx.beginPath();
@@ -228,7 +228,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose, onScanSuccess }) => {
       bottom: 30px;
       left: 50%;
       transform: translateX(-50%);
-      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#667eea'};
+      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : 'var(--accent)'};
       color: white;
       padding: 12px 24px;
       border-radius: 50px;

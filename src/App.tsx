@@ -28,11 +28,10 @@ import WelcomeScreen from './components/WelcomeScreen';
 import VerifyPage from './pages/VerifyPage';
 import ConnectPage from './pages/ConnectPage';
 import ResetPassword from './pages/ResetPassword';
-const BotDocsPage = React.lazy(() => import('./pages/BotDocsPage'));
 
 // Сервисы
 import { getSession, clearSession, saveSession } from './services/cookies';
-import { connectToServer, onMessage, disconnect } from './services/socket';
+import { disconnect } from './services/socket';
 import { initE2EE, isE2EEEnabled, loadE2EESettings, setE2EEEnabled, resetE2EEKeys } from './services/e2ee';
 import { checkPremium, PREMIUM_FEATURES } from './services/premium';
 import { useAdaptiveLayout } from './hooks/useAdaptiveLayout';
@@ -98,8 +97,8 @@ interface NewDeviceInfo {
 }
 
 // Константы
-const FRONTEND_URL = import.meta.env.VITE_APP_URL || 'https://monogram-one-mu.vercel.app';
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com/';
+const FRONTEND_URL = import.meta.env.VITE_APP_URL || 'https://f1w6ggb2-5173.euw.devtunnels.ms/';
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://f1w6ggb2-8000.euw.devtunnels.ms/';
 
 const App: React.FC = () => {
   // ============================================
@@ -181,7 +180,6 @@ const App: React.FC = () => {
     userId: number;
     peerId: number;
     peerName: string;
-    isVideo?: boolean;
   } | null>(null);
 
   // Group call state
@@ -742,12 +740,6 @@ const App: React.FC = () => {
         setUserData(session.user);
         
         await initE2EE(session.user.id);
-        connectToServer(session.user.id);
-        onMessage((msg) => {
-          if (msg.type === 'new_message') {
-            loadUserChats();
-          }
-        });
           await loadUserChats();
         await loadPremiumStatus();
         await checkNewDevice();
@@ -824,7 +816,13 @@ const App: React.FC = () => {
   }, [savedChats]);
 
   // Polling: refresh chat list every 5 seconds
-  // Real-time updates via WebSocket - no polling needed
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const interval = setInterval(() => {
+      loadUserChats();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn]);
 
   // URL-based chat loading
   useEffect(() => {
@@ -1095,17 +1093,13 @@ const App: React.FC = () => {
     return (
       <ConnectPage
         code={connectCode}
-        onConnected={() => { window.location.href = 'https://f1w6ggb2-5174.euw.devtunnels.ms'; }}
+        onConnected={() => { window.location.href = 'https://f1w6ggb2-5174.euw.devtunnels.ms/'; }}
       />
     );
   }
 
   if (window.location.pathname === '/reset-password') {
     return <ResetPassword />;
-  }
-
-  if (window.location.pathname === '/docs/bot-api') {
-    return <React.Suspense fallback={<div className="loading-screen"><span className="loader"></span></div>}><BotDocsPage /></React.Suspense>;
   }
 
   const registerMatch = window.location.pathname === '/register-username';
@@ -1120,7 +1114,7 @@ const App: React.FC = () => {
   const shareMatch = window.location.pathname === '/share';
   if (shareMatch) {
     return (
-      <React.Suspense fallback={<span className="loader"></span>}>
+      <React.Suspense fallback={<div className="loading-spinner" />}>
         <SharePage />
       </React.Suspense>
     );
@@ -1151,23 +1145,22 @@ const App: React.FC = () => {
         </div>
       );
     }
-    return <React.Suspense fallback={<span className="loader"></span>}><AdminPanel onBack={() => { window.location.href = '/'; setShowAdmin(false); }} onLogout={() => setShowLogoutConfirm(true)} /></React.Suspense>;
+    return <React.Suspense fallback={<div className="loading-spinner" />}><AdminPanel onBack={() => { window.location.href = '/'; setShowAdmin(false); }} onLogout={() => setShowLogoutConfirm(true)} /></React.Suspense>;
   }
 
   if (showAdmin && !isLoggedIn) return <Login onLogin={handleLogin} />;
-  if (notFound) return <React.Suspense fallback={<span className="loader"></span>}><NotFound title="404" message="Такой страницы не существует" description="Страница не найдена." onClose={() => { setNotFound(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense>;
+  if (notFound) return <React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="404" message="Такой страницы не существует" description="Страница не найдена." onClose={() => { setNotFound(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense>;
   if (isLoading) {
     const savedAvatar = localStorage.getItem('avatar_drawing');
     if (savedAvatar && !showAvatarDrawer) {
-      return <div className="loading-screen" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20}}>
-        <img src="/assets/images/icon.svg" alt="Monogram" style={{width: 64, height: 64, marginBottom: 8}} />
-        <span style={{fontSize: '1.5rem', fontWeight: 700, color: 'white'}}>Monogram</span>
-        <span className="loader"></span>
+      return <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p style={{color: 'white', marginTop: 16}}>Загрузка...</p>
       </div>;
     }
     if (showAvatarDrawer) {
       const AvatarDrawer = React.lazy(() => import('./components/AvatarDrawer'));
-      return <React.Suspense fallback={<span className="loader"></span>}>
+      return <React.Suspense fallback={<div className="loading-spinner" />}>
         <AvatarDrawer
           onSave={(avatar) => {
             localStorage.setItem('avatar_drawing', avatar);
@@ -1177,10 +1170,9 @@ const App: React.FC = () => {
         />
       </React.Suspense>;
     }
-    return <div className="loading-screen" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20}}>
-      <img src="/assets/images/icon.svg" alt="Monogram" style={{width: 64, height: 64, marginBottom: 8}} />
-      <span style={{fontSize: '1.5rem', fontWeight: 700, color: 'white'}}>Monogram</span>
-      <span className="loader"></span>
+    return <div className="loading-screen">
+      <div className="loading-spinner"></div>
+      <p style={{color: 'white', marginTop: 16}}>Загрузка...</p>
     </div>;
   }
 
@@ -1200,7 +1192,7 @@ const App: React.FC = () => {
       
       {/* Приглашения и ошибки */}
       {inviteError && !isLoggedIn && (
-        <React.Suspense fallback={<span className="loader"></span>}><NotFound title="Ошибка" message="Чат не найден" description="Ссылка недействительна." onClose={() => { setInviteError(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense>
+        <React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="Ошибка" message="Чат не найден" description="Ссылка недействительна." onClose={() => { setInviteError(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense>
       )}
       {inviteUsername && isLoggedIn && !inviteError && (
         <InviteModal
@@ -1239,7 +1231,7 @@ const App: React.FC = () => {
                   </button>
                   {(() => {
                     const chat = savedChats.find(c => c.id === activeChat.id);
-                    const avatarColors = ['#667eea','#764ba2','#f093fb','#f5576c','#4facfe','#43e97b'];
+                    const avatarColors = ['var(--accent)','var(--danger)','#f093fb','#f5576c','#4facfe','#43e97b'];
                     const color = avatarColors[(activeChat.id || 0) % avatarColors.length];
                     return (
                       <div className="chat-avatar-mobile" style={{ background: color }}>
@@ -1354,7 +1346,7 @@ const App: React.FC = () => {
         />
       )}
       {showSettings && (
-        <React.Suspense fallback={<span className="loader"></span>}>
+        <React.Suspense fallback={<div className="loading-spinner" />}>
           <SettingsModal 
             onClose={() => setShowSettings(false)} 
             e2eeEnabled={e2eeEnabled}
@@ -1396,12 +1388,12 @@ const App: React.FC = () => {
       {showScanner && <QRScanner onClose={() => setShowScanner(false)} onScanSuccess={(result) => console.debug('Scanned:', result)} />}
       {showQRLogin && <QRLogin onClose={() => setShowQRLogin(false)} />}
       {showPremium && (
-        <React.Suspense fallback={<span className="loader"></span>}>
+        <React.Suspense fallback={<div className="loading-spinner" />}>
           <PremiumModal onClose={() => setShowPremium(false)} />
         </React.Suspense>
       )}
       {forwardMessageId && (
-        <React.Suspense fallback={<span className="loader"></span>}>
+        <React.Suspense fallback={<div className="loading-spinner" />}>
           <ForwardDialog
             messageId={forwardMessageId}
             onClose={() => setForwardMessageId(null)}
@@ -1412,19 +1404,20 @@ const App: React.FC = () => {
 
       {/* Call Screen */}
       {activeCall && (
-        <React.Suspense fallback={<span className="loader"></span>}>
+        <React.Suspense fallback={<div className="loading-spinner" />}>
           <CallScreen
+            chatId={activeCall.chatId}
+            userId={activeCall.userId}
+            peerId={activeCall.peerId}
             peerName={activeCall.peerName}
-            isVideo={activeCall.isVideo || false}
             onEnd={() => setActiveCall(null)}
-            onMinimize={() => {}}
           />
         </React.Suspense>
       )}
 
       {/* Group Call Screen */}
       {groupCall && (
-        <React.Suspense fallback={<span className="loader"></span>}>
+        <React.Suspense fallback={<div className="loading-spinner" />}>
           <GroupCallScreen
             roomId={groupCall.roomId}
             userId={groupCall.userId}
@@ -1450,7 +1443,7 @@ const App: React.FC = () => {
             </ul>
             <div style={{display: 'flex', gap: 12, justifyContent: 'center'}}>
               <button className="btn-secondary" onClick={() => setShowQuarkPayConnect(false)}>Позже</button>
-              <a href="https://f1w6ggb2-5174.euw.devtunnels.ms" target="_blank" rel="noopener" className="btn-primary" style={{textDecoration: 'none', padding: '12px 24px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', borderRadius: 12, fontWeight: 600, border: 'none', cursor: 'pointer'}}>Подключить</a>
+              <a href="https://f1w6ggb2-5174.euw.devtunnels.ms/" target="_blank" rel="noopener" className="btn-primary" style={{textDecoration: 'none', padding: '12px 24px', background: 'var(--gradient-primary)', color: 'white', borderRadius: 12, fontWeight: 600, border: 'none', cursor: 'pointer'}}>Подключить</a>
             </div>
           </div>
         </div>

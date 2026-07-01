@@ -90,7 +90,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({ onClose }) =>
                 disabled={loading}
                 style={{
                   width: '100%', padding: '12px',
-                  background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                  background: 'var(--gradient-primary)',
                   color: 'white', border: 'none', borderRadius: 12,
                   fontWeight: 600, fontSize: '0.95rem', cursor: loading ? 'wait' : 'pointer',
                   opacity: loading ? 0.7 : 1,

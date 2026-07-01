@@ -30,7 +30,7 @@ interface SidebarProps {
 }
 
 const avatarColors = [
-  '#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe',
+  'var(--accent)', 'var(--danger)', '#f093fb', '#f5576c', '#4facfe',
   '#43e97b', '#fa709a', '#a18cd1', '#fbc2eb', '#84fab0',
   '#fccb90', '#d57eeb', '#5ee7df', '#b7f8db', '#f093fb',
 ];
@@ -150,7 +150,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="sidebar-logo">
             <div style={{
               width: 32, height: 32, borderRadius: 8,
-              background: 'linear-gradient(135deg, var(--accent), #764ba2)',
+              background: 'var(--gradient-avatar)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'white', fontWeight: 800, fontSize: 14,
             }}>M</div>
@@ -201,7 +201,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }}
                 style={{cursor: 'pointer'}}
               >
-                <div className="chat-avatar" style={{background: '#667eea', overflow: 'hidden'}}>
+                <div className="chat-avatar" style={{background: 'var(--accent)', overflow: 'hidden'}}>
                   {user.avatar_url ? (
                     <img src={user.avatar_url} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
                   ) : (
@@ -235,9 +235,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                 if (action) onArchiveChat(chat.id);
               }}
             >
-              <div className="chat-avatar" style={{ background: color, overflow: 'hidden' }}>
+              <div className="chat-avatar" style={{ background: color }}>
                 {chat.avatar_url ? (
-                  <img src={chat.avatar_url} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                  <img src={chat.avatar_url} alt="" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%'}} />
                 ) : (
                   <span className="chat-avatar-letter">{letter}</span>
                 )}
@@ -262,7 +262,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="sidebar-footer">
         <div className="sidebar-user" onClick={onProfileClick}>
           <div className="sidebar-avatar">
-            {userData?.avatar_url ? <img src={userData.avatar_url} alt="" /> : <Icon name="user" size={20} />}
+            {userData?.avatar_url ? <img src={userData.avatar_url} alt="" /> : (
+              <span style={{fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 16}}>
+                {(userData?.first_name || 'U').charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
           <div className="sidebar-user-info">
             <span className="sidebar-username">{displayName}</span>

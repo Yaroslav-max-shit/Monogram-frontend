@@ -185,7 +185,7 @@ button {
 }
 
 button:focus-visible {
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 0 0 3px rgba(199, 110, 0, 0.3);
   border-color: var(--accent);
 }
 
@@ -265,7 +265,7 @@ input:focus, textarea:focus, select:focus {
 
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(199, 110, 0, 0.1);
 }
 
 /* ============================================ */
@@ -366,7 +366,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 .custom-toast.info {
-  background: #667eea;
+  background: var(--accent);
   color: white;
 }
 
@@ -497,7 +497,7 @@ input:focus, textarea:focus, select:focus {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #764ba2);
+  background: var(--gradient-avatar);
   display: flex;
   align-items: center;
   justify-content: center;

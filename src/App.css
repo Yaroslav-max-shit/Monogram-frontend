@@ -14,7 +14,7 @@
   justify-content: center;
   align-items: center;
   text-align: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-primary);
   color: white;
   min-height: 100vh;
 }
@@ -145,7 +145,7 @@
 }
 
 .admin-access-denied-btn.primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-primary);
   color: white;
   border: none;
 }
@@ -258,7 +258,7 @@
 
 /* Полноэкранный QR */
 .qr-fullscreen-overlay {
-  background: linear-gradient(135deg, #667eea, #764ba2, #f093fb, #f5576c);
+  background: var(--gradient-primary);
   background-size: 200% 200%;
   animation: gradientShift 8s ease infinite;
 }
@@ -321,7 +321,7 @@
 .qr-avatar-circle span {
   font-size: 3rem;
   font-weight: bold;
-  color: #667eea;
+  color: var(--accent);
 }
 
 .qr-avatar-section h2 {
@@ -383,7 +383,7 @@
 
 .qr-action-btn.primary {
   background: white;
-  color: #667eea;
+  color: var(--accent);
   border: none;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }

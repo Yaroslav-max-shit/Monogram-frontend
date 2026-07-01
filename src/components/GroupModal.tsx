@@ -53,7 +53,7 @@ const GroupModal: React.FC<{ onClose: () => void; onChatSelect: (id: number, nam
           }}>Отмена</button>
           <button onClick={handleCreate} style={{
             flex: 1, padding: '14px', borderRadius: '12px',
-            border: 'none', background: 'linear-gradient(135deg, #667eea, #764ba2)',
+            border: 'none', background: 'var(--gradient-primary)',
             color: 'white', fontSize: '1rem', fontWeight: 600, cursor: 'pointer'
           }}>Создать</button>
         </div>

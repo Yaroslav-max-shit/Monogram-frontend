@@ -16,7 +16,7 @@ const ThemeContext = createContext<ThemeContextType>({
   themeMode: 'dark',
   toggleDarkMode: () => {},
   setThemeMode: () => {},
-  accentColor: '#667eea',
+  accentColor: 'var(--accent)',
   setAccentColor: () => {},
 });
 
@@ -31,7 +31,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return (saved as ThemeMode) || 'dark';
   });
   const [accentColor, setAccentColorState] = useState(() => {
-    return localStorage.getItem('monogram_accent') || '#667eea';
+    return localStorage.getItem('monogram_accent') || 'var(--accent)';
   });
 
   const applyTheme = (mode: ThemeMode, accent: string) => {

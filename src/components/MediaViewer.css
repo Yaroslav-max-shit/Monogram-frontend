@@ -291,7 +291,7 @@
   width: 120px;
   height: 120px;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--accent), #764ba2);
+  background: var(--gradient-avatar);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -377,7 +377,7 @@
 
 .audio-play-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 16px rgba(199, 110, 0, 0.4);
 }
 
 .audio-extra-controls {
