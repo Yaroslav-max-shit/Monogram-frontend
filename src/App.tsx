@@ -21,6 +21,7 @@ import NewDeviceAlert from './components/Security/NewDeviceAlert';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
+import BlobLoader from './components/BlobLoader';
 import HamburgerMenu from './components/UI/HamburgerMenu';
 import CompleteRegistration from './components/CompleteRegistration';
 import RegisterUsername from './components/RegisterUsername';
@@ -1154,23 +1155,23 @@ const App: React.FC = () => {
     const savedAvatar = localStorage.getItem('avatar_drawing');
     if (savedAvatar && !showAvatarDrawer) {
       return <div className="loading-screen" style={{
-        background: 'linear-gradient(135deg, #C76E00, #D94F04)',
+        background: 'var(--bg-primary)',
         position: 'relative', overflow: 'hidden',
       }}>
-        <div className="splash-logo" style={{
-          animation: 'splashRise 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-        }}>
-          <img src="/assets/images/icon.svg" alt="Monogram" style={{width: 80, height: 80, marginBottom: 16}} />
+        <div style={{animation: 'splashRise 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards'}}>
+          <img src="/assets/images/icon.svg" alt="Monogram" style={{width: 64, height: 64, marginBottom: 12}} />
         </div>
-        <span className="loader" style={{animation: 'splashFadeIn 0.6s 0.4s ease both'}}></span>
+        <div style={{animation: 'splashFadeIn 0.6s 0.4s ease both'}}>
+          <BlobLoader size={120} />
+        </div>
         <p style={{
-          color: 'rgba(255,255,255,0.9)', marginTop: 16,
-          fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '1.5rem',
+          color: 'var(--text-primary)', marginTop: 12,
+          fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: '1.5rem',
           letterSpacing: -0.5,
           animation: 'splashFadeIn 0.6s 0.6s ease both',
         }}>Monogram</p>
         <style>{`
-          @keyframes splashRise { 0% { transform: translateY(0); } 100% { transform: translateY(-30px); } }
+          @keyframes splashRise { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-20px) scale(0.9); } }
           @keyframes splashFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         `}</style>
       </div>;
@@ -1189,18 +1190,18 @@ const App: React.FC = () => {
       </React.Suspense>;
     }
     return <div className="loading-screen" style={{
-      background: 'linear-gradient(135deg, #C76E00, #D94F04)',
+      background: 'var(--bg-primary)',
       position: 'relative', overflow: 'hidden',
     }}>
-      <div className="splash-logo" style={{
-        animation: 'splashRise 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-      }}>
-        <img src="/assets/images/icon.svg" alt="Monogram" style={{width: 80, height: 80, marginBottom: 16}} />
+      <div style={{animation: 'splashRise 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards'}}>
+        <img src="/assets/images/icon.svg" alt="Monogram" style={{width: 64, height: 64, marginBottom: 12}} />
       </div>
-      <span className="loader" style={{animation: 'splashFadeIn 0.6s 0.4s ease both'}}></span>
+      <div style={{animation: 'splashFadeIn 0.6s 0.4s ease both'}}>
+        <BlobLoader size={120} />
+      </div>
       <p style={{
-        color: 'rgba(255,255,255,0.9)', marginTop: 16,
-        fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '1.5rem',
+        color: 'var(--text-primary)', marginTop: 12,
+        fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: '1.5rem',
         letterSpacing: -0.5,
         animation: 'splashFadeIn 0.6s 0.6s ease both',
       }}>Monogram</p>
