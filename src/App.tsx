@@ -1104,7 +1104,7 @@ const App: React.FC = () => {
     return (
       <ConnectPage
         code={connectCode}
-        onConnected={() => { window.location.href = 'https://monogram-one-mu.vercel.app/'; }}
+        onConnected={() => { window.location.href = 'https://f1w6ggb2-5174.euw.devtunnels.ms/'; }}
       />
     );
   }
