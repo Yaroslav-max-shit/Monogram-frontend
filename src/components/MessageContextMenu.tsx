@@ -21,9 +21,11 @@ interface MessageContextMenuProps {
   onEdit: (text: string) => void;
   onDelete: () => void;
   onDeleteForEveryone: () => void;
+  onAutoDelete: (seconds: number) => void;
   onCopy: () => void;
   onForward: () => void;
   onWhoForwarded?: () => void;
+  onTranslate?: () => void;
 }
 
 const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
@@ -38,9 +40,11 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   onEdit,
   onDelete,
   onDeleteForEveryone,
+  onAutoDelete,
   onCopy,
   onForward,
   onWhoForwarded,
+  onTranslate,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [selectedText, setSelectedText] = React.useState('');
@@ -145,6 +149,32 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           <div className="context-menu-item danger" onClick={onDeleteForEveryone}>
             <Icon name="delete" size={18} />
             <span>Удалить у всех</span>
+          </div>
+          <div className="context-menu-item" onClick={() => { onAutoDelete(3600); onClose(); }}>
+            <Icon name="clock" size={18} />
+            <span>Автоудаление через 1ч</span>
+          </div>
+          <div className="context-menu-item" onClick={() => { onAutoDelete(86400); onClose(); }}>
+            <Icon name="clock" size={18} />
+            <span>Автоудаление через 24ч</span>
+          </div>
+          <div className="context-menu-item" onClick={() => { onAutoDelete(604800); onClose(); }}>
+            <Icon name="clock" size={18} />
+            <span>Автоудаление через 7д</span>
+          </div>
+          <div className="context-menu-item" onClick={() => { onAutoDelete(2592000); onClose(); }}>
+            <Icon name="clock" size={18} />
+            <span>Автоудаление через 30д</span>
+          </div>
+        </>
+      )}
+
+      {onTranslate && (
+        <>
+          <div className="context-menu-divider" />
+          <div className="context-menu-item" onClick={() => { onTranslate(); onClose(); }}>
+            <Icon name="globe" size={18} />
+            <span>Перевести</span>
           </div>
         </>
       )}

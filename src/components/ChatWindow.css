@@ -95,10 +95,10 @@
 .chat-header-typing {
   font-size: 0.7rem;
   color: var(--accent);
-  animation: pulse 1s infinite;
+  animation: pulse-opacity 1s infinite;
 }
 
-@keyframes pulse {
+@keyframes pulse-opacity {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
@@ -585,10 +585,10 @@
 
 .voice-button.recording {
   background: linear-gradient(135deg, #ef4444, #dc2626);
-  animation: pulse 1s infinite;
+  animation: pulse-scale 1s infinite;
 }
 
-@keyframes pulse {
+@keyframes pulse-scale {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.1); }
 }
@@ -1060,11 +1060,6 @@
 .mention {
   color: var(--accent-color, #6c5ce7);
   font-weight: 600;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.05); opacity: 0.8; }
 }
 
 /* ========== ГОЛОСОВОЕ СООБЩЕНИЕ ========== */

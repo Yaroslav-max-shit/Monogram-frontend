@@ -24,6 +24,10 @@ interface SidebarProps {
   onPinChat: (id: number, isPinned: boolean) => void;
   onArchiveChat: (id: number) => void;
   onMuteChat: (id: number, duration: number) => void;
+  onDeleteChat: (id: number) => void;
+  onBlockUser: (id: number) => void;
+  onClearHistory: (id: number) => void;
+  onAddToFolder: (id: number) => void;
   isOpen: boolean;
   onClose: () => void;
   isMobileLayout?: boolean;
@@ -49,6 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   userData, isAdmin, isPremium,
   onAdminClick, onPremiumClick,
   onPinChat, onArchiveChat, onMuteChat,
+  onDeleteChat, onBlockUser, onClearHistory, onAddToFolder,
   isOpen, onClose, isMobileLayout
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -61,6 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const focusModeActive = isFocusModeActive();
   const [orderedChats, setOrderedChats] = useState<any[]>([]);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ chatId: number; x: number; y: number } | null>(null);
 
   const displayName = userData?.first_name
     ? `${userData.first_name} ${userData.last_name || ''}`.trim()
@@ -231,8 +237,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => onChatSelect(chat.id, chat.name || chat.title || 'Чат')}
               onContextMenu={(e) => {
                 e.preventDefault();
-                const action = confirm('Архивировать чат?');
-                if (action) onArchiveChat(chat.id);
+                setContextMenu({ chatId: chat.id, x: e.clientX, y: e.clientY });
               }}
             >
               <div className="chat-avatar" style={{ background: color }}>
@@ -295,6 +300,54 @@ const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {showFocusMode && <FocusMode onClose={() => setShowFocusMode(false)} />}
+
+      {/* Кастомное контекст-меню */}
+      {contextMenu && (
+        <div 
+          className="context-menu-overlay" 
+          onClick={() => setContextMenu(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 10000 }}
+        >
+          <div 
+            className="context-menu"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              left: contextMenu.x,
+              top: contextMenu.y,
+              background: 'var(--bg-secondary)',
+              borderRadius: 12,
+              padding: '8px 0',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+              minWidth: 180,
+              zIndex: 10001,
+            }}
+          >
+            <button className="context-menu-item" onClick={() => { onPinChat(contextMenu.chatId, false); setContextMenu(null); }}>
+              <Icon name="pin" size={16} /> Закрепить
+            </button>
+            <button className="context-menu-item" onClick={() => { onMuteChat(contextMenu.chatId, 3600); setContextMenu(null); }}>
+              <Icon name="bell-off" size={16} /> Замутить
+            </button>
+            <button className="context-menu-item" onClick={() => { onArchiveChat(contextMenu.chatId); setContextMenu(null); }}>
+              <Icon name="archive" size={16} /> Архивировать
+            </button>
+            <button className="context-menu-item" onClick={() => { onAddToFolder(contextMenu.chatId); setContextMenu(null); }}>
+              <Icon name="folder" size={16} /> Добавить в папку
+            </button>
+            <button className="context-menu-item" onClick={() => { onClearHistory(contextMenu.chatId); setContextMenu(null); }}>
+              <Icon name="trash-2" size={16} /> Очистить историю
+            </button>
+            <button className="context-menu-item" onClick={() => { onBlockUser(contextMenu.chatId); setContextMenu(null); }}>
+              <Icon name="ban" size={16} /> Заблокировать
+            </button>
+            <div className="context-menu-divider" />
+            <button className="context-menu-item danger" onClick={() => { onDeleteChat(contextMenu.chatId); setContextMenu(null); }}>
+              <Icon name="delete" size={16} /> Удалить чат
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

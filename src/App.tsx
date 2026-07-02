@@ -29,10 +29,12 @@ import WelcomeScreen from './components/WelcomeScreen';
 import VerifyPage from './pages/VerifyPage';
 import ConnectPage from './pages/ConnectPage';
 import ResetPassword from './pages/ResetPassword';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Сервисы
 import { getSession, clearSession, saveSession } from './services/cookies';
 import { disconnect } from './services/socket';
+import { realtime } from './services/realtime';
 import { initE2EE, isE2EEEnabled, loadE2EESettings, setE2EEEnabled, resetE2EEKeys } from './services/e2ee';
 import { checkPremium, PREMIUM_FEATURES } from './services/premium';
 import { useAdaptiveLayout } from './hooks/useAdaptiveLayout';
@@ -740,6 +742,13 @@ const App: React.FC = () => {
         setIsLoggedIn(true);
         setUserData(session.user);
         
+        // Подключаем WebSocket через realtime.ts
+        realtime.connect(session.user.id, session.token);
+        realtime.on('new_message', handleIncomingMessage);
+        realtime.on('typing', (data: any) => {
+          // Обработка typing индикаторов будет в ChatWindow
+        });
+        
         await initE2EE(session.user.id);
           await loadUserChats();
         await loadPremiumStatus();
@@ -956,6 +965,7 @@ const App: React.FC = () => {
       await apiClient.post('/auth/logout');
     } catch {}
     disconnect();
+    realtime.disconnect();
     clearSession();
     setIsLoggedIn(false);
     setUserData(null);
@@ -1115,9 +1125,11 @@ const App: React.FC = () => {
   const shareMatch = window.location.pathname === '/share';
   if (shareMatch) {
     return (
-      <React.Suspense fallback={<div className="loading-spinner" />}>
-        <SharePage />
-      </React.Suspense>
+      <ErrorBoundary>
+        <React.Suspense fallback={<div className="loading-spinner" />}>
+          <SharePage />
+        </React.Suspense>
+      </ErrorBoundary>
     );
   }
 
@@ -1146,11 +1158,11 @@ const App: React.FC = () => {
         </div>
       );
     }
-    return <React.Suspense fallback={<div className="loading-spinner" />}><AdminPanel onBack={() => { window.location.href = '/'; setShowAdmin(false); }} onLogout={() => setShowLogoutConfirm(true)} /></React.Suspense>;
+    return <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}><AdminPanel onBack={() => { window.location.href = '/'; setShowAdmin(false); }} onLogout={() => setShowLogoutConfirm(true)} /></React.Suspense></ErrorBoundary>;
   }
 
   if (showAdmin && !isLoggedIn) return <Login onLogin={handleLogin} />;
-  if (notFound) return <React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="404" message="Такой страницы не существует" description="Страница не найдена." onClose={() => { setNotFound(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense>;
+  if (notFound) return <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="404" message="Такой страницы не существует" description="Страница не найдена." onClose={() => { setNotFound(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense></ErrorBoundary>;
   if (isLoading) {
     const savedAvatar = localStorage.getItem('avatar_drawing');
     if (savedAvatar && !showAvatarDrawer) {
@@ -1178,7 +1190,7 @@ const App: React.FC = () => {
     }
     if (showAvatarDrawer) {
       const AvatarDrawer = React.lazy(() => import('./components/AvatarDrawer'));
-      return <React.Suspense fallback={<div className="loading-spinner" />}>
+      return <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}>
         <AvatarDrawer
           currentAvatar={userData?.avatar_url}
           onSave={(avatar) => {
@@ -1187,7 +1199,7 @@ const App: React.FC = () => {
           }}
           onSkip={() => setShowAvatarDrawer(false)}
         />
-      </React.Suspense>;
+      </React.Suspense></ErrorBoundary>;
     }
     return <div className="loading-screen" style={{
       background: 'var(--bg-primary)',
@@ -1224,7 +1236,7 @@ const App: React.FC = () => {
       
       {/* Приглашения и ошибки */}
       {inviteError && !isLoggedIn && (
-        <React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="Ошибка" message="Чат не найден" description="Ссылка недействительна." onClose={() => { setInviteError(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense>
+        <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="Ошибка" message="Чат не найден" description="Ссылка недействительна." onClose={() => { setInviteError(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense></ErrorBoundary>
       )}
       {inviteUsername && isLoggedIn && !inviteError && (
         <InviteModal
@@ -1312,6 +1324,10 @@ const App: React.FC = () => {
                 onPinChat={handlePinChat}
                 onArchiveChat={handleArchiveChat}
                 onMuteChat={handleMuteChat}
+                onDeleteChat={(id) => { if (confirm('Удалить чат?')) handleArchiveChat(id); }}
+                onBlockUser={(id) => { if (confirm('Заблокировать пользователя?')) apiClient.post(`/users/block/${id}`).catch(() => {}); }}
+                onClearHistory={(id) => { if (confirm('Очистить историю?')) apiClient.delete(`/chats/${id}`).catch(() => {}); }}
+                onAddToFolder={(id) => { /* TODO: open folder modal */ }}
                 isOpen={sidebarOpen}
                 onClose={closeSidebar}
                 isMobileLayout={true}
@@ -1339,6 +1355,10 @@ const App: React.FC = () => {
                 onPinChat={handlePinChat}
                 onArchiveChat={handleArchiveChat}
                 onMuteChat={handleMuteChat}
+                onDeleteChat={(id) => { if (confirm('Удалить чат?')) handleArchiveChat(id); }}
+                onBlockUser={(id) => { if (confirm('Заблокировать пользователя?')) apiClient.post(`/users/block/${id}`).catch(() => {}); }}
+                onClearHistory={(id) => { if (confirm('Очистить историю?')) apiClient.delete(`/chats/${id}`).catch(() => {}); }}
+                onAddToFolder={(id) => { /* TODO: open folder modal */ }}
                 isOpen={sidebarOpen}
                 onClose={closeSidebar}
               />
@@ -1378,19 +1398,21 @@ const App: React.FC = () => {
         />
       )}
       {showSettings && (
-        <React.Suspense fallback={<div className="loading-spinner" />}>
-          <SettingsModal 
-            onClose={() => setShowSettings(false)} 
-            e2eeEnabled={e2eeEnabled}
-            onToggleE2EE={handleToggleE2EE}
-            biometricSupported={biometricSupported}
-            biometricEnabled={biometricEnabled}
-            onToggleBiometric={toggleBiometric}
-            isMobile={isMobile}
-            isPremium={isPremium}
-            onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }}
-          />
-        </React.Suspense>
+        <ErrorBoundary>
+          <React.Suspense fallback={<div className="loading-spinner" />}>
+            <SettingsModal 
+              onClose={() => setShowSettings(false)} 
+              e2eeEnabled={e2eeEnabled}
+              onToggleE2EE={handleToggleE2EE}
+              biometricSupported={biometricSupported}
+              biometricEnabled={biometricEnabled}
+              onToggleBiometric={toggleBiometric}
+              isMobile={isMobile}
+              isPremium={isPremium}
+              onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }}
+            />
+          </React.Suspense>
+        </ErrorBoundary>
       )}
       {showNotifications && <NotificationsModal onClose={() => setShowNotifications(false)} />}
       {showAddChat && <AddChatModal onClose={() => setShowAddChat(false)} onAddChat={handleAddNewChat} />}
@@ -1420,42 +1442,50 @@ const App: React.FC = () => {
       {showScanner && <QRScanner onClose={() => setShowScanner(false)} onScanSuccess={(result) => console.debug('Scanned:', result)} />}
       {showQRLogin && <QRLogin onClose={() => setShowQRLogin(false)} />}
       {showPremium && (
-        <React.Suspense fallback={<div className="loading-spinner" />}>
-          <PremiumModal onClose={() => setShowPremium(false)} />
-        </React.Suspense>
+        <ErrorBoundary>
+          <React.Suspense fallback={<div className="loading-spinner" />}>
+            <PremiumModal onClose={() => setShowPremium(false)} />
+          </React.Suspense>
+        </ErrorBoundary>
       )}
       {forwardMessageId && (
-        <React.Suspense fallback={<div className="loading-spinner" />}>
-          <ForwardDialog
-            messageId={forwardMessageId}
-            onClose={() => setForwardMessageId(null)}
-            onDone={() => { setForwardMessageId(null); }}
-          />
-        </React.Suspense>
+        <ErrorBoundary>
+          <React.Suspense fallback={<div className="loading-spinner" />}>
+            <ForwardDialog
+              messageId={forwardMessageId}
+              onClose={() => setForwardMessageId(null)}
+              onDone={() => { setForwardMessageId(null); }}
+            />
+          </React.Suspense>
+        </ErrorBoundary>
       )}
 
       {/* Call Screen */}
       {activeCall && (
-        <React.Suspense fallback={<div className="loading-spinner" />}>
-          <CallScreen
-            chatId={activeCall.chatId}
-            userId={activeCall.userId}
-            peerId={activeCall.peerId}
-            peerName={activeCall.peerName}
-            onEnd={() => setActiveCall(null)}
-          />
-        </React.Suspense>
+        <ErrorBoundary>
+          <React.Suspense fallback={<div className="loading-spinner" />}>
+            <CallScreen
+              chatId={activeCall.chatId}
+              userId={activeCall.userId}
+              peerId={activeCall.peerId}
+              peerName={activeCall.peerName}
+              onEnd={() => setActiveCall(null)}
+            />
+          </React.Suspense>
+        </ErrorBoundary>
       )}
 
       {/* Group Call Screen */}
       {groupCall && (
-        <React.Suspense fallback={<div className="loading-spinner" />}>
-          <GroupCallScreen
-            roomId={groupCall.roomId}
-            userId={groupCall.userId}
+        <ErrorBoundary>
+          <React.Suspense fallback={<div className="loading-spinner" />}>
+            <GroupCallScreen
+              roomId={groupCall.roomId}
+              userId={groupCall.userId}
             onEnd={() => setGroupCall(null)}
           />
         </React.Suspense>
+        </ErrorBoundary>
       )}
 
       {isLoggedIn && <PwaInstallBanner />}

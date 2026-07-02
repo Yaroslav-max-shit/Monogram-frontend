@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
-import { votePoll } from '../utils/features';
+import { votePoll, closePoll } from '../utils/features';
 
 interface Props {
   poll: any;
   messageId: number;
+  currentUserId?: number;
+  onTranslate?: () => void;
 }
 
-const PollView: React.FC<Props> = ({ poll, messageId }) => {
+const PollView: React.FC<Props> = ({ poll, messageId, currentUserId, onTranslate }) => {
   const [voted, setVoted] = useState(false);
   const [results, setResults] = useState<Record<number, number>>({});
   const [totalVotes, setTotalVotes] = useState(0);
+  const [isClosed, setIsClosed] = useState(poll.is_closed);
 
   const handleVote = async (idx: number) => {
-    if (voted || poll.is_closed) return;
+    if (voted || isClosed) return;
     try {
       await votePoll(poll.poll_id, idx);
       setResults(prev => ({ ...prev, [idx]: (prev[idx] || 0) + 1 }));
@@ -21,8 +24,17 @@ const PollView: React.FC<Props> = ({ poll, messageId }) => {
     } catch {}
   };
 
+  const handleClose = async () => {
+    if (!confirm('Закрыть опрос?')) return;
+    try {
+      await closePoll(poll.poll_id);
+      setIsClosed(true);
+    } catch {}
+  };
+
   const options = poll.options || [];
   const maxVotes = Math.max(1, ...Object.values(results));
+  const isCreator = currentUserId && poll.creator_id === currentUserId;
 
   return (
     <div className="poll-view">
@@ -34,18 +46,36 @@ const PollView: React.FC<Props> = ({ poll, messageId }) => {
         return (
           <div
             key={idx}
-            className={`poll-option ${voted || poll.is_closed ? 'poll-result' : ''}`}
+            className={`poll-option ${voted || isClosed ? 'poll-result' : ''}`}
             onClick={() => handleVote(idx)}
           >
             <div className="poll-option-bar" style={{ width: `${width}%` }} />
             <span className="poll-option-text">{opt}</span>
-            {(voted || poll.is_closed) && (
+            {(voted || isClosed) && (
               <span className="poll-option-pct">{pct}%</span>
             )}
           </div>
         );
       })}
-      {poll.is_closed && <div className="poll-closed">Опрос завершён</div>}
+      {isClosed && <div className="poll-closed">Опрос завершён</div>}
+      {isCreator && !isClosed && (
+        <button 
+          className="poll-close-btn" 
+          onClick={handleClose}
+          style={{
+            marginTop: 8,
+            padding: '6px 12px',
+            background: 'transparent',
+            border: '1px solid var(--border-color)',
+            borderRadius: 8,
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            fontSize: 12,
+          }}
+        >
+          Закрыть опрос
+        </button>
+      )}
     </div>
   );
 };

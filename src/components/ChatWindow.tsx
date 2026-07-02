@@ -66,7 +66,7 @@ const VoiceMessagePlayer: React.FC<{ url: string; duration: number }> = ({ url, 
 import PollView from './PollView';
 import apiClient from '../services/api';
 import { decryptMessage, encryptMessage, isEncrypted } from '../services/encryption';
-import { onMessage } from '../services/socket';
+import { realtime } from '../services/realtime';
 import MentionDropdown from './MentionDropdown';
 import StickerPicker from './StickerPicker';
 import SchedulePicker from './SchedulePicker';
@@ -77,6 +77,7 @@ import MessageSelector from './MessageSelector';
 import PinnedBar from './PinnedBar';
 import VideoPlayer from './VideoPlayer';
 import AutoDeleteTimer from './AutoDeleteTimer';
+import TranslatorModal from './TranslatorModal';
 import './ChatWindow.css';
 import './TransferCard.css';
 
@@ -141,6 +142,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [showMediaViewer, setShowMediaViewer] = useState(false);
   const [mediaViewerUrl, setMediaViewerUrl] = useState('');
   const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
+  const [showTranslator, setShowTranslator] = useState(false);
+  const [translateText, setTranslateText] = useState('');
   const [typingUsers, setTypingUsers] = useState<Set<number>>(new Set());
   const [forwardMode, setForwardMode] = useState(false);
   const [selectedMessages, setSelectedMessages] = useState<number[]>([]);
@@ -148,6 +151,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [chatsForForward, setChatsForForward] = useState<any[]>([]);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const recordingDurationRef = useRef(0);
   const [editingMsgId, setEditingMsgId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
   const [showReactionPicker, setShowReactionPicker] = useState<{ msgId: number; x: number; y: number } | null>(null);
@@ -185,12 +189,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const voiceLongPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const touchStartRef = useRef<{ x: number; y: number; messageId: number | null }>({ x: 0, y: 0, messageId: null });
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const [isDragOver, setIsDragOver] = useState(false);
   const [showMediaGallery, setShowMediaGallery] = useState(false);
@@ -204,7 +211,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [selectedSticker, setSelectedSticker] = useState<string | null>(null);
   const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showPinnedBar, setShowPinnedBar] = useState(false);
   const [autoDeleteTimer, setAutoDeleteTimer] = useState(0);
 
@@ -318,14 +324,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const loadMessages = useCallback(async () => {
     try {
-      const response = await apiClient.get(`/messages/chat/${chatId}`);
+      const response = await apiClient.get(`/messages/chat/${chatId}?limit=20`);
       let msgs = response.data;
       
       // Always try to decrypt if content looks encrypted
       msgs = await Promise.all(msgs.map(async (msg: Message) => {
         if (!msg.is_deleted && isEncrypted(msg.content)) {
           try {
-            const decrypted = await decryptMessage(msg.content);
+            const decrypted = await decryptMessage(msg.content, msg.sender_id, currentUserId, chatId);
             try {
               const parsed = JSON.parse(decrypted);
               if (parsed.text) {
@@ -346,12 +352,63 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       }));
       
       setMessages(msgs);
+      setHasMoreMessages(msgs.length >= 20);
     } catch (error) {
       console.error('Ошибка загрузки сообщений:', error);
     } finally {
       setIsLoading(false);
     }
   }, [chatId, currentUserId]);
+
+  // Загрузка старых сообщений при скролле вверх
+  const loadMoreMessages = useCallback(async () => {
+    if (loadingMore || !hasMoreMessages || messages.length === 0) return;
+    
+    setLoadingMore(true);
+    try {
+      const oldestId = messages[0]?.id;
+      if (!oldestId) return;
+      
+      const response = await apiClient.get(`/messages/chat/${chatId}?before_id=${oldestId}&limit=20`);
+      let olderMsgs = response.data;
+      
+      if (olderMsgs.length === 0) {
+        setHasMoreMessages(false);
+        return;
+      }
+      
+      // Decrypt older messages
+      olderMsgs = await Promise.all(olderMsgs.map(async (msg: Message) => {
+        if (!msg.is_deleted && isEncrypted(msg.content)) {
+          try {
+            const decrypted = await decryptMessage(msg.content, msg.sender_id, currentUserId, chatId);
+            try {
+              const parsed = JSON.parse(decrypted);
+              if (parsed.text) {
+                return { ...msg, content: parsed.text };
+              }
+            } catch {}
+            return { ...msg, content: decrypted };
+          } catch {
+            return msg;
+          }
+        }
+        return msg;
+      }));
+      
+      olderMsgs = olderMsgs.map((msg: Message) => ({
+        ...msg,
+        status: msg.sender_id === currentUserId ? 'read' : 'delivered'
+      }));
+      
+      setMessages(prev => [...olderMsgs, ...prev]);
+      setHasMoreMessages(olderMsgs.length >= 20);
+    } catch (error) {
+      console.error('Ошибка загрузки старых сообщений:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [chatId, currentUserId, messages, loadingMore, hasMoreMessages]);
 
   useEffect(() => {
     loadMessages();
@@ -378,7 +435,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               const decrypted = await Promise.all(newMsgs.map(async (m: any) => {
                 if (isEncrypted(m.content)) {
                   try {
-                    const dec = await decryptMessage(m.content);
+                    const dec = await decryptMessage(m.content, m.sender_id, currentUserId, chatId);
                     try { const p = JSON.parse(dec); if (p.text) return { ...m, content: p.text }; } catch {}
                     return { ...m, content: dec };
                   } catch { return m; }
@@ -400,6 +457,55 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const interval = setInterval(poll, 2000);
     return () => clearInterval(interval);
   }, [chatId, currentUserId]);
+
+  // Подписка на typing индикаторы через WebSocket
+  useEffect(() => {
+    if (!chatId || !currentUserId) return () => {};
+    
+    const unsubscribe = realtime.on('typing', (data: any) => {
+      if (data.chat_id === chatId && data.user_id !== currentUserId) {
+        setTypingUsers(prev => new Set([...prev, data.user_id]));
+        // Убираем через 3 секунды
+        setTimeout(() => {
+          setTypingUsers(prev => {
+            const next = new Set(prev);
+            next.delete(data.user_id);
+            return next;
+          });
+        }, 3000);
+      }
+    });
+    
+    return unsubscribe;
+  }, [chatId, currentUserId]);
+
+  // Infinite scroll — загрузка старых сообщений при скролле вверх
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container || loadingMore || !hasMoreMessages) return;
+
+    const sentinel = document.createElement('div');
+    sentinel.className = 'scroll-sentinel';
+    container.prepend(sentinel);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            loadMoreMessages();
+          }
+        });
+      },
+      { root: container, threshold: 0.1 }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+      sentinel.remove();
+    };
+  }, [loadingMore, hasMoreMessages, loadMoreMessages]);
 
   // IntersectionObserver for message scroll animations
   useEffect(() => {
@@ -544,8 +650,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       });
     }
     
-    // Always encrypt messages
-    content = await encryptMessage(content);
+    // Определяем получателя для шифрования
+    // Для приватных чатов — другой участник, для групп — первый участник (кроме себя)
+    let recipientUserId = currentUserId;
+    if (chatMembers.length > 0) {
+      const otherMember = chatMembers.find(m => m.id !== currentUserId);
+      if (otherMember) {
+        recipientUserId = otherMember.id;
+      }
+    }
+    
+    // Шифруем сообщение
+    content = await encryptMessage(content, recipientUserId, currentUserId, chatId);
     
     const tempId = Date.now();
     const tempMessage: Message = {
@@ -598,15 +714,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         updateMessageStatus(newMessage.id, 'read');
       }, 1000);
       
-      const ws = (window as any).ws;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          type: 'new_message',
-          chat_id: chatId,
-          content: inputText,
-          sender_id: currentUserId
-        }));
-      }
+      // Отправляем через WebSocket для реалтайм-доставки
+      realtime.send({
+        type: 'new_message',
+        chat_id: chatId,
+        content: inputText,
+        sender_id: currentUserId
+      });
       if (onMessageSent) onMessageSent();
     } catch (error) {
       console.error('Ошибка отправки:', error);
@@ -665,6 +779,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
   };
 
+  const handleAutoDelete = async (messageId: number, seconds: number) => {
+    try {
+      await apiClient.post(`/messages/${messageId}/auto-delete`, { seconds });
+      // Обновляем сообщение с таймером автоудаления
+      setMessages(prev => prev.map(msg => {
+        if (msg.id === messageId) {
+          const autoDeleteAt = new Date(Date.now() + seconds * 1000).toISOString();
+          return { ...msg, auto_delete_at: autoDeleteAt } as any;
+        }
+        return msg;
+      }));
+      setShowContextMenu(false);
+    } catch (error) {
+      console.error('Ошибка установки автоудаления:', error);
+    }
+  };
+
   const handleCopyMessage = (text: string) => {
     navigator.clipboard.writeText(text);
     setShowContextMenu(false);
@@ -698,6 +829,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const handleTyping = () => {
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    // Отправляем typing event через WebSocket
+    realtime.send({ type: 'typing', chat_id: chatId, user_id: currentUserId });
     typingTimeoutRef.current = setTimeout(() => {}, 1000);
   };
 
@@ -788,9 +921,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const startVoiceRecording = () => {
     setIsVoiceRecording(true);
     setRecordingDuration(0);
+    recordingDurationRef.current = 0;
     
     recordingTimerRef.current = setInterval(() => {
-      setRecordingDuration(prev => prev + 1);
+      setRecordingDuration(prev => {
+        recordingDurationRef.current = prev + 1;
+        return prev + 1;
+      });
     }, 1000);
     
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
@@ -808,7 +945,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         
         const tempId = Date.now();
-        const voiceContent = JSON.stringify({ type: 'voice', duration: recordingDuration });
+        const duration = recordingDurationRef.current;
+        const voiceContent = JSON.stringify({ type: 'voice', duration });
         
         const tempMessage: Message = {
           id: tempId,
@@ -825,7 +963,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         const formData = new FormData();
         formData.append('audio', audioBlob, 'voice.webm');
         formData.append('chat_id', String(chatId));
-        formData.append('duration', String(recordingDuration));
+        formData.append('duration', String(duration));
         
         try {
           await apiClient.post('/messages/upload-audio', formData);
@@ -1644,6 +1782,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           }} 
           onDelete={() => handleDeleteMessage(selectedMessage.id)} 
           onDeleteForEveryone={() => handleDeleteForEveryone(selectedMessage.id)} 
+          onAutoDelete={(seconds) => handleAutoDelete(selectedMessage.id, seconds)}
           onCopy={() => handleCopyMessage(selectedMessage.content)} 
           onForward={() => {
             if (onForwardMessage) {
@@ -1655,8 +1794,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             setShowContextMenu(false);
           }} 
           onWhoForwarded={() => handleWhoForwarded(selectedMessage)}
+          onTranslate={() => {
+            setTranslateText(selectedMessage.content);
+            setShowTranslator(true);
+            setShowContextMenu(false);
+          }}
           isForwarded={!!selectedMessage.is_forwarded || !!selectedMessage.forwarded_from_message_id}
         />
+      )}
+      
+      {/* Translator Modal */}
+      {showTranslator && (
+        <TranslatorModal text={translateText} onClose={() => setShowTranslator(false)} />
       )}
       
       {/* Reaction picker */}

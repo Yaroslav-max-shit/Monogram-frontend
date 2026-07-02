@@ -15,6 +15,14 @@ const SearchModal: React.FC<SearchModalProps> = ({ onClose, onChatSelect }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'chats' | 'messages' | 'users'>('all');
   const [filterChatId, setFilterChatId] = useState<number | null>(null);
   const [chats, setChats] = useState<any[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Расширенные фильтры
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [senderId, setSenderId] = useState<number | null>(null);
+  const [contentType, setContentType] = useState<string>('');
+  const [hasMedia, setHasMedia] = useState(false);
 
   useEffect(() => {
     loadChats();
@@ -39,8 +47,20 @@ const SearchModal: React.FC<SearchModalProps> = ({ onClose, onChatSelect }) => {
   const performSearch = async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get(`/search/global?q=${encodeURIComponent(query)}&limit=50`);
-      setResults(res.data);
+      const params = new URLSearchParams({
+        q: query,
+        limit: '50'
+      });
+      
+      if (filterChatId) params.append('chat_id', String(filterChatId));
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      if (senderId) params.append('sender_id', String(senderId));
+      if (contentType) params.append('content_type', contentType);
+      if (hasMedia) params.append('has_media', 'true');
+      
+      const res = await apiClient.get(`/search/messages?${params.toString()}`);
+      setResults({ chats: [], messages: res.data.messages || [], users: [] });
     } catch (error) {
       console.error('Search error:', error);
     } finally {
@@ -105,6 +125,84 @@ const SearchModal: React.FC<SearchModalProps> = ({ onClose, onChatSelect }) => {
           <div className="search-filter">
             <span>Фильтр: чат {chats.find(c => c.id === filterChatId)?.name}</span>
             <button onClick={() => setFilterChatId(null)}>✕</button>
+          </div>
+        )}
+        
+        {/* Кнопка расширенных фильтров */}
+        <button 
+          className="filter-toggle-btn"
+          onClick={() => setShowFilters(!showFilters)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 12px',
+            background: showFilters ? 'var(--accent)' : 'var(--bg-tertiary)',
+            border: 'none',
+            borderRadius: 8,
+            color: showFilters ? '#fff' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            fontSize: 13,
+            margin: '8px 0',
+          }}
+        >
+          <Icon name="filter" size={14} />
+          Фильтры
+        </button>
+        
+        {/* Расширенные фильтры */}
+        {showFilters && (
+          <div className="advanced-filters" style={{
+            padding: 12,
+            background: 'var(--bg-tertiary)',
+            borderRadius: 12,
+            marginBottom: 12,
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>От даты</label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>До даты</label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                />
+              </div>
+            </div>
+            
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Тип контента</label>
+              <select
+                value={contentType}
+                onChange={(e) => setContentType(e.target.value)}
+                style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+              >
+                <option value="">Все</option>
+                <option value="text">Текст</option>
+                <option value="photo">Фото</option>
+                <option value="video">Видео</option>
+                <option value="file">Файлы</option>
+                <option value="voice">Голосовые</option>
+              </select>
+            </div>
+            
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={hasMedia}
+                onChange={(e) => setHasMedia(e.target.checked)}
+              />
+              Только с медиа
+            </label>
           </div>
         )}
         

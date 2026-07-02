@@ -14,7 +14,7 @@
   --bg-hover: #EDE8DF;
   --text-primary: #1C1712;
   --text-secondary: #5C5248;
-  --text-tertiary: #8A7E72;
+  --text-tertiary: #6B5F53;
   --border-color: #DDD6CC;
   --hover-bg: #EDE8DF;
   --active-bg: #E0D9CF;
@@ -45,7 +45,7 @@ body.dark-mode {
   --bg-hover: #2A2622;
   --text-primary: #F5EDE4;
   --text-secondary: #C4B8A8;
-  --text-tertiary: #8A7E72;
+  --text-tertiary: #9A8E82;
   --border-color: #332E28;
   --hover-bg: #2A2622;
   --active-bg: #332E28;
@@ -76,7 +76,7 @@ body.amoled-mode {
   --bg-hover: #161410;
   --text-primary: #F5EDE4;
   --text-secondary: #C4B8A8;
-  --text-tertiary: #6A5E50;
+  --text-tertiary: #8A7E72;
   --border-color: #1E1B18;
   --hover-bg: #161410;
   --active-bg: #222018;
@@ -106,7 +106,7 @@ body.nord-mode {
   --bg-hover: #434C5E;
   --text-primary: #ECEFF4;
   --text-secondary: #D8DEE9;
-  --text-tertiary: #A0A8B8;
+  --text-tertiary: #B0B8C8;
   --border-color: #4C566A;
   --hover-bg: #434C5E;
   --active-bg: #4C566A;
@@ -133,7 +133,7 @@ body.dracula-mode {
   --bg-hover: #44475A;
   --text-primary: #F8F8F2;
   --text-secondary: #CCC;
-  --text-tertiary: #9090A0;
+  --text-tertiary: #A8A8B8;
   --border-color: #6272A4;
   --hover-bg: #44475A;
   --active-bg: #6272A4;
@@ -160,7 +160,7 @@ body.lavender-mode {
   --bg-hover: #2D2740;
   --text-primary: #E8E0F0;
   --text-secondary: #C0B0D8;
-  --text-tertiary: #8878A0;
+  --text-tertiary: #A898C0;
   --border-color: #3D3550;
   --hover-bg: #2D2740;
   --active-bg: #3D3550;
@@ -187,7 +187,7 @@ body.ocean-mode {
   --bg-hover: #253545;
   --text-primary: #E0E8F0;
   --text-secondary: #A0B0C0;
-  --text-tertiary: #607080;
+  --text-tertiary: #8090A0;
   --border-color: #304050;
   --hover-bg: #253545;
   --active-bg: #304050;

@@ -85,6 +85,10 @@ export async function getPollResults(pollId: number): Promise<any> {
   return res.data;
 }
 
+export async function closePoll(pollId: number) {
+  return apiClient.post(`/polls/close/${pollId}`);
+}
+
 export async function saveMessage(messageId: number) {
   return apiClient.post('/saved/add', { message_id: messageId });
 }

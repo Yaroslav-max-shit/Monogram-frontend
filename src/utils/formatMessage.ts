@@ -24,7 +24,9 @@ export const formatMessageText = (text: string): React.ReactNode => {
   // Ссылки — only http/https, strip javascript: and other protocols
   formatted = formatted.replace(/(https?:\/\/[^\s]+)/g, (match) => {
     const safeUrl = match.replace(/[^\x20-\x7E]/g, '').substring(0, 2000);
-    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer nofollow">${safeUrl}</a>`;
+    // Экранируем кавычки для предотвращения XSS через атрибуты
+    const escapedUrl = safeUrl.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer nofollow">${safeUrl}</a>`;
   });
   
   // @упоминания
