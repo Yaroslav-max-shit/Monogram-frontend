@@ -5,6 +5,9 @@ import { useAccounts } from '../hooks/useAccounts';
 import { FocusMode, isFocusModeActive } from './FocusMode';
 import './Sidebar.css';
 
+const BACKEND_URL = 'https://monogram-backend-dxv4.onrender.com';
+const getAvatarUrl = (url?: string) => url ? (url.startsWith('http') ? url : `${BACKEND_URL}${url}`) : '';
+
 interface SidebarProps {
   chats: any[];
   activeChatId: number;
@@ -242,7 +245,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             >
               <div className="chat-avatar" style={{ background: color }}>
                 {chat.avatar_url ? (
-                  <img src={chat.avatar_url} alt="" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%'}} />
+                  <img src={getAvatarUrl(chat.avatar_url)} alt="" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%'}} />
                 ) : (
                   <span className="chat-avatar-letter">{letter}</span>
                 )}
@@ -267,7 +270,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="sidebar-footer">
         <div className="sidebar-user" onClick={onProfileClick}>
           <div className="sidebar-avatar">
-            {userData?.avatar_url ? <img src={userData.avatar_url} alt="" /> : (
+            {userData?.avatar_url ? (
+              <img src={getAvatarUrl(userData.avatar_url)} alt="" />
+            ) : (
               <span style={{fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: 16}}>
                 {(userData?.first_name || 'U').charAt(0).toUpperCase()}
               </span>
@@ -293,7 +298,13 @@ const Sidebar: React.FC<SidebarProps> = ({
             <span>Настройки</span>
           </button>
           <button className="sidebar-footer-btn" onClick={onProfileClick}>
-            <Icon name="user" size={20} />
+            {userData?.avatar_url ? (
+              <img src={getAvatarUrl(userData.avatar_url)} alt="" className="sidebar-footer-avatar" />
+            ) : (
+              <div className="sidebar-footer-avatar-placeholder">
+                {userData?.first_name?.[0] || userData?.username?.[0] || '?'}
+              </div>
+            )}
             <span>Профиль</span>
           </button>
         </div>

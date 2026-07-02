@@ -3,6 +3,9 @@ import apiClient from '../../services/api';
 import Icon from '../Icon';
 import './SearchModal.css';
 
+const BACKEND_URL = 'https://monogram-backend-dxv4.onrender.com';
+const getAvatarUrl = (url?: string) => url ? (url.startsWith('http') ? url : `${BACKEND_URL}${url}`) : '';
+
 interface SearchModalProps {
   onClose: () => void;
   onChatSelect: (chatId: number, chatName: string) => void;
@@ -273,7 +276,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ onClose, onChatSelect }) => {
                         <div key={user.id} className="result-item user" onClick={() => handleUserClick(user)}>
                           <div className="result-avatar">
                             {user.avatar_url ? (
-                              <img src={user.avatar_url} alt="" />
+                              <img src={getAvatarUrl(user.avatar_url)} alt="" />
                             ) : (
                               <span>{user.username.charAt(0).toUpperCase()}</span>
                             )}

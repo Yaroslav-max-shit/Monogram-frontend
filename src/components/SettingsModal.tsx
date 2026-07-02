@@ -800,7 +800,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {userData?.avatar_url ? (
 
-                <img src={userData.avatar_url} alt="" />
+                <img src={userData.avatar_url.startsWith('http') ? userData.avatar_url : `https://monogram-backend-dxv4.onrender.com${userData.avatar_url}`} alt="" />
 
               ) : (
 
@@ -1516,7 +1516,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   {userData?.avatar_url ? (
 
-                    <img src={userData.avatar_url} alt="" />
+                    <img src={userData.avatar_url.startsWith('http') ? userData.avatar_url : `https://monogram-backend-dxv4.onrender.com${userData.avatar_url}`} alt="" />
 
                   ) : (
 

@@ -121,6 +121,26 @@
     transform: scale(0.95);
   }
 
+  .sidebar-footer-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .sidebar-footer-avatar-placeholder {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gradient-avatar);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
   .sidebar-footer {
     border-top: 1px solid var(--border-color);
     padding: 8px 12px;
