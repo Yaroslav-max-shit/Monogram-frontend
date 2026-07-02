@@ -1,5 +1,7 @@
 type RealtimeHandler = (data: any) => void;
 
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com';
+
 class RealtimeService {
   private ws: WebSocket | null = null;
   private handlers: Map<string, Set<RealtimeHandler>> = new Map();
@@ -11,15 +13,14 @@ class RealtimeService {
     this.userId = userId;
     this.disconnect();
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
+    // Подключаемся к бэкенду, а не к фронтенду (Vercel не проксирует WS)
+    const wsUrl = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
 
     try {
-      this.ws = new WebSocket(`${protocol}//${host}/ws/${userId}`);
+      this.ws = new WebSocket(`${wsUrl}/ws/${userId}?token=${encodeURIComponent(token)}`);
 
       this.ws.onopen = () => {
-        console.debug('[Realtime] WebSocket connected');
-        this.ws?.send(JSON.stringify({ type: 'auth', token }));
+        console.debug('[Realtime] WebSocket connected to', wsUrl);
       };
 
       this.ws.onmessage = (event) => {
@@ -46,12 +47,18 @@ class RealtimeService {
   private connectSSE(userId: number) {
     if (this.sseSource) return;
 
-    this.sseSource = new EventSource(`/api/sse/${userId}`);
+    // SSE тоже на бэкенде, не на Vercel
+    const token = localStorage.getItem('monogram_token') || '';
+    this.sseSource = new EventSource(`${BACKEND_URL}/api/sse/${userId}?token=${encodeURIComponent(token)}`);
     this.sseSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         this.emit(data.type, data);
       } catch {}
+    };
+    this.sseSource.onerror = () => {
+      this.sseSource?.close();
+      this.sseSource = null;
     };
   }
 
@@ -60,7 +67,7 @@ class RealtimeService {
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       if (this.userId) {
-        const token = localStorage.getItem('token') || document.cookie.replace(/(?:(?:^|.*;\s*)access_token\s*=\s*([^;]*).*$)|^.*$/, "$1");
+        const token = localStorage.getItem('monogram_token') || '';
         this.connect(this.userId, token);
       }
     }, 3000);

@@ -22,7 +22,12 @@ const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
 };
 
 const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
-  const binary = atob(base64);
+  // Проверяем валидность base64 перед atob
+  const cleaned = base64.replace(/[\s\n\r]/g, '');
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleaned)) {
+    throw new Error('Invalid base64 string');
+  }
+  const binary = atob(cleaned);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
@@ -470,7 +475,11 @@ export const isEncrypted = (data: string): boolean => {
   if (!data || data.length < 24) return false;
   const trimmed = data.trim();
   if (trimmed.startsWith('{') || trimmed.startsWith('[') || trimmed.startsWith('<')) return false;
-  return /^[A-Za-z0-9+/=]{24,}$/.test(trimmed);
+  // Проверяем валидную base64 строку чётной длины (с учётом padding)
+  if (!/^[A-Za-z0-9+/]+=*$/.test(trimmed)) return false;
+  // Длина должна быть кратна 4 (с учётом padding) для валидного base64
+  const padded = trimmed.length % 4 === 0 ? trimmed : trimmed + '='.repeat(4 - (trimmed.length % 4));
+  return padded.length >= 24;
 };
 
 // Удаление ключей (при логауте)

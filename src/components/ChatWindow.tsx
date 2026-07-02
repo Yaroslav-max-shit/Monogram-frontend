@@ -418,9 +418,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   useEffect(() => {
     if (!chatId || !currentUserId) return;
     let lastMsgId = 0;
+    let mounted = true;
     const poll = async () => {
+      if (!mounted) return;
       try {
-        const res = await apiClient.get(`/messages/chat/${chatId}`);
+        const res = await apiClient.get(`/messages/chat/${chatId}?limit=20`);
         const msgs = res.data || [];
         if (msgs.length > 0) {
           const newest = msgs[msgs.length - 1];
@@ -455,7 +457,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       } catch {}
     };
     const interval = setInterval(poll, 2000);
-    return () => clearInterval(interval);
+    return () => { mounted = false; clearInterval(interval); };
   }, [chatId, currentUserId]);
 
   // Подписка на typing индикаторы через WebSocket
