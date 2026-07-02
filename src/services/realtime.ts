@@ -1,3 +1,5 @@
+import { getSession } from './cookies';
+
 type RealtimeHandler = (data: any) => void;
 
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com';
@@ -9,7 +11,7 @@ class RealtimeService {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private sseSource: EventSource | null = null;
 
-  connect(userId: number, token: string) {
+  async connect(userId: number, token: string) {
     this.userId = userId;
     this.disconnect();
 
@@ -44,11 +46,15 @@ class RealtimeService {
     }
   }
 
-  private connectSSE(userId: number) {
+  private async connectSSE(userId: number) {
     if (this.sseSource) return;
 
+    // Получаем расшифрованный токен из сессии
+    const session = await getSession();
+    const token = session?.token || '';
+    if (!token) return;
+
     // SSE тоже на бэкенде, не на Vercel
-    const token = localStorage.getItem('monogram_token') || '';
     this.sseSource = new EventSource(`${BACKEND_URL}/api/sse/${userId}?token=${encodeURIComponent(token)}`);
     this.sseSource.onmessage = (event) => {
       try {
@@ -62,13 +68,16 @@ class RealtimeService {
     };
   }
 
-  private scheduleReconnect() {
+  private async scheduleReconnect() {
     if (this.reconnectTimer) return;
-    this.reconnectTimer = setTimeout(() => {
+    this.reconnectTimer = setTimeout(async () => {
       this.reconnectTimer = null;
       if (this.userId) {
-        const token = localStorage.getItem('monogram_token') || '';
-        this.connect(this.userId, token);
+        const session = await getSession();
+        const token = session?.token || '';
+        if (token) {
+          this.connect(this.userId, token);
+        }
       }
     }, 3000);
   }
