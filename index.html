@@ -27,6 +27,7 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
+        background: #FAF7F2;
       }
 
       .app-container {
@@ -151,13 +152,13 @@
       
       /* Dark mode preloader */
       body.dark-mode #preloader,
-      body.amoled-mode #preloader,
-      body.nord-mode #preloader,
-      body.dracula-mode #preloader,
-      body.lavender-mode #preloader,
-      body.ocean-mode #preloader {
+      body.amoled-mode #preloader {
         background: #141210;
       }
+      body.nord-mode #preloader { background: #2E3440; }
+      body.dracula-mode #preloader { background: #282A36; }
+      body.lavender-mode #preloader { background: #1A1625; }
+      body.ocean-mode #preloader { background: #0D1B2A; }
       body.dark-mode .preload-text,
       body.amoled-mode .preload-text,
       body.nord-mode .preload-text,
@@ -196,6 +197,27 @@
     </div>
     <div id="root"></div>
     
+    <script>
+      // Apply theme immediately to prevent white flash
+      (function() {
+        var theme = localStorage.getItem('monogram_theme') || 'light';
+        if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.body.classList.add('dark-mode');
+        } else if (theme === 'amoled') {
+          document.body.classList.add('amoled-mode');
+        } else if (theme === 'nord') {
+          document.body.classList.add('nord-mode');
+        } else if (theme === 'dracula') {
+          document.body.classList.add('dracula-mode');
+        } else if (theme === 'lavender') {
+          document.body.classList.add('lavender-mode');
+        } else if (theme === 'ocean') {
+          document.body.classList.add('ocean-mode');
+        }
+        // Set root background immediately
+        document.documentElement.style.background = theme.includes('dark') || theme === 'amoled' || theme === 'nord' || theme === 'dracula' || theme === 'lavender' || theme === 'ocean' ? '#141210' : '#FAF7F2';
+      })();
+    </script>
     <script type="module">
       (function() {
         const preloader = document.getElementById('preloader');
