@@ -9,12 +9,16 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#667eea" />
+    <meta name="theme-color" content="#C76E00" />
     
     <link rel="modulepreload" href="/src/components/Sidebar.tsx">
     <link rel="modulepreload" href="/src/components/ChatWindow.tsx">
     
     <title>Monogram</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,7 +33,7 @@
         height: 100%;
         overflow: hidden;
       }
-      body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+      body { font-family: 'Inter', 'Manrope', system-ui, -apple-system, sans-serif; }
       
       #preloader {
         position: fixed;
@@ -38,31 +42,26 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--bg-primary, #FAF7F2);
         z-index: 99999;
         transition: opacity 0.6s ease;
       }
       
       .preload-logo {
-        width: 120px;
-        height: 120px;
-        margin-bottom: 28px;
-        filter: drop-shadow(0 8px 24px rgba(0,0,0,0.3));
-        animation: logoPulse 2s ease-in-out infinite;
-      }
-      
-      @keyframes logoPulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
+        width: 80px;
+        height: 80px;
+        margin-bottom: 16px;
+        filter: drop-shadow(0 4px 16px rgba(199, 110, 0, 0.2));
       }
       
       .preload-text {
         position: relative;
-        font-size: 3rem;
+        font-size: 2rem;
+        font-family: 'Manrope', sans-serif;
         font-weight: 800;
-        letter-spacing: -1px;
-        color: rgba(255,255,255,0.15);
-        margin-bottom: 16px;
+        letter-spacing: -1.5px;
+        color: var(--text-primary, #1C1712);
+        margin-bottom: 20px;
         user-select: none;
         overflow: hidden;
         line-height: 1;
@@ -70,76 +69,139 @@
         white-space: nowrap;
       }
       
-      .preload-text-fill {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        width: 0%;
-        background: white;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        transition: width 0.3s ease;
-        white-space: nowrap;
-        overflow: hidden;
-      }
-      
-      .preload-subtitle {
-        font-size: 0.9rem;
-        color: rgba(255,255,255,0.6);
-        letter-spacing: 1px;
-        margin-bottom: 24px;
-      }
-      
       .preload-percent {
-        font-size: 1rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        color: rgba(255,255,255,0.8);
-        margin-top: 16px;
+        color: var(--text-tertiary, #8A7E72);
+        margin-top: 8px;
         font-variant-numeric: tabular-nums;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
       }
       
-      .preload-status {
-        font-size: 0.75rem;
-        color: rgba(255,255,255,0.5);
-        margin-top: 8px;
+      /* Blob goo loader */
+      svg.preload-goo-svg { display: none; }
+      
+      .preload-blobs {
+        filter: url(#goo);
+        width: 140px;
+        height: 140px;
+        position: relative;
+        overflow: hidden;
+        border-radius: 70px;
+        transform-style: preserve-3d;
+      }
+      
+      .preload-blob-center {
+        transform-style: preserve-3d;
+        position: absolute;
+        background: #C76E00;
+        top: 50%; left: 50%;
+        width: 16px; height: 16px;
+        transform-origin: left top;
+        transform: scale(0) translate(-50%, -50%);
+        animation: preBlobGrow 3.4s linear infinite;
+        border-radius: 50%;
+        box-shadow: 0 -8px 24px -3px #C76E00;
+      }
+      
+      .preload-blob {
+        position: absolute;
+        background: #C76E00;
+        top: 50%; left: 50%;
+        width: 16px; height: 16px;
+        border-radius: 50%;
+        animation: preBlobs 3.4s ease-out infinite;
+        transform: scale(0) translate(-50%, -50%);
+        transform-origin: center top;
+        opacity: 0;
+      }
+      .preload-blob:nth-child(2) { animation-delay: 0.2s; }
+      .preload-blob:nth-child(3) { animation-delay: 0.4s; }
+      .preload-blob:nth-child(4) { animation-delay: 0.6s; }
+      .preload-blob:nth-child(5) { animation-delay: 0.8s; }
+      .preload-blob:nth-child(6) { animation-delay: 1.0s; }
+      .preload-blob:nth-child(7) { animation-delay: 1.2s; }
+      
+      @keyframes preBlobs {
+        0% { opacity: 0; transform: scale(0) translate(-165px, -50%); }
+        1% { opacity: 1; }
+        35%, 65% { opacity: 1; transform: scale(.9) translate(-50%, -50%); }
+        99% { opacity: 1; }
+        100% { opacity: 0; transform: scale(0) translate(165px, -50%); }
+      }
+      
+      @keyframes preBlobGrow {
+        0%, 39% { transform: scale(0) translate(-50%, -50%); }
+        40%, 42% { transform: scale(1, .9) translate(-50%, -50%); }
+        43%, 44% { transform: scale(1.2, 1.1) translate(-50%, -50%); }
+        45%, 46% { transform: scale(1.3, 1.2) translate(-50%, -50%); }
+        47%, 48% { transform: scale(1.4, 1.3) translate(-50%, -50%); }
+        52% { transform: scale(1.5, 1.4) translate(-50%, -50%); }
+        54% { transform: scale(1.7, 1.6) translate(-50%, -50%); }
+        58% { transform: scale(1.8, 1.7) translate(-50%, -50%); }
+        68%, 70% { transform: scale(1.7, 1.5) translate(-50%, -50%); }
+        78% { transform: scale(1.6, 1.4) translate(-50%, -50%); }
+        80%, 81% { transform: scale(1.5, 1.4) translate(-50%, -50%); }
+        82%, 83% { transform: scale(1.4, 1.3) translate(-50%, -50%); }
+        84%, 85% { transform: scale(1.3, 1.2) translate(-50%, -50%); }
+        86%, 87% { transform: scale(1.2, 1.1) translate(-50%, -50%); }
+        90%, 91% { transform: scale(1, .9) translate(-50%, -50%); }
+        92%, 100% { transform: scale(0) translate(-50%, -50%); }
+      }
+      
+      /* Dark mode preloader */
+      body.dark-mode #preloader,
+      body.amoled-mode #preloader,
+      body.nord-mode #preloader,
+      body.dracula-mode #preloader,
+      body.lavender-mode #preloader,
+      body.ocean-mode #preloader {
+        background: #141210;
+      }
+      body.dark-mode .preload-text,
+      body.amoled-mode .preload-text,
+      body.nord-mode .preload-text,
+      body.dracula-mode .preload-text,
+      body.lavender-mode .preload-text,
+      body.ocean-mode .preload-text {
+        color: #F5EDE4;
       }
     </style>
   </head>
   <body>
     <div id="preloader">
-      <img class="preload-logo" src="/assets/images/icon-192.png" alt="Monogram" />
-      <div class="preload-text">
-        <span style="display: inline-block; padding-bottom: 7px;">Monogram</span>
-        <div class="preload-text-fill" id="preload-fill" style="padding-bottom: 7px;">Monogram</div>
+      <svg class="preload-goo-svg" xmlns="http://www.w3.org/2000/svg" version="1.1">
+        <defs>
+          <filter id="goo">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 18 -7" result="goo" />
+            <feBlend in="SourceGraphic" in2="goo" />
+          </filter>
+        </defs>
+      </svg>
+      <img class="preload-logo" src="/assets/images/icon.svg" alt="Monogram" />
+      <div class="preload-text">Monogram</div>
+      <div style="width:140px;height:140px;position:relative;">
+        <div class="preload-blobs">
+          <div class="preload-blob-center"></div>
+          <div class="preload-blob"></div>
+          <div class="preload-blob"></div>
+          <div class="preload-blob"></div>
+          <div class="preload-blob"></div>
+          <div class="preload-blob"></div>
+          <div class="preload-blob"></div>
+        </div>
       </div>
-      <p class="preload-subtitle">Загрузка приложения</p>
-      <p class="preload-percent" id="preload-percent">0%</p>
-      <p class="preload-status" id="preload-status">Подготовка...</p>
+      <p class="preload-percent" id="preload-percent"></p>
     </div>
     <div id="root"></div>
     
     <script type="module">
       (function() {
-        const textFill = document.getElementById('preload-fill');
-        const percentEl = document.getElementById('preload-percent');
-        const statusEl = document.getElementById('preload-status');
         const preloader = document.getElementById('preloader');
         
-        let currentPercent = 0;
-        
-        // Функция обновления прогресса
         window.updatePreloadProgress = function(percent, status) {
-          if (percent > currentPercent) {
-            currentPercent = Math.min(percent, 100);
-            if (textFill) textFill.style.width = Math.round(currentPercent) + '%';
-            if (percentEl) percentEl.textContent = Math.round(currentPercent) + '%'; 
-            if (status && statusEl) statusEl.textContent = status;
-          }
-          
-          if (currentPercent >= 100) {
+          if (percent >= 100) {
             setTimeout(() => {
               if (preloader) {
                 preloader.style.opacity = '0';
@@ -149,27 +211,12 @@
           }
         };
         
-        // Имитация начальной загрузки
-        let progress = 0;
-        const interval = setInterval(() => {
-          if (progress < 90) {
-            progress += Math.random() * 10;
-            if (progress > 90) progress = 90;
-            window.updatePreloadProgress(Math.round(progress), 'Загрузка ресурсов...');  // ← округляем
-          }
-        }, 150);
-        
-        // Когда React загрузится
         window.addEventListener('load', () => {
-          clearInterval(interval);
           window.updatePreloadProgress(100, 'Готово!');
         });
       })();
     </script>
     
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      window.__VITE_HMR_HOST__ = 'localhost';
-    </script>
   </body>
 </html>
