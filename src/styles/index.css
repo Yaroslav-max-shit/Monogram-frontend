@@ -223,8 +223,9 @@ button {
 .preload-text {
   position: relative;
   font-size: 3rem;
+  font-family: 'Manrope', sans-serif;
   font-weight: 800;
-  letter-spacing: -1px;
+  letter-spacing: -1.5px;
   color: rgba(255, 255, 255, 0.15);
   margin-bottom: 16px;
   user-select: none;
