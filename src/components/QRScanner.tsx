@@ -33,8 +33,8 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose, onScanSuccess }) => {
   const animationRef = useRef<number>();
 
   const OUR_DOMAINS = [
-    'f1w6ggb2-5173.euw.devtunnels.ms',
-    'f1w6ggb2-5173.euw.devtunnels.ms'
+    'monogram-one-mu.vercel.app',
+    'monogram-one-mu.vercel.app'
   ];
 
   const stopCamera = () => {
