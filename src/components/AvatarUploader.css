@@ -1,0 +1,247 @@
+/* AvatarUploader Styles */
+.avatar-uploader-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.avatar-uploader-modal {
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg-primary);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.avatar-uploader-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.avatar-uploader-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.avatar-uploader-close,
+.avatar-uploader-save {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: background 0.15s;
+}
+
+.avatar-uploader-close:hover {
+  background: var(--bg-tertiary);
+}
+
+.avatar-uploader-save {
+  width: auto;
+  border-radius: 18px;
+  padding: 0 16px;
+  height: 32px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.avatar-uploader-save:hover {
+  background: var(--bg-tertiary);
+}
+
+.avatar-uploader-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.avatar-uploader-canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 50vh;
+  overflow: hidden;
+  background: #1a1a1a;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.avatar-uploader-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+
+.avatar-uploader-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 280px;
+  height: 280px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  overflow: hidden;
+  z-index: 2;
+  background: #2a2a2a;
+}
+
+.avatar-uploader-circle img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  transform-origin: center center;
+}
+
+.avatar-uploader-border {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 284px;
+  height: 284px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.avatar-uploader-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-tertiary);
+  gap: 12px;
+}
+
+.avatar-uploader-placeholder p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.avatar-uploader-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.avatar-uploader-rotate {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.avatar-uploader-rotate:hover {
+  background: var(--border-color);
+}
+
+.avatar-uploader-zoom-slider {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  outline: none;
+}
+
+.avatar-uploader-zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid white;
+}
+
+.avatar-uploader-zoom-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid white;
+}
+
+.avatar-uploader-actions {
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.avatar-uploader-upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--accent);
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: filter 0.15s;
+}
+
+.avatar-uploader-upload-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .avatar-uploader-modal {
+    max-width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .avatar-uploader-circle {
+    width: 240px;
+    height: 240px;
+  }
+  
+  .avatar-uploader-border {
+    width: 244px;
+    height: 244px;
+  }
+}

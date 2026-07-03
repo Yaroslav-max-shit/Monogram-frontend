@@ -4,6 +4,10 @@ import apiClient from '../services/api';
 import './ProfileModal.css';
 import Icon from './Icon';
 import UserStats from './UserStats';
+import AvatarUploader from './AvatarUploader';
+
+const BACKEND_URL = 'https://monogram-backend-dxv4.onrender.com';
+const getAvatarUrl = (url?: string) => url ? (url.startsWith('http') ? url : `${BACKEND_URL}${url}`) : '';
 
 interface ProfileModalProps {
   onClose: () => void;
@@ -24,6 +28,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose, userData, onSave, 
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showAvatarUploader, setShowAvatarUploader] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -154,9 +159,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose, userData, onSave, 
         </div>
 
         <div className="profile-avatar-section">
-          <div className="avatar-upload" onClick={() => fileInputRef.current?.click()}>
+          <div className="avatar-upload" onClick={() => setShowAvatarUploader(true)}>
             {avatar ? (
-              <img src={avatar} alt="Avatar" className="profile-avatar-large" />
+              <img src={getAvatarUrl(avatar)} alt="Avatar" className="profile-avatar-large" />
             ) : (
               <div className="profile-avatar-large placeholder">
                 {profile.first_name?.charAt(0)?.toUpperCase() || profile.username?.charAt(0)?.toUpperCase() || '?'}
@@ -166,15 +171,19 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose, userData, onSave, 
               <Icon name="upload" size={16} />
             </div>
           </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleAvatarChange} 
-            accept="image/*" 
-            hidden 
-          />
-          <p className="avatar-hint">Нажмите чтобы изменить фото (макс. 5 МБ)</p>
+          <p className="avatar-hint">Нажмите чтобы изменить фото</p>
         </div>
+
+        {showAvatarUploader && (
+          <AvatarUploader
+            currentAvatar={avatar}
+            onAvatarSaved={(url) => {
+              setAvatar(url);
+              setShowAvatarUploader(false);
+            }}
+            onClose={() => setShowAvatarUploader(false)}
+          />
+        )}
 
         <div className="profile-form">
           <div className="input-group">
