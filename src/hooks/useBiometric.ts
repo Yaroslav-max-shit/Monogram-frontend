@@ -20,7 +20,7 @@ export const useBiometric = () => {
   });
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // РћРїСЂРµРґРµР»РµРЅРёРµ СѓСЃС‚СЂРѕР№СЃС‚РІР°
+  // Определение устройства
   const detectDevice = useCallback((): { isMobile: boolean; deviceType: BiometricState['deviceType'] } => {
     const ua = navigator.userAgent;
     
@@ -39,7 +39,7 @@ export const useBiometric = () => {
     return { isMobile: false, deviceType: 'unknown' };
   }, []);
 
-  // РћРїСЂРµРґРµР»РµРЅРёРµ С‚РёРїР° Р±РёРѕРјРµС‚СЂРёРё (СѓРїСЂРѕС‰С‘РЅРЅР°СЏ РїСЂРѕРІРµСЂРєР°)
+  // Определение типа биометрии (упрощённая проверка)
   const detectBiometricType = useCallback((): BiometricState['biometricType'] => {
     const ua = navigator.userAgent;
     
@@ -55,12 +55,12 @@ export const useBiometric = () => {
     return 'none';
   }, []);
 
-  // РџСЂРѕРІРµСЂРєР° РїРѕРґРґРµСЂР¶РєРё Р±РёРѕРјРµС‚СЂРёРё
+  // Проверка поддержки биометрии
   const checkSupport = useCallback(async () => {
     const { isMobile, deviceType } = detectDevice();
     const biometricType = detectBiometricType();
-    // РќР° РІРµР±Рµ Р±РёРѕРјРµС‚СЂРёСЏ СЂР°Р±РѕС‚Р°РµС‚ С‚РѕР»СЊРєРѕ С‡РµСЂРµР· WebAuthn, С‡С‚Рѕ СЃР»РѕР¶РЅРѕ, РїРѕСЌС‚РѕРјСѓ РїРѕРєР° РѕС‚РєР»СЋС‡Р°РµРј
-    const isSupported = false; // РћС‚РєР»СЋС‡Р°РµРј Р±РёРѕРјРµС‚СЂРёСЋ РЅР° РІРµР±Рµ
+    // На вебе биометрия работает только через WebAuthn, что сложно, поэтому пока отключаем
+    const isSupported = false; // Отключаем биометрию на вебе
     
     setState(prev => ({
       ...prev,
@@ -72,7 +72,7 @@ export const useBiometric = () => {
     }));
   }, [detectDevice, detectBiometricType]);
 
-  // Р—Р°РіСЂСѓР·РєР° РЅР°СЃС‚СЂРѕРµРє
+  // Загрузка настроек
   useEffect(() => {
     checkSupport();
     
@@ -80,7 +80,7 @@ export const useBiometric = () => {
     setState(prev => ({ ...prev, isEnabled: saved === 'true' }));
   }, [checkSupport]);
 
-  // РђСѓС‚РµРЅС‚РёС„РёРєР°С†РёСЏ (Р·Р°РіР»СѓС€РєР°, С‚Р°Рє РєР°Рє РЅР° РІРµР±Рµ Р±РёРѕРјРµС‚СЂРёСЏ РЅРµ СЂР°Р±РѕС‚Р°РµС‚)
+  // Аутентификация (заглушка, так как на вебе биометрия не работает)
   const authenticate = useCallback(async (): Promise<boolean> => {
     if (!state.isSupported || !state.isEnabled) {
       return true;
@@ -88,20 +88,20 @@ export const useBiometric = () => {
     
     setIsAuthenticating(true);
     
-    // РќР° РІРµР±Рµ Р±РёРѕРјРµС‚СЂРёСЏ РЅРµ СЂР°Р±РѕС‚Р°РµС‚, РїСЂРѕСЃС‚Рѕ Р·Р°РїСЂР°С€РёРІР°РµРј PIN
-    const pin = prompt('Р’РІРµРґРёС‚Рµ PIN-РєРѕРґ РґР»СЏ РІС…РѕРґР°:');
+    // На вебе биометрия не работает, просто запрашиваем PIN
+    const pin = prompt('Введите PIN-код для входа:');
     const success = pin === localStorage.getItem('user_pin');
     
     setIsAuthenticating(false);
     return success;
   }, [state.isSupported, state.isEnabled]);
 
-  // Р’РєР»СЋС‡РµРЅРёРµ/РІС‹РєР»СЋС‡РµРЅРёРµ Р±РёРѕРјРµС‚СЂРёРё
+  // Включение/выключение биометрии
   const toggle = useCallback(async () => {
     const newValue = !state.isEnabled;
     
     if (newValue && state.isSupported) {
-      const pin = prompt('РЎРѕР·РґР°Р№С‚Рµ PIN-РєРѕРґ РґР»СЏ РІС…РѕРґР° (Р·Р°РїР°СЃРЅРѕР№ РІР°СЂРёР°РЅС‚):');
+      const pin = prompt('Создайте PIN-код для входа (запасной вариант):');
       if (pin && pin.length >= 4) {
         localStorage.setItem('user_pin', pin);
       } else {

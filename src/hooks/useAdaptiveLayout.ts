@@ -121,6 +121,13 @@ export const useAdaptiveLayout = (initialSidebarState: boolean = false) => {
     }
   }, [state.isDesktop]);
 
+  // На мобильном sidebar всегда открыт
+  useEffect(() => {
+    if (state.isMobile && !state.sidebarOpen) {
+      setState(prev => ({ ...prev, sidebarOpen: true }));
+    }
+  }, [state.isMobile]);
+
   // Обработчик ресайза
   useEffect(() => {
     updateLayout();
