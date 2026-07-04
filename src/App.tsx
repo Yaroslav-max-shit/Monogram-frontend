@@ -17,6 +17,8 @@ import ChatInfoModal from './components/ChatInfoModal';
 import ConfirmModal from './components/ConfirmModal';
 import QRScanner from './components/QRScanner';
 import QRLogin from './components/Auth/QRLogin';
+import Stories from './components/Stories/Stories';
+import type { StoryUser } from './components/Stories/Stories';
 const PremiumModal = React.lazy(() => import('./components/Premium/PremiumModal'));
 import NewDeviceAlert from './components/Security/NewDeviceAlert';
 import Login from './components/Login';
