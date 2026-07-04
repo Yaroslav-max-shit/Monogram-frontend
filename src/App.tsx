@@ -1,11 +1,12 @@
-// App.tsx — ИСПРАВЛЕННАЯ ВЕРСИЯ
+// App.tsx вЂ” РРЎРџР РђР’Р›Р•РќРќРђРЇ Р’Р•Р РЎРРЇ
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 
-// Компоненты
+// РљРѕРјРїРѕРЅРµРЅС‚С‹
 const NotFound = React.lazy(() => import('./components/NotFound'));
 const AdminPanel = React.lazy(() => import('./components/AdminPanel'));
 import ProfileModal from './components/ProfileModal';
+const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
 const SettingsModal = React.lazy(() => import('./components/SettingsModal'));
 import NotificationsModal from './components/NotificationsModal';
 import InviteModal from './components/InviteModal';
@@ -31,7 +32,7 @@ import ConnectPage from './pages/ConnectPage';
 import ResetPassword from './pages/ResetPassword';
 import ErrorBoundary from './components/ErrorBoundary';
 
-// Сервисы
+// РЎРµСЂРІРёСЃС‹
 import { getSession, clearSession, saveSession } from './services/cookies';
 import { disconnect } from './services/socket';
 import { realtime } from './services/realtime';
@@ -99,13 +100,13 @@ interface NewDeviceInfo {
   sessionId: string;
 }
 
-// Константы
+// РљРѕРЅСЃС‚Р°РЅС‚С‹
 const FRONTEND_URL = import.meta.env.VITE_APP_URL || 'https://monogram-one-mu.vercel.app';
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com';
 
 const App: React.FC = () => {
   // ============================================
-  // СОСТОЯНИЯ
+  // РЎРћРЎРўРћРЇРќРРЇ
   // ============================================
   const [isLoading, setIsLoading] = useState(true);
   const [showAvatarDrawer, setShowAvatarDrawer] = useState(false);
@@ -116,7 +117,7 @@ const App: React.FC = () => {
   const [savedChats, setSavedChats] = useState<ChatInfo[]>([]);
   const [isPremium, setIsPremium] = useState(false);
   
-  // Модальные окна
+  // РњРѕРґР°Р»СЊРЅС‹Рµ РѕРєРЅР°
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -141,30 +142,30 @@ const App: React.FC = () => {
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
   
-  // Безопасность
+  // Р‘РµР·РѕРїР°СЃРЅРѕСЃС‚СЊ
   const [showNewDeviceAlert, setShowNewDeviceAlert] = useState(false);
   const [newDeviceInfo, setNewDeviceInfo] = useState<NewDeviceInfo | null>(null);
   const [e2eeEnabled, setE2eeEnabled] = useState(() => loadE2EESettings().enabled);
   const { isSupported: biometricSupported, isEnabled: biometricEnabled, isMobile, authenticate: biometricAuth, toggle: toggleBiometric } = useBiometric();
   
-  // Приглашения и ошибки
+  // РџСЂРёРіР»Р°С€РµРЅРёСЏ Рё РѕС€РёР±РєРё
   const [inviteUsername, setInviteUsername] = useState<string | null>(null);
   const [inviteUserData, setInviteUserData] = useState<{ firstName: string; lastName: string; avatarUrl?: string; bio?: string } | null>(null);
   const [inviteError, setInviteError] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
   
-  // Админ
+  // РђРґРјРёРЅ
   const [showAdmin, setShowAdmin] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminChecked, setAdminChecked] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   
-  // QR сессия
+  // QR СЃРµСЃСЃРёСЏ
   const [qrSessionId, setQrSessionId] = useState<string | null>(null);
   const [qrStatus, setQrStatus] = useState<string>('waiting');
   
-  // Google регистрация
+  // Google СЂРµРіРёСЃС‚СЂР°С†РёСЏ
   const [showCompleteRegistration, setShowCompleteRegistration] = useState(false);
   const [completeRegistrationData, setCompleteRegistrationData] = useState<{
     email: string;
@@ -174,7 +175,7 @@ const App: React.FC = () => {
     avatar: string;
   } | null>(null);
   
-  // Адаптивность
+  // РђРґР°РїС‚РёРІРЅРѕСЃС‚СЊ
   const { isMobile: isMobileLayout, sidebarOpen, toggleSidebar, closeSidebar } = useAdaptiveLayout();
 
   // Call state
@@ -188,7 +189,7 @@ const App: React.FC = () => {
   // Group call state
   const [groupCall, setGroupCall] = useState<{ roomId: string; userId: number } | null>(null);
 
-  // Toast уведомления
+  // Toast СѓРІРµРґРѕРјР»РµРЅРёСЏ
   const { toasts, addToast, removeToast } = useToast();
 
   // ============================================
@@ -216,7 +217,7 @@ const App: React.FC = () => {
   });
 
   // ============================================
-  // ЗАГРУЗКА ПРЕМИУМ СТАТУСА
+  // Р—РђР“Р РЈР—РљРђ РџР Р•РњРРЈРњ РЎРўРђРўРЈРЎРђ
   // ============================================
   const loadPremiumStatus = useCallback(async () => {
     if (userData?.id) {
@@ -227,7 +228,7 @@ const App: React.FC = () => {
   }, [userData?.id]);
 
   // ============================================
-  // ЗАГРУЗКА ЧАТОВ
+  // Р—РђР“Р РЈР—РљРђ Р§РђРўРћР’
   // ============================================
 
   const loadUserChats = useCallback(async () => {
@@ -241,7 +242,7 @@ const App: React.FC = () => {
           .filter((chat: any) => chat.id && chat.name)
           .map((chat: any) => ({
             id: chat.id,
-            name: chat.name || `Чат ${chat.id}`,
+            name: chat.name || `Р§Р°С‚ ${chat.id}`,
             type: chat.type || 'private',
             lastMessage: '',
             time: '',
@@ -255,9 +256,9 @@ const App: React.FC = () => {
         if (!hasFavorites) {
           chats.unshift({ 
             id: FAVORITES_ID, 
-            name: 'Избранное', 
+            name: 'РР·Р±СЂР°РЅРЅРѕРµ', 
             type: 'private', 
-            lastMessage: 'Сохранённые сообщения', 
+            lastMessage: 'РЎРѕС…СЂР°РЅС‘РЅРЅС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ', 
             time: '',
             unreadCount: 0,
             isPinned: false,
@@ -268,7 +269,7 @@ const App: React.FC = () => {
             id: 999998, 
             name: 'Monogram', 
             type: 'channel', 
-            lastMessage: 'Новости мессенджера', 
+            lastMessage: 'РќРѕРІРѕСЃС‚Рё РјРµСЃСЃРµРЅРґР¶РµСЂР°', 
             time: '',
             unreadCount: 0,
             isPinned: false,
@@ -278,12 +279,12 @@ const App: React.FC = () => {
         setSavedChats(chats);
       }
     } catch (error) {
-      console.error('Ошибка загрузки чатов:', error);
+      console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё С‡Р°С‚РѕРІ:', error);
     }
   }, []);
 
   // ============================================
-  // ГЕНЕРАЦИЯ ID ЧАТА
+  // Р“Р•РќР•Р РђР¦РРЇ ID Р§РђРўРђ
   // ============================================
   const generatePrivateChatId = useCallback((user1: string, user2: string): number => {
     const sorted = [user1.toLowerCase(), user2.toLowerCase()].sort();
@@ -301,7 +302,7 @@ const App: React.FC = () => {
       await apiClient.post(`/chats/${chatId}/archive`);
       loadUserChats();
     } catch (error) {
-      console.error('Ошибка архивации чата:', error);
+      console.error('РћС€РёР±РєР° Р°СЂС…РёРІР°С†РёРё С‡Р°С‚Р°:', error);
     }
   };
 
@@ -310,12 +311,12 @@ const App: React.FC = () => {
       await apiClient.post(`/chats/${chatId}/mute`, { duration_minutes: duration });
       loadUserChats();
     } catch (error) {
-      console.error('Ошибка отключения звука:', error);
+      console.error('РћС€РёР±РєР° РѕС‚РєР»СЋС‡РµРЅРёСЏ Р·РІСѓРєР°:', error);
     }
   };
 
   // ============================================
-  // ОБРАБОТЧИКИ СООБЩЕНИЙ
+  // РћР‘Р РђР‘РћРўР§РРљР РЎРћРћР‘Р©Р•РќРР™
   // ============================================
   const handleIncomingMessage = useCallback((msg: any) => {
     setSavedChats(prev => {
@@ -327,21 +328,21 @@ const App: React.FC = () => {
         return prev.map(c => 
           c.id === chatId ? { 
             ...c, 
-            lastMessage: msg.content?.substring(0, 30) || 'Новое сообщение',
+            lastMessage: msg.content?.substring(0, 30) || 'РќРѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             unreadCount: (c.unreadCount || 0) + 1 
           } : c
         );
       }
       
-      // Новый чат — загружаем имя собеседника
-      const chatName = msg.chat_name || msg.sender_name || `Чат ${chatId}`;
+      // РќРѕРІС‹Р№ С‡Р°С‚ вЂ” Р·Р°РіСЂСѓР¶Р°РµРј РёРјСЏ СЃРѕР±РµСЃРµРґРЅРёРєР°
+      const chatName = msg.chat_name || msg.sender_name || `Р§Р°С‚ ${chatId}`;
       
       return [{
         id: chatId,
         name: chatName,
         type: msg.chat_type || 'private',
-        lastMessage: msg.content?.substring(0, 30) || 'Новое сообщение',
+        lastMessage: msg.content?.substring(0, 30) || 'РќРѕРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         unreadCount: 1,
         isPinned: false,
@@ -350,7 +351,7 @@ const App: React.FC = () => {
   }, []);
 
   // ============================================
-  // ПРОВЕРКА АДМИНА
+  // РџР РћР’Р•Р РљРђ РђР”РњРРќРђ
   // ============================================
   const checkAdmin = useCallback(async () => {
     try {
@@ -363,7 +364,7 @@ const App: React.FC = () => {
   }, []);
 
   // ============================================
-  // ПРОВЕРКА НОВОГО УСТРОЙСТВА
+  // РџР РћР’Р•Р РљРђ РќРћР’РћР“Рћ РЈРЎРўР РћР™РЎРўР’Рђ
   // ============================================
   const checkNewDevice = useCallback(async () => {
     try {
@@ -379,7 +380,7 @@ const App: React.FC = () => {
         setShowNewDeviceAlert(true);
       }
     } catch (error) {
-      console.error('Ошибка проверки устройства:', error);
+      console.error('РћС€РёР±РєР° РїСЂРѕРІРµСЂРєРё СѓСЃС‚СЂРѕР№СЃС‚РІР°:', error);
     }
   }, []);
 
@@ -389,7 +390,7 @@ const App: React.FC = () => {
       setShowNewDeviceAlert(false);
       setNewDeviceInfo(null);
     } catch (error) {
-      console.error('Ошибка подтверждения:', error);
+      console.error('РћС€РёР±РєР° РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ:', error);
     }
   };
 
@@ -398,14 +399,14 @@ const App: React.FC = () => {
       await apiClient.delete(`/auth/sessions/${newDeviceInfo?.sessionId}`);
       setShowNewDeviceAlert(false);
       setNewDeviceInfo(null);
-      alert('Сессия завершена. Неизвестное устройство отключено.');
+      alert('РЎРµСЃСЃРёСЏ Р·Р°РІРµСЂС€РµРЅР°. РќРµРёР·РІРµСЃС‚РЅРѕРµ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ РѕС‚РєР»СЋС‡РµРЅРѕ.');
     } catch (error) {
-      console.error('Ошибка завершения сессии:', error);
+      console.error('РћС€РёР±РєР° Р·Р°РІРµСЂС€РµРЅРёСЏ СЃРµСЃСЃРёРё:', error);
     }
   };
 
   // ============================================
-  // QR ЛОГИН ФУНКЦИИ
+  // QR Р›РћР“РРќ Р¤РЈРќРљР¦РР
   // ============================================
   const createQRSession = async () => {
     try {
@@ -413,7 +414,7 @@ const App: React.FC = () => {
       setQrSessionId(response.data.session_id);
       return response.data.qr_link;
     } catch (error) {
-      console.error('Ошибка создания QR сессии:', error);
+      console.error('РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ QR СЃРµСЃСЃРёРё:', error);
       return `${FRONTEND_URL}/qr/test`;
     }
   };
@@ -424,19 +425,19 @@ const App: React.FC = () => {
       setQrStatus(response.data.status);
       
       if (response.data.status === 'confirmed') {
-        // Вход подтверждён, перенаправляем
+        // Р’С…РѕРґ РїРѕРґС‚РІРµСЂР¶РґС‘РЅ, РїРµСЂРµРЅР°РїСЂР°РІР»СЏРµРј
         window.location.href = '/';
       }
     } catch (error) {
-      console.error('Ошибка проверки статуса QR:', error);
+      console.error('РћС€РёР±РєР° РїСЂРѕРІРµСЂРєРё СЃС‚Р°С‚СѓСЃР° QR:', error);
     }
   }, []);
 
   // ============================================
-  // ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
+  // РРќРР¦РРђР›РР—РђР¦РРЇ РџР РР›РћР–Р•РќРРЇ
   // ============================================
   useEffect(() => {
-    // Timer для показа рисовалки через 10 секунд
+    // Timer РґР»СЏ РїРѕРєР°Р·Р° СЂРёСЃРѕРІР°Р»РєРё С‡РµСЂРµР· 10 СЃРµРєСѓРЅРґ
     const timer = setTimeout(() => {
       if (isLoading) {
         const savedAvatar = localStorage.getItem('avatar_drawing');
@@ -448,7 +449,7 @@ const App: React.FC = () => {
     setAvatarTimer(timer);
 
     const initApp = async () => {
-      window.updatePreloadProgress?.(70, 'Загрузка профиля...');
+      window.updatePreloadProgress?.(70, 'Р—Р°РіСЂСѓР·РєР° РїСЂРѕС„РёР»СЏ...');
       
       if (biometricSupported && biometricEnabled && isMobile) {
         const authSuccess = await biometricAuth();
@@ -460,13 +461,13 @@ const App: React.FC = () => {
 
       const path = window.location.pathname;
 
-      // /login → / (login page не используется, показываем WelcomeScreen)
+      // /login в†’ / (login page РЅРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ, РїРѕРєР°Р·С‹РІР°РµРј WelcomeScreen)
       if (path === '/login') {
         window.location.href = '/';
         return;
       }
 
-      // /install/android → InstallPage
+      // /install/android в†’ InstallPage
       if (path === '/install/android') {
         setIsLoading(false);
         return;
@@ -478,7 +479,7 @@ const App: React.FC = () => {
       const verifyMatch = path.match(/^\/verify\/(.+)$/);
       const connectMatch = path.match(/^\/connect\/(.+)$/);
       
-      // Обработка верификации email
+      // РћР±СЂР°Р±РѕС‚РєР° РІРµСЂРёС„РёРєР°С†РёРё email
       if (verifyMatch) {
         const token = verifyMatch[1];
         try {
@@ -495,7 +496,7 @@ const App: React.FC = () => {
         return;
       }
 
-      // Обработка подключения QuarkPay
+      // РћР±СЂР°Р±РѕС‚РєР° РїРѕРґРєР»СЋС‡РµРЅРёСЏ QuarkPay
       if (connectMatch) {
         const connectCodeStr = connectMatch[1];
         setConnectCode(connectCodeStr);
@@ -503,7 +504,7 @@ const App: React.FC = () => {
         return;
       }
 
-      // Обработка @username deep links (/@username или /username)
+      // РћР±СЂР°Р±РѕС‚РєР° @username deep links (/@username РёР»Рё /username)
       const reservedPaths = ['config', 'connect', 'verify', 'qr', 'share', 'install', 'register-username', 'reset-password', 'google-success', 'google-register', 'ya-success', 'api', 'assets', 'payment', 'premium', 'chats', 'users', 'messages', 'admin', 'bots', 'e2ee', 'stickers', 'search', 'calls', 'drafts', 'gamification', 'ai', 'stories', 'archive', 'saved', 'folders', 'settings', 'notifications', 'profile'];
       const pathParts = path.replace(/^\//, '').split('/');
       const usernameCandidate = pathParts[0];
@@ -542,24 +543,24 @@ const App: React.FC = () => {
         return;
       }
 
-      // Обработка QR-регистрации (со сканера телефона)
+      // РћР±СЂР°Р±РѕС‚РєР° QR-СЂРµРіРёСЃС‚СЂР°С†РёРё (СЃРѕ СЃРєР°РЅРµСЂР° С‚РµР»РµС„РѕРЅР°)
       const qrMatch = path.match(/^\/qr\/register\/(.+)$/);
       if (qrMatch) {
           const sessionId = qrMatch[1];
           
-          // Проверяем, есть ли уже сессия
+          // РџСЂРѕРІРµСЂСЏРµРј, РµСЃС‚СЊ Р»Рё СѓР¶Рµ СЃРµСЃСЃРёСЏ
           const session = await getSession();
           if (session) {
               setIsLoggedIn(true);
               setUserData(session.user);
               await loadUserChats();
               await loadPremiumStatus();
-              // Не показываем тост, просто показываем мессенджер
+              // РќРµ РїРѕРєР°Р·С‹РІР°РµРј С‚РѕСЃС‚, РїСЂРѕСЃС‚Рѕ РїРѕРєР°Р·С‹РІР°РµРј РјРµСЃСЃРµРЅРґР¶РµСЂ
           } else {
-              // Показываем тост только если нет сессии
+              // РџРѕРєР°Р·С‹РІР°РµРј С‚РѕСЃС‚ С‚РѕР»СЊРєРѕ РµСЃР»Рё РЅРµС‚ СЃРµСЃСЃРёРё
               const toast = document.createElement('div');
               toast.className = 'custom-toast info';
-              toast.textContent = 'Чтобы войти в аккаунт через QR-код, перейдите в Настройки → Устройства → Сканировать QR-код';
+              toast.textContent = 'Р§С‚РѕР±С‹ РІРѕР№С‚Рё РІ Р°РєРєР°СѓРЅС‚ С‡РµСЂРµР· QR-РєРѕРґ, РїРµСЂРµР№РґРёС‚Рµ РІ РќР°СЃС‚СЂРѕР№РєРё в†’ РЈСЃС‚СЂРѕР№СЃС‚РІР° в†’ РЎРєР°РЅРёСЂРѕРІР°С‚СЊ QR-РєРѕРґ';
               toast.style.cssText = `
                   position: fixed;
                   bottom: 30px;
@@ -579,7 +580,7 @@ const App: React.FC = () => {
           return;
       }
 
-      // Обработка QR-входа (с компа после сканирования)
+      // РћР±СЂР°Р±РѕС‚РєР° QR-РІС…РѕРґР° (СЃ РєРѕРјРїР° РїРѕСЃР»Рµ СЃРєР°РЅРёСЂРѕРІР°РЅРёСЏ)
       // Deep link handling
       try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -615,7 +616,7 @@ const App: React.FC = () => {
         const params = new URLSearchParams(window.location.search);
         const token = params.get('token');
         if (token === 'error' || !token) {
-          alert('Ошибка входа через Google');
+          alert('РћС€РёР±РєР° РІС…РѕРґР° С‡РµСЂРµР· Google');
           window.location.href = '/';
           return;
         }
@@ -667,7 +668,7 @@ const App: React.FC = () => {
         const msg = params.get('message');
         
         if (token === 'error') {
-          alert(msg || 'Ошибка входа через Яндекс');
+          alert(msg || 'РћС€РёР±РєР° РІС…РѕРґР° С‡РµСЂРµР· РЇРЅРґРµРєСЃ');
           window.location.href = '/';
           return;
         }
@@ -685,10 +686,10 @@ const App: React.FC = () => {
         }
       }
 
-      // Загружаем сессию перед обработкой маршрутов
+      // Р—Р°РіСЂСѓР¶Р°РµРј СЃРµСЃСЃРёСЋ РїРµСЂРµРґ РѕР±СЂР°Р±РѕС‚РєРѕР№ РјР°СЂС€СЂСѓС‚РѕРІ
       const session = await getSession();
 
-      // Обработка /invite/login/TOKEN — неавторизованный пользователь с приглашением
+      // РћР±СЂР°Р±РѕС‚РєР° /invite/login/TOKEN вЂ” РЅРµР°РІС‚РѕСЂРёР·РѕРІР°РЅРЅС‹Р№ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ РїСЂРёРіР»Р°С€РµРЅРёРµРј
       if (inviteLoginMatch) {
         const token = inviteLoginMatch[1];
         const pending = sessionStorage.getItem('invite_pending_' + token);
@@ -701,7 +702,7 @@ const App: React.FC = () => {
         return;
       }
 
-      // Обработка приглашений для неавторизованных
+      // РћР±СЂР°Р±РѕС‚РєР° РїСЂРёРіР»Р°С€РµРЅРёР№ РґР»СЏ РЅРµР°РІС‚РѕСЂРёР·РѕРІР°РЅРЅС‹С…
       if (!session && inviteMatch) {
         const val = inviteMatch[1];
         const token = crypto.randomUUID();
@@ -710,7 +711,7 @@ const App: React.FC = () => {
         return;
       }
 
-      // Обработка приглашений для авторизованных
+      // РћР±СЂР°Р±РѕС‚РєР° РїСЂРёРіР»Р°С€РµРЅРёР№ РґР»СЏ Р°РІС‚РѕСЂРёР·РѕРІР°РЅРЅС‹С…
       if (inviteMatch) {
         const val = inviteMatch[1];
         try {
@@ -736,17 +737,17 @@ const App: React.FC = () => {
         setNotFound(true);
       }
 
-      window.updatePreloadProgress?.(85, 'Подключение к серверу...');
+      window.updatePreloadProgress?.(85, 'РџРѕРґРєР»СЋС‡РµРЅРёРµ Рє СЃРµСЂРІРµСЂСѓ...');
       
       if (session) {
         setIsLoggedIn(true);
         setUserData(session.user);
         
-        // Подключаем WebSocket через realtime.ts
+        // РџРѕРґРєР»СЋС‡Р°РµРј WebSocket С‡РµСЂРµР· realtime.ts
         realtime.connect(session.user.id, session.token);
         realtime.on('new_message', handleIncomingMessage);
         realtime.on('typing', (data: any) => {
-          // Обработка typing индикаторов будет в ChatWindow
+          // РћР±СЂР°Р±РѕС‚РєР° typing РёРЅРґРёРєР°С‚РѕСЂРѕРІ Р±СѓРґРµС‚ РІ ChatWindow
         });
         
         await initE2EE(session.user.id);
@@ -758,7 +759,7 @@ const App: React.FC = () => {
         if (window.location.pathname === '/config') checkAdmin();
       }
       
-      window.updatePreloadProgress?.(100, 'Готово!');
+      window.updatePreloadProgress?.(100, 'Р“РѕС‚РѕРІРѕ!');
       if (avatarTimer) clearTimeout(avatarTimer);
       setIsLoading(false);
     };
@@ -868,7 +869,7 @@ const App: React.FC = () => {
   }, []);
 
   // ============================================
-  // НАСТРОЙКИ E2EE
+  // РќРђРЎРўР РћР™РљР E2EE
   // ============================================
   const handleToggleE2EE = async (enabled: boolean) => {
     setE2eeEnabled(enabled);
@@ -880,7 +881,7 @@ const App: React.FC = () => {
   };
 
   // ============================================
-  // ДЕЙСТВИЯ С ЧАТАМИ
+  // Р”Р•Р™РЎРўР’РРЇ РЎ Р§РђРўРђРњР
   // ============================================
   const handleStartChat = useCallback((username: string) => {
     const chatId = generatePrivateChatId(userData?.username || '', username);
@@ -892,7 +893,7 @@ const App: React.FC = () => {
       const newChat: ChatInfo = {
         id: chatId,
         name: username.charAt(0).toUpperCase() + username.slice(1),
-        lastMessage: 'Начните общение',
+        lastMessage: 'РќР°С‡РЅРёС‚Рµ РѕР±С‰РµРЅРёРµ',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: 'private',
         unreadCount: 0,
@@ -919,12 +920,12 @@ const App: React.FC = () => {
     try {
       await apiClient.post('/chats/pin', { chat_id: chatId, is_pinned: isPinned });
     } catch (error) {
-      console.error('Ошибка закрепления чата:', error);
+      console.error('РћС€РёР±РєР° Р·Р°РєСЂРµРїР»РµРЅРёСЏ С‡Р°С‚Р°:', error);
     }
   };
 
   // ============================================
-  // АВТОРИЗАЦИЯ
+  // РђР’РўРћР РР—РђР¦РРЇ
   // ============================================
   const handleLogin = useCallback(() => {
     getSession().then(session => {
@@ -940,7 +941,7 @@ const App: React.FC = () => {
           setConnectCode(pendingConnect);
         }
 
-        // Проверяем, есть ли отложенное приглашение
+        // РџСЂРѕРІРµСЂСЏРµРј, РµСЃС‚СЊ Р»Рё РѕС‚Р»РѕР¶РµРЅРЅРѕРµ РїСЂРёРіР»Р°С€РµРЅРёРµ
         const pendingUsername = sessionStorage.getItem('pendingInvite');
         if (pendingUsername) {
           sessionStorage.removeItem('pendingInvite');
@@ -976,7 +977,7 @@ const App: React.FC = () => {
   }, []);
 
   // ============================================
-  // QR-КОД ДЕЙСТВИЯ
+  // QR-РљРћР” Р”Р•Р™РЎРўР’РРЇ
   // ============================================
   const handleOpenQR = useCallback(() => {
     setShowQR(true);
@@ -997,7 +998,7 @@ const App: React.FC = () => {
   }, [userData?.username]);
 
   // ============================================
-  // РЕНДЕР QR МОДАЛКИ (С ССЫЛКОЙ ДЛЯ ВХОДА)
+  // Р Р•РќР”Р•Р  QR РњРћР”РђР›РљР (РЎ РЎРЎР«Р›РљРћР™ Р”Р›РЇ Р’РҐРћР”Рђ)
   // ============================================
   const renderQRModal = () => {
     const qrValue = `${FRONTEND_URL}/qr/register/${qrSessionId || 'test'}`;
@@ -1005,7 +1006,7 @@ const App: React.FC = () => {
     return (
       <div className="modal-overlay qr-fullscreen-overlay" onClick={handleCloseQR}>
         <div className="qr-fullscreen" onClick={e => e.stopPropagation()}>
-          <button className="qr-close-btn" onClick={handleCloseQR} aria-label="Закрыть QR">✕</button>
+          <button className="qr-close-btn" onClick={handleCloseQR} aria-label="Р—Р°РєСЂС‹С‚СЊ QR">вњ•</button>
           
           <div className="qr-avatar-section">
             <div className="qr-avatar-circle">
@@ -1017,7 +1018,7 @@ const App: React.FC = () => {
             </div>
             <h2>{userData?.username}</h2>
             <p>@{userData?.username}</p>
-            {isPremium && <div className="premium-badge">💎 Premium</div>}
+            {isPremium && <div className="premium-badge">рџ’Ћ Premium</div>}
           </div>
           
           <div className="qr-code-wrapper" style={{
@@ -1055,20 +1056,20 @@ const App: React.FC = () => {
           
           <div className="qr-actions">
             <button className="qr-action-btn primary" onClick={handleCopyInviteLink}>
-              <Icon name="copy" size={18} /> Скопировать ссылку
+              <Icon name="copy" size={18} /> РЎРєРѕРїРёСЂРѕРІР°С‚СЊ СЃСЃС‹Р»РєСѓ
             </button>
             <button className="qr-action-btn secondary" onClick={handleOpenScanner}>
-              <Icon name="camera" size={18} /> Сканировать QR
+              <Icon name="camera" size={18} /> РЎРєР°РЅРёСЂРѕРІР°С‚СЊ QR
             </button>
             <button className="qr-action-btn premium" onClick={() => setShowQRLogin(true)}>
-              <Icon name="qr" size={18} /> Вход по QR
+              <Icon name="qr" size={18} /> Р’С…РѕРґ РїРѕ QR
             </button>
           </div>
           
           <p className="qr-hint">
-            Отсканируйте QR-код в разделе<br/>
-            <strong>Настройки → Устройства → Сканировать QR-код</strong><br/>
-            чтобы войти в аккаунт на этом устройстве
+            РћС‚СЃРєР°РЅРёСЂСѓР№С‚Рµ QR-РєРѕРґ РІ СЂР°Р·РґРµР»Рµ<br/>
+            <strong>РќР°СЃС‚СЂРѕР№РєРё в†’ РЈСЃС‚СЂРѕР№СЃС‚РІР° в†’ РЎРєР°РЅРёСЂРѕРІР°С‚СЊ QR-РєРѕРґ</strong><br/>
+            С‡С‚РѕР±С‹ РІРѕР№С‚Рё РІ Р°РєРєР°СѓРЅС‚ РЅР° СЌС‚РѕРј СѓСЃС‚СЂРѕР№СЃС‚РІРµ
           </p>
         </div>
       </div>
@@ -1076,7 +1077,7 @@ const App: React.FC = () => {
   };
 
   // ============================================
-  // РЕНДЕР (УСЛОВНЫЙ)
+  // Р Р•РќР”Р•Р  (РЈРЎР›РћР’РќР«Р™)
   // ============================================
 
   if (showCompleteRegistration && completeRegistrationData) {
@@ -1138,7 +1139,7 @@ const App: React.FC = () => {
       return (
         <div className="loading-screen">
           <img src="/assets/images/icon-192.png" alt="Monogram" style={{ width: 120, height: 120 }} />
-          <h1>Проверка прав...</h1>
+          <h1>РџСЂРѕРІРµСЂРєР° РїСЂР°РІ...</h1>
           <div className="loading-bar"><div className="loading-progress" /></div>
         </div>
       );
@@ -1147,12 +1148,12 @@ const App: React.FC = () => {
       return (
         <div className="admin-access-denied">
           <div className="admin-access-denied-card">
-            <div className="admin-access-denied-icon">🔒</div>
-            <h1>Доступ запрещён</h1>
-            <p>На эту страницу могут попасть только администраторы.</p>
+            <div className="admin-access-denied-icon">рџ”’</div>
+            <h1>Р”РѕСЃС‚СѓРї Р·Р°РїСЂРµС‰С‘РЅ</h1>
+            <p>РќР° СЌС‚Сѓ СЃС‚СЂР°РЅРёС†Сѓ РјРѕРіСѓС‚ РїРѕРїР°СЃС‚СЊ С‚РѕР»СЊРєРѕ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂС‹.</p>
             <div className="admin-access-denied-actions">
-              <button className="admin-access-denied-btn primary" onClick={() => { window.location.href = '/'; setShowAdmin(false); }}>Перейти в мессенджер</button>
-              <button className="admin-access-denied-btn secondary" onClick={() => setShowLogoutConfirm(true)}>Выйти</button>
+              <button className="admin-access-denied-btn primary" onClick={() => { window.location.href = '/'; setShowAdmin(false); }}>РџРµСЂРµР№С‚Рё РІ РјРµСЃСЃРµРЅРґР¶РµСЂ</button>
+              <button className="admin-access-denied-btn secondary" onClick={() => setShowLogoutConfirm(true)}>Р’С‹Р№С‚Рё</button>
             </div>
           </div>
         </div>
@@ -1162,7 +1163,7 @@ const App: React.FC = () => {
   }
 
   if (showAdmin && !isLoggedIn) return <Login onLogin={handleLogin} />;
-  if (notFound) return <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="404" message="Такой страницы не существует" description="Страница не найдена." onClose={() => { setNotFound(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense></ErrorBoundary>;
+  if (notFound) return <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="404" message="РўР°РєРѕР№ СЃС‚СЂР°РЅРёС†С‹ РЅРµ СЃСѓС‰РµСЃС‚РІСѓРµС‚" description="РЎС‚СЂР°РЅРёС†Р° РЅРµ РЅР°Р№РґРµРЅР°." onClose={() => { setNotFound(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense></ErrorBoundary>;
   if (isLoading) {
     const savedAvatar = localStorage.getItem('avatar_drawing');
     if (savedAvatar && !showAvatarDrawer) {
@@ -1221,11 +1222,11 @@ const App: React.FC = () => {
   }
 
   // ============================================
-  // ОСНОВНОЙ РЕНДЕР
+  // РћРЎРќРћР’РќРћР™ Р Р•РќР”Р•Р 
   // ============================================
   return (
     <div className="app-container">
-      {/* Уведомление о новом устройстве */}
+      {/* РЈРІРµРґРѕРјР»РµРЅРёРµ Рѕ РЅРѕРІРѕРј СѓСЃС‚СЂРѕР№СЃС‚РІРµ */}
       {showNewDeviceAlert && newDeviceInfo && (
         <NewDeviceAlert
           onConfirm={handleConfirmDevice}
@@ -1234,9 +1235,9 @@ const App: React.FC = () => {
         />
       )}
       
-      {/* Приглашения и ошибки */}
+      {/* РџСЂРёРіР»Р°С€РµРЅРёСЏ Рё РѕС€РёР±РєРё */}
       {inviteError && !isLoggedIn && (
-        <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="Ошибка" message="Чат не найден" description="Ссылка недействительна." onClose={() => { setInviteError(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense></ErrorBoundary>
+        <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="РћС€РёР±РєР°" message="Р§Р°С‚ РЅРµ РЅР°Р№РґРµРЅ" description="РЎСЃС‹Р»РєР° РЅРµРґРµР№СЃС‚РІРёС‚РµР»СЊРЅР°." onClose={() => { setInviteError(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense></ErrorBoundary>
       )}
       {inviteUsername && isLoggedIn && !inviteError && (
         <InviteModal
@@ -1252,7 +1253,7 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Основное содержимое */}
+      {/* РћСЃРЅРѕРІРЅРѕРµ СЃРѕРґРµСЂР¶РёРјРѕРµ */}
       {!isLoggedIn ? (
         showWelcome ? (
           <WelcomeScreen 
@@ -1265,12 +1266,12 @@ const App: React.FC = () => {
         )
       ) : (
         <div className="app-main-layout">
-          {/* Мобильная версия: всегда показываем чат на весь экран */}
+          {/* РњРѕР±РёР»СЊРЅР°СЏ РІРµСЂСЃРёСЏ: РІСЃРµРіРґР° РїРѕРєР°Р·С‹РІР°РµРј С‡Р°С‚ РЅР° РІРµСЃСЊ СЌРєСЂР°РЅ */}
           {isMobileLayout ? (
             activeChat ? (
               <div className="chat-fullscreen">
                 <div className="chat-fullscreen-header">
-                  <button className="back-to-chats" onClick={() => { setActiveChat(null); window.history.pushState({}, '', '/'); }} aria-label="Назад к чатам">
+                  <button className="back-to-chats" onClick={() => { setActiveChat(null); window.history.pushState({}, '', '/'); }} aria-label="РќР°Р·Р°Рґ Рє С‡Р°С‚Р°Рј">
                     <Icon name="arrow" size={20} />
                   </button>
                   {(() => {
@@ -1304,7 +1305,7 @@ const App: React.FC = () => {
                   />
               </div>
             ) : (
-              // На телефоне если нет активного чата - показываем сайдбар с выбором чата
+              // РќР° С‚РµР»РµС„РѕРЅРµ РµСЃР»Рё РЅРµС‚ Р°РєС‚РёРІРЅРѕРіРѕ С‡Р°С‚Р° - РїРѕРєР°Р·С‹РІР°РµРј СЃР°Р№РґР±Р°СЂ СЃ РІС‹Р±РѕСЂРѕРј С‡Р°С‚Р°
               <Sidebar
                 chats={savedChats}
                 activeChatId={activeChat ? (activeChat as { id: number; name: string; type?: string }).id : 0}
@@ -1324,9 +1325,9 @@ const App: React.FC = () => {
                 onPinChat={handlePinChat}
                 onArchiveChat={handleArchiveChat}
                 onMuteChat={handleMuteChat}
-                onDeleteChat={(id) => { if (confirm('Удалить чат?')) handleArchiveChat(id); }}
-                onBlockUser={(id) => { if (confirm('Заблокировать пользователя?')) apiClient.post(`/users/block/${id}`).catch(() => {}); }}
-                onClearHistory={(id) => { if (confirm('Очистить историю?')) apiClient.delete(`/chats/${id}`).catch(() => {}); }}
+                onDeleteChat={(id) => { if (confirm('РЈРґР°Р»РёС‚СЊ С‡Р°С‚?')) handleArchiveChat(id); }}
+                onBlockUser={(id) => { if (confirm('Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ?')) apiClient.post(`/users/block/${id}`).catch(() => {}); }}
+                onClearHistory={(id) => { if (confirm('РћС‡РёСЃС‚РёС‚СЊ РёСЃС‚РѕСЂРёСЋ?')) apiClient.delete(`/chats/${id}`).catch(() => {}); }}
                 onAddToFolder={(id) => { /* TODO: open folder modal */ }}
                 isOpen={sidebarOpen}
                 onClose={closeSidebar}
@@ -1334,7 +1335,7 @@ const App: React.FC = () => {
               />
             )
           ) : (
-            // Десктопная версия: сайдбар + контент
+            // Р”РµСЃРєС‚РѕРїРЅР°СЏ РІРµСЂСЃРёСЏ: СЃР°Р№РґР±Р°СЂ + РєРѕРЅС‚РµРЅС‚
             <>
               <Sidebar
                 chats={savedChats}
@@ -1355,9 +1356,9 @@ const App: React.FC = () => {
                 onPinChat={handlePinChat}
                 onArchiveChat={handleArchiveChat}
                 onMuteChat={handleMuteChat}
-                onDeleteChat={(id) => { if (confirm('Удалить чат?')) handleArchiveChat(id); }}
-                onBlockUser={(id) => { if (confirm('Заблокировать пользователя?')) apiClient.post(`/users/block/${id}`).catch(() => {}); }}
-                onClearHistory={(id) => { if (confirm('Очистить историю?')) apiClient.delete(`/chats/${id}`).catch(() => {}); }}
+                onDeleteChat={(id) => { if (confirm('РЈРґР°Р»РёС‚СЊ С‡Р°С‚?')) handleArchiveChat(id); }}
+                onBlockUser={(id) => { if (confirm('Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ?')) apiClient.post(`/users/block/${id}`).catch(() => {}); }}
+                onClearHistory={(id) => { if (confirm('РћС‡РёСЃС‚РёС‚СЊ РёСЃС‚РѕСЂРёСЋ?')) apiClient.delete(`/chats/${id}`).catch(() => {}); }}
                 onAddToFolder={(id) => { /* TODO: open folder modal */ }}
                 isOpen={sidebarOpen}
                 onClose={closeSidebar}
@@ -1377,9 +1378,9 @@ const App: React.FC = () => {
                 ) : (
                   <div className="welcome-screen">
                     <Icon name="logo" size={72} />
-                    <h2>Добро пожаловать в Monogram</h2>
-                    <p>Выберите чат или создайте новый</p>
-                    {isPremium && <div className="premium-welcome-badge">✨ Премиум аккаунт ✨</div>}
+                    <h2>Р”РѕР±СЂРѕ РїРѕР¶Р°Р»РѕРІР°С‚СЊ РІ Monogram</h2>
+                    <p>Р’С‹Р±РµСЂРёС‚Рµ С‡Р°С‚ РёР»Рё СЃРѕР·РґР°Р№С‚Рµ РЅРѕРІС‹Р№</p>
+                    {isPremium && <div className="premium-welcome-badge">вњЁ РџСЂРµРјРёСѓРј Р°РєРєР°СѓРЅС‚ вњЁ</div>}
                   </div>
                 )}
               </div>
@@ -1388,14 +1389,16 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Модальные окна */}
+      {/* РњРѕРґР°Р»СЊРЅС‹Рµ РѕРєРЅР° */}
       {showProfile && (
-        <ProfileModal 
-          onClose={() => setShowProfile(false)} 
-          userData={userData} 
-          onSave={setUserData}
-          onShowQR={handleOpenQR}
-        />
+        <ErrorBoundary>
+          <React.Suspense fallback={<div className="loading-spinner" />}>
+            <ProfilePage 
+              onBack={() => setShowProfile(false)} 
+              onSettings={() => { setShowProfile(false); setShowSettings(true); }}
+            />
+          </React.Suspense>
+        </ErrorBoundary>
       )}
       {showSettings && (
         <ErrorBoundary>
@@ -1427,17 +1430,17 @@ const App: React.FC = () => {
       )}
       {showLogoutConfirm && (
         <ConfirmModal
-          title="Выход из аккаунта"
-          message="Вы уверены, что хотите выйти?"
-          confirmText="Выйти"
-          cancelText="Отмена"
+          title="Р’С‹С…РѕРґ РёР· Р°РєРєР°СѓРЅС‚Р°"
+          message="Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ РІС‹Р№С‚Рё?"
+          confirmText="Р’С‹Р№С‚Рё"
+          cancelText="РћС‚РјРµРЅР°"
           onConfirm={handleLogout}
           onCancel={() => setShowLogoutConfirm(false)}
           danger
         />
       )}
       
-      {/* QR и сканер */}
+      {/* QR Рё СЃРєР°РЅРµСЂ */}
       {showQR && renderQRModal()}
       {showScanner && <QRScanner onClose={() => setShowScanner(false)} onScanSuccess={(result) => console.debug('Scanned:', result)} />}
       {showQRLogin && <QRLogin onClose={() => setShowQRLogin(false)} />}
@@ -1496,16 +1499,16 @@ const App: React.FC = () => {
         <div className="modal-overlay" onClick={() => setShowQuarkPayConnect(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{maxWidth: 440, textAlign: 'center', padding: '2rem'}}>
             <div style={{width: 64, height: 64, background: 'linear-gradient(135deg, #00d4aa, #00b894)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '1.5rem', fontWeight: 800, color: '#000'}}>Q</div>
-            <h2 style={{marginBottom: 12}}>Подключить QuarkPay?</h2>
-            <p style={{color: 'var(--text-secondary)', marginBottom: 8, fontSize: '0.9rem'}}>QuarkPay получит доступ к:</p>
+            <h2 style={{marginBottom: 12}}>РџРѕРґРєР»СЋС‡РёС‚СЊ QuarkPay?</h2>
+            <p style={{color: 'var(--text-secondary)', marginBottom: 8, fontSize: '0.9rem'}}>QuarkPay РїРѕР»СѓС‡РёС‚ РґРѕСЃС‚СѓРї Рє:</p>
             <ul style={{textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: 20, paddingLeft: 20}}>
-              <li>Ваше имя и аватарка</li>
-              <li>Отправка денег по QuarkPay прямо в чатах</li>
-              <li>Если у собеседника подключён QuarkPay</li>
+              <li>Р’Р°С€Рµ РёРјСЏ Рё Р°РІР°С‚Р°СЂРєР°</li>
+              <li>РћС‚РїСЂР°РІРєР° РґРµРЅРµРі РїРѕ QuarkPay РїСЂСЏРјРѕ РІ С‡Р°С‚Р°С…</li>
+              <li>Р•СЃР»Рё Сѓ СЃРѕР±РµСЃРµРґРЅРёРєР° РїРѕРґРєР»СЋС‡С‘РЅ QuarkPay</li>
             </ul>
             <div style={{display: 'flex', gap: 12, justifyContent: 'center'}}>
-              <button className="btn-secondary" onClick={() => setShowQuarkPayConnect(false)}>Позже</button>
-               <a href="https://f1w6ggb2-5174.euw.devtunnels.ms/" target="_blank" rel="noopener" className="btn-primary" style={{textDecoration: 'none', padding: '12px 24px', background: 'var(--gradient-primary)', color: 'white', borderRadius: 12, fontWeight: 600, border: 'none', cursor: 'pointer'}}>Подключить</a>
+              <button className="btn-secondary" onClick={() => setShowQuarkPayConnect(false)}>РџРѕР·Р¶Рµ</button>
+               <a href="https://f1w6ggb2-5174.euw.devtunnels.ms/" target="_blank" rel="noopener" className="btn-primary" style={{textDecoration: 'none', padding: '12px 24px', background: 'var(--gradient-primary)', color: 'white', borderRadius: 12, fontWeight: 600, border: 'none', cursor: 'pointer'}}>РџРѕРґРєР»СЋС‡РёС‚СЊ</a>
             </div>
           </div>
         </div>
@@ -1538,9 +1541,9 @@ const App: React.FC = () => {
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <h3 style={{ margin: '0 0 6px', fontSize: '1rem', fontWeight: 600 }}>Перевод выполнен!</h3>
+            <h3 style={{ margin: '0 0 6px', fontSize: '1rem', fontWeight: 600 }}>РџРµСЂРµРІРѕРґ РІС‹РїРѕР»РЅРµРЅ!</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              {transferSuccessData.amount.toLocaleString('ru-RU')} ₽ → @{transferSuccessData.to_username}
+              {transferSuccessData.amount.toLocaleString('ru-RU')} в‚Ѕ в†’ @{transferSuccessData.to_username}
             </p>
           </div>
         </div>
