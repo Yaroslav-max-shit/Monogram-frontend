@@ -19,7 +19,7 @@ const PinnedBar: React.FC<PinnedBarProps> = ({ chatId, onNavigate }) => {
   useEffect(() => {
     const loadPinned = async () => {
       try {
-        const res = await apiClient.get(`/messages/chat/${chatId}/pinned`);
+        const res = await apiClient.get(`/messages/${chatId}/pinned`);
         setPinnedMessages(res.data || []);
       } catch {
         setPinnedMessages([]);

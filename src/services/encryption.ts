@@ -23,6 +23,9 @@ const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
 
 const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
   // Проверяем валидность base64 перед atob
+  if (!base64 || typeof base64 !== 'string') {
+    throw new Error('Invalid input: expected string');
+  }
   const cleaned = base64.replace(/[\s\n\r]/g, '');
   if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleaned)) {
     throw new Error('Invalid base64 string');
@@ -273,7 +276,10 @@ export const decryptMessage = async (
   recipientUserId: number,
   chatId: number
 ): Promise<string> => {
-  if (!encryptedBase64) return encryptedBase64;
+  if (!encryptedBase64 || typeof encryptedBase64 !== 'string') {
+    // Не строка — возвращаем как есть (не зашифровано)
+    return String(encryptedBase64 || '');
+  }
   
   try {
     const privateKey = await getPrivateKey(recipientUserId);
