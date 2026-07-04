@@ -362,7 +362,7 @@
     max-height: 100dvh !important;
     overflow-y: auto !important;
     padding-top: var(--safe-area-top) !important;
-    padding-bottom: var(--safe-area-bottom) !important;
+    padding-bottom: 0 !important;
   }
 
   .modal-header {
