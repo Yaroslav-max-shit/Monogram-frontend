@@ -414,7 +414,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     loadMessages();
   }, [loadMessages]);
 
-  // Real-time: polling for new messages every 2 seconds
+  // Real-time: polling for new messages every 5 seconds (reduced from 2s)
   useEffect(() => {
     if (!chatId || !currentUserId) return;
     let lastMsgId = 0;
@@ -422,7 +422,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const poll = async () => {
       if (!mounted) return;
       try {
-        const res = await apiClient.get(`/messages/chat/${chatId}?limit=20`);
+        // Только проверяем есть ли новые, не загружаем все
+        const res = await apiClient.get(`/messages/chat/${chatId}?limit=5`);
         const msgs = res.data || [];
         if (msgs.length > 0) {
           const newest = msgs[msgs.length - 1];
@@ -431,34 +432,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             return;
           }
           if (newest.id > lastMsgId) {
-            const newMsgs = msgs.filter((m: any) => m.id > lastMsgId && m.sender_id !== currentUserId);
-            if (newMsgs.length > 0) {
-              // Decrypt new messages
-              const decrypted = await Promise.all(newMsgs.map(async (m: any) => {
-                if (isEncrypted(m.content)) {
-                  try {
-                    const dec = await decryptMessage(m.content, m.sender_id, currentUserId, chatId);
-                    try { const p = JSON.parse(dec); if (p.text) return { ...m, content: p.text }; } catch {}
-                    return { ...m, content: dec };
-                  } catch { return m; }
-                }
-                return m;
-              }));
-              setMessages(prev => {
-                const existingIds = new Set(prev.map(m => m.id));
-                const fresh = decrypted.filter((m: any) => !existingIds.has(m.id));
-                return fresh.length > 0 ? [...prev, ...fresh] : prev;
-              });
-              scrollToBottom();
-            }
+            // Есть новые — загружаем полный список
+            loadMessages();
             lastMsgId = newest.id;
           }
         }
       } catch {}
     };
-    const interval = setInterval(poll, 2000);
+    const interval = setInterval(poll, 5000);
     return () => { mounted = false; clearInterval(interval); };
-  }, [chatId, currentUserId]);
+  }, [chatId, currentUserId, loadMessages]);
 
   // Подписка на typing индикаторы через WebSocket
   useEffect(() => {
