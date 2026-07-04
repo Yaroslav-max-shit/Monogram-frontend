@@ -19,10 +19,12 @@ class RealtimeService {
     const wsUrl = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
 
     try {
-      this.ws = new WebSocket(`${wsUrl}/ws/${userId}?token=${encodeURIComponent(token)}`);
+      this.ws = new WebSocket(`${wsUrl}/ws/${userId}`);
 
       this.ws.onopen = () => {
         console.debug('[Realtime] WebSocket connected to', wsUrl);
+        // Отправляем токен в первом сообщении (не в URL)
+        this.ws?.send(JSON.stringify({ type: 'auth', token }));
       };
 
       this.ws.onmessage = (event) => {

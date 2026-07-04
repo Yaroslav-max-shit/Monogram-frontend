@@ -1,208 +1,92 @@
-// Ключ для шифрования
-const ENCRYPTION_KEY = 'monogram-secure-key-2024-!@#$%^&*()';
+// Session management - tokens stored in HttpOnly cookies (set by backend)
+// No client-side encryption needed - cookies are HttpOnly + Secure + SameSite
 
-// Преобразуем строковый ключ в CryptoKey
-const getKey = async (): Promise<CryptoKey> => {
-  const encoder = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(ENCRYPTION_KEY),
-    'PBKDF2',
-    false,
-    ['deriveBits', 'deriveKey']
-  );
-  
-  return crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: encoder.encode('monogram-salt'),
-      iterations: 100000,
-      hash: 'SHA-256',
-    },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  );
-};
+interface UserData {
+  id: number;
+  username: string;
+  firstName: string;
+  lastName?: string;
+  avatar_url?: string;
+}
 
-// Шифрование
-const encrypt = async (text: string): Promise<string> => {
-  const key = await getKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encoder = new TextEncoder();
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    encoder.encode(text)
-  );
-  
-  // Возвращаем iv + зашифрованные данные
-  const combined = new Uint8Array(iv.length + encrypted.byteLength);
-  combined.set(iv);
-  combined.set(new Uint8Array(encrypted), iv.length);
-  
-  return btoa(String.fromCharCode(...combined));
-};
+interface Session {
+  token: string;
+  user: UserData;
+}
 
-// Дешифрование
-const decrypt = async (text: string): Promise<string> => {
-  try {
-    const key = await getKey();
-    const combined = Uint8Array.from(atob(text), c => c.charCodeAt(0));
-    const iv = combined.slice(0, 12);
-    const data = combined.slice(12);
-    
-    const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      data
-    );
-    
-    return new TextDecoder().decode(decrypted);
-  } catch (error) {
-    console.error('❌ Ошибка дешифрования:', error);
-    return '';
-  }
-};
-
-// Установка зашифрованной куки
-const setEncryptedCookie = async (name: string, value: string, days: number = 30) => {
-  try {
-    const encrypted = await encrypt(value);
-    const expires = new Date(Date.now() + days * 864e5).toUTCString();
-    document.cookie = `${name}=${encodeURIComponent(encrypted)}; expires=${expires}; path=/; SameSite=Lax; Secure`;
-  } catch (error) {
-    console.error('❌ Ошибка шифрования куки:', error);
-  }
-};
-
-// Получение и расшифровка куки
-const getEncryptedCookie = async (name: string): Promise<string | null> => {
-  try {
-    const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-    if (!match) return null;
-    
-    const encrypted = decodeURIComponent(match[1]);
-    const decrypted = await decrypt(encrypted);
-    return decrypted || null;
-  } catch (error) {
-    console.error('❌ Ошибка чтения куки:', error);
-    return null;
-  }
-};
-
-// Удаление куки
-const deleteCookie = (name: string) => {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; Secure`;
-};
-
-// ============================================
-// СОХРАНЕНИЕ И ЗАГРУЗКА СЕССИИ
-// ============================================
-
-// Сохранить сессию
+// Save session - token goes to HttpOnly cookie (backend sets it), user data in sessionStorage (not localStorage)
 export const saveSession = async (
-    token: string, 
-    user: { 
-        id: number; 
-        username: string; 
-        firstName: string;
-        lastName?: string;
-        avatar_url?: string;
-    }
+    token: string,
+    user: UserData
 ) => {
-    // console.log('🔐 Сохраняю сессию (шифрую)...');
-    
-    // Сохраняем в зашифрованные куки
-    await setEncryptedCookie('token', token);
-    await setEncryptedCookie('user', JSON.stringify(user));
-    
-    // Дублируем в localStorage (тоже шифруем)
+    // Token is set as HttpOnly cookie by backend via Set-Cookie header
+    // We store minimal user data in sessionStorage (cleared on tab close)
     try {
-        const encryptedToken = await encrypt(token);
-        const encryptedUser = await encrypt(JSON.stringify(user));
-        localStorage.setItem('monogram_token', encryptedToken);
-        localStorage.setItem('monogram_user', encryptedUser);
+        sessionStorage.setItem('monogram_user', JSON.stringify(user));
+        sessionStorage.setItem('monogram_token', token);
     } catch (error) {
-        console.error('❌ Ошибка сохранения в localStorage:', error);
+        console.error('Error saving session:', error);
     }
-    
-    // console.log('✅ Сессия сохранена (зашифрована)');
 };
 
-// Получить сессию
-export const getSession = async (): Promise<{ token: string; user: any } | null> => {
+// Get session - token from cookie, user from sessionStorage
+export const getSession = async (): Promise<Session | null> => {
     try {
-        // console.log('🔓 Загружаю сессию (расшифровываю)...');
+        // Try sessionStorage first (faster)
+        let token = sessionStorage.getItem('monogram_token');
+        let userStr = sessionStorage.getItem('monogram_user');
         
-        // Пробуем из localStorage (быстрее)
-        let encryptedToken = localStorage.getItem('monogram_token');
-        let encryptedUser = localStorage.getItem('monogram_user');
+        if (token && userStr) {
+            const user = JSON.parse(userStr);
+            return { token, user };
+        }
         
-        if (encryptedToken && encryptedUser) {
-            try {
-                const token = await decrypt(encryptedToken);
-                const userStr = await decrypt(encryptedUser);
-                if (token && userStr) {
-                    const user = JSON.parse(userStr);
+        // Fallback: try to get token from cookie
+        const cookieMatch = document.cookie.match(/(?:^|;\s*)access_token=([^;]*)/);
+        if (cookieMatch) {
+            token = decodeURIComponent(cookieMatch[1]);
+            if (token) {
+                // Decode JWT payload to get user info (no verification - just reading)
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    const user: UserData = {
+                        id: payload.user_id || payload.sub,
+                        username: payload.username || '',
+                        firstName: payload.first_name || '',
+                        lastName: payload.last_name || '',
+                    };
+                    // Save for faster access next time
+                    sessionStorage.setItem('monogram_token', token);
+                    sessionStorage.setItem('monogram_user', JSON.stringify(user));
                     return { token, user };
+                } catch {
+                    // Invalid JWT format
                 }
-            } catch (error) {
-                console.warn('Не удалось расшифровать localStorage:', error);
-            }
-        }
-        
-        // Пробуем из куки
-        const cookieToken = await getEncryptedCookie('token');
-        const cookieUserStr = await getEncryptedCookie('user');
-        
-        if (cookieToken && cookieUserStr) {
-            try {
-                const token = cookieToken;
-                const user = JSON.parse(cookieUserStr);
-                
-                // Восстанавливаем в localStorage
-                if (!encryptedToken) {
-                    localStorage.setItem('monogram_token', await encrypt(token));
-                    localStorage.setItem('monogram_user', await encrypt(cookieUserStr));
-                }
-                
-                return { token, user };
-            } catch (error) {
-                console.error('Ошибка парсинга пользователя:', error);
             }
         }
         
         return null;
     } catch (error) {
-        console.error('❌ Ошибка загрузки сессии:', error);
+        console.error('Error loading session:', error);
         return null;
     }
 };
 
-// Удалить сессию (выход)
+// Clear session
 export const clearSession = () => {
-    // console.log('🗑️ Очищаю сессию...');
+    sessionStorage.removeItem('monogram_token');
+    sessionStorage.removeItem('monogram_user');
+    sessionStorage.removeItem('monogram_settings');
     
-    // Удаляем куки
-    deleteCookie('token');
-    deleteCookie('user');
-    
-    // Удаляем localStorage
-    localStorage.removeItem('monogram_token');
-    localStorage.removeItem('monogram_user');
-    localStorage.removeItem('monogram_settings');
-    
-    // console.log('✅ Сессия очищена');
+    // Clear auth cookie
+    document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; Secure';
 };
 
-// Сохранить настройки (без шифрования — не критично)
+// Settings (non-sensitive, can stay in localStorage)
 export const saveSettings = (settings: any) => {
     localStorage.setItem('monogram_settings', JSON.stringify(settings));
 };
 
-// Получить настройки
 export const getSettings = () => {
     try {
         const saved = localStorage.getItem('monogram_settings');
