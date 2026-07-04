@@ -34,6 +34,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // РЎРµСЂРІРёСЃС‹
 import { getSession, clearSession, saveSession } from './services/cookies';
+import { cacheChats, getCachedChats, getCachedMessages, isOnline, onOnlineStatusChange } from './services/cache';
 import { disconnect } from './services/socket';
 import { realtime } from './services/realtime';
 import { initE2EE, isE2EEEnabled, loadE2EESettings, setE2EEEnabled, resetE2EEKeys } from './services/e2ee';
@@ -116,6 +117,7 @@ const App: React.FC = () => {
   const [activeChat, setActiveChat] = useState<{ id: number; name: string; type?: string } | null>(null);
   const [savedChats, setSavedChats] = useState<ChatInfo[]>([]);
   const [isPremium, setIsPremium] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline'>('online');
   
   // РњРѕРґР°Р»СЊРЅС‹Рµ РѕРєРЅР°
   const [showProfile, setShowProfile] = useState(false);
@@ -232,8 +234,14 @@ const App: React.FC = () => {
   // ============================================
 
   const loadUserChats = useCallback(async () => {
-    if (chatsLoadedRef.current) return;
-    chatsLoadedRef.current = true;
+    // Сначала загружаем из кэша (мгновенно)
+    const cached = await getCachedChats();
+    if (cached.length > 0) {
+      setSavedChats(cached);
+      setIsLoading(false);
+    }
+    
+    // Потом синхронизируем с сервером в фоне
     try {
       const response = await apiClient.get('/chats/');
       const FAVORITES_ID = userData?.id ? userData.id * 1000000 + 999999 : 999999;
@@ -277,9 +285,12 @@ const App: React.FC = () => {
         }
         
         setSavedChats(chats);
+        // Кэшируем для оффлайн-доступа
+        cacheChats(chats);
       }
     } catch (error) {
       console.error('РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё С‡Р°С‚РѕРІ:', error);
+      // Если сервер недоступен — показываем кэш (уже загружен выше)
     }
   }, []);
 
@@ -826,7 +837,19 @@ const App: React.FC = () => {
       : 'Monogram';
   }, [savedChats]);
 
-  // Polling: refresh chat list every 5 seconds
+  // Online/offline status listener
+  useEffect(() => {
+    return onOnlineStatusChange((online) => {
+      setConnectionStatus(online ? 'online' : 'offline');
+      // При восстановлении связи — синхронизируем с сервером
+      if (online && isLoggedIn) {
+        chatsLoadedRef.current = false;
+        loadUserChats();
+      }
+    });
+  }, [isLoggedIn]);
+
+  // Polling: refresh chat list every 10 seconds (reduced from 5)
   useEffect(() => {
     if (!isLoggedIn) return;
     const interval = setInterval(() => {
@@ -1332,6 +1355,7 @@ const App: React.FC = () => {
                 isOpen={sidebarOpen}
                 onClose={closeSidebar}
                 isMobileLayout={true}
+                connectionStatus={connectionStatus}
               />
             )
           ) : (

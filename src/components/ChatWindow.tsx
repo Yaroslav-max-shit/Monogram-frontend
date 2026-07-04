@@ -65,6 +65,7 @@ const VoiceMessagePlayer: React.FC<{ url: string; duration: number }> = ({ url, 
 };
 import PollView from './PollView';
 import apiClient from '../services/api';
+import { getCachedMessages, cacheMessages, isOnline } from '../services/cache';
 import { decryptMessage, encryptMessage, isEncrypted } from '../services/encryption';
 import { realtime } from '../services/realtime';
 import MentionDropdown from './MentionDropdown';
@@ -323,6 +324,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [messages]);
 
   const loadMessages = useCallback(async () => {
+    // Сначала загружаем из кэша (мгновенно)
+    const cached = await getCachedMessages(chatId);
+    if (cached.length > 0) {
+      setMessages(cached);
+      setIsLoading(false);
+    }
+    
+    // Потом синхронизируем с сервером
     try {
       const response = await apiClient.get(`/messages/chat/${chatId}?limit=20`);
       let msgs = response.data;
@@ -353,6 +362,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       
       setMessages(msgs);
       setHasMoreMessages(msgs.length >= 20);
+      // Кэшируем сообщения
+      cacheMessages(chatId, msgs);
     } catch (error) {
       console.error('Ошибка загрузки сообщений:', error);
     } finally {
@@ -1406,9 +1417,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
           <div className="chat-header-details">
             <div className="chat-header-name">{chatName}</div>
-            {typingUsers.size > 0 && (
+            {typingUsers.size > 0 ? (
               <div className="chat-header-typing">печатает...</div>
-            )}
+            ) : !navigator.onLine ? (
+              <div className="chat-header-typing" style={{color: 'var(--text-tertiary)'}}>Соединение...</div>
+            ) : null}
           </div>
         </div>
         <div className="chat-header-actions">

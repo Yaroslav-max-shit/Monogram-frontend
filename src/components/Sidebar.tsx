@@ -34,6 +34,7 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   isMobileLayout?: boolean;
+  connectionStatus?: 'online' | 'offline';
 }
 
 const avatarColors = [
@@ -163,7 +164,14 @@ const Sidebar: React.FC<SidebarProps> = ({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'white', fontWeight: 800, fontSize: 14,
             }}>M</div>
-            <span>Monogram</span>
+            <div>
+              <span>Monogram</span>
+              {connectionStatus === 'offline' && (
+                <span style={{ display: 'block', fontSize: 11, color: 'var(--text-tertiary)' }}>
+                  Соединение...
+                </span>
+              )}
+            </div>
           </div>
           <div className="sidebar-header-actions">
             <button onClick={onSettingsClick} style={{
