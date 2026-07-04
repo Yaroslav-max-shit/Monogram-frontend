@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { animate } from 'animejs';
 import apiClient from '../services/api';
+import './TransferModal.css';
 
 const QUARKPAY_DOMAIN = 'https://f1w6ggb2-5174.euw.devtunnels.ms';
 
@@ -174,11 +175,21 @@ const TransferModal: React.FC<TransferModalProps> = ({
           {step === 'checking' && (
             <div style={{ textAlign: 'center', padding: '30px 0' }}>
               <div style={{
-                width: 40, height: 40, border: '3px solid var(--border-color)',
-                borderTopColor: 'var(--accent)', borderRadius: '50%',
-                animation: 'spin 1s linear infinite', margin: '0 auto 12px',
+                width: 56, height: 56, borderRadius: 14,
+                background: 'var(--bg-primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 14px', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-tertiary)',
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }}>Q</div>
+              <div style={{
+                height: 14, width: '60%', background: 'var(--bg-primary)', borderRadius: 7,
+                margin: '0 auto 8px', animation: 'pulse 1.5s ease-in-out infinite',
               }} />
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Проверка...</p>
+              <div style={{
+                height: 12, width: '80%', background: 'var(--bg-primary)', borderRadius: 6,
+                margin: '0 auto', animation: 'pulse 1.5s ease-in-out infinite 0.2s',
+              }} />
+              <p style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', marginTop: 12 }}>Проверка подключения...</p>
             </div>
           )}
 
@@ -212,15 +223,25 @@ const TransferModal: React.FC<TransferModalProps> = ({
                 </ul>
               </div>
 
-              <a href={`${QUARKPAY_DOMAIN}/connect`} target="_blank" rel="noopener" style={{
+              <button onClick={async () => {
+                try {
+                  const res = await apiClient.post('/payment/quarkpay-generate-connect-code');
+                  const code = res.data?.connect_code;
+                  if (code) {
+                    window.location.href = `${QUARKPAY_DOMAIN}/connect/${code}`;
+                  }
+                } catch {
+                  window.location.href = `${QUARKPAY_DOMAIN}/connect`;
+                }
+              }} style={{
                 display: 'block', width: '100%', padding: '12px',
                 background: 'linear-gradient(135deg, #00d4aa, #00b894)',
                 color: '#000', border: 'none', borderRadius: 12,
                 fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
-                textDecoration: 'none', textAlign: 'center',
+                textAlign: 'center',
               }}>
                 Подключить
-              </a>
+              </button>
             </div>
           )}
 

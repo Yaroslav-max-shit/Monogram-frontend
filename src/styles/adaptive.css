@@ -570,6 +570,15 @@
   button:active {
     transform: scale(0.97) !important;
   }
+
+  /* Все кнопки — скруглённые на мобильном */
+  button, .btn-primary, .btn-secondary, .modal-btn-primary, .modal-btn-secondary {
+    border-radius: 12px !important;
+  }
+
+  .chat-header-action, .sidebar-action-btn, .header-icon-btn {
+    border-radius: 12px !important;
+  }
 }
 
 /* ============================================
