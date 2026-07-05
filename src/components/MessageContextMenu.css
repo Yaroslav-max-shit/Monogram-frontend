@@ -37,3 +37,9 @@
   background: var(--border-color);
   margin: 4px 0;
 }
+
+.context-menu-item .auto-delete-arrow {
+  margin-left: auto;
+  opacity: 0.5;
+  transition: transform 0.2s;
+}

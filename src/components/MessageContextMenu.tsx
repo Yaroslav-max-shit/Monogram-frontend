@@ -48,6 +48,7 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [selectedText, setSelectedText] = React.useState('');
+  const [showAutoDelete, setShowAutoDelete] = React.useState(false);
 
   useEffect(() => {
     const selection = window.getSelection();
@@ -135,6 +136,13 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         </div>
       )}
 
+      {!isOwn && (
+        <div className="context-menu-item" onClick={onDelete}>
+          <Icon name="delete" size={18} />
+          <span>Удалить у себя</span>
+        </div>
+      )}
+
       {isOwn && (
         <>
           <div className="context-menu-item" onClick={handleEdit}>
@@ -150,22 +158,31 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
             <Icon name="delete" size={18} />
             <span>Удалить у всех</span>
           </div>
-          <div className="context-menu-item" onClick={() => { onAutoDelete(3600); onClose(); }}>
+          <div className="context-menu-divider" />
+          <div className="context-menu-item" onClick={() => setShowAutoDelete(!showAutoDelete)}>
             <Icon name="clock" size={18} />
-            <span>Автоудаление через 1ч</span>
+            <span style={{ flex: 1 }}>Автоудаление</span>
+            <Icon name={showAutoDelete ? "arrow-up" : "arrow-down"} size={16} />
           </div>
-          <div className="context-menu-item" onClick={() => { onAutoDelete(86400); onClose(); }}>
-            <Icon name="clock" size={18} />
-            <span>Автоудаление через 24ч</span>
-          </div>
-          <div className="context-menu-item" onClick={() => { onAutoDelete(604800); onClose(); }}>
-            <Icon name="clock" size={18} />
-            <span>Автоудаление через 7д</span>
-          </div>
-          <div className="context-menu-item" onClick={() => { onAutoDelete(2592000); onClose(); }}>
-            <Icon name="clock" size={18} />
-            <span>Автоудаление через 30д</span>
-          </div>
+          {showAutoDelete && (
+            <>
+              <div className="context-menu-item" onClick={() => { onAutoDelete(3600); onClose(); }} style={{ paddingLeft: 44 }}>
+                <span>Через 1 час</span>
+              </div>
+              <div className="context-menu-item" onClick={() => { onAutoDelete(86400); onClose(); }} style={{ paddingLeft: 44 }}>
+                <span>Через 24 часа</span>
+              </div>
+              <div className="context-menu-item" onClick={() => { onAutoDelete(604800); onClose(); }} style={{ paddingLeft: 44 }}>
+                <span>Через 7 дней</span>
+              </div>
+              <div className="context-menu-item" onClick={() => { onAutoDelete(2592000); onClose(); }} style={{ paddingLeft: 44 }}>
+                <span>Через 30 дней</span>
+              </div>
+              <div className="context-menu-item" onClick={() => { onAutoDelete(0); onClose(); }} style={{ paddingLeft: 44 }}>
+                <span>Выключить</span>
+              </div>
+            </>
+          )}
         </>
       )}
 

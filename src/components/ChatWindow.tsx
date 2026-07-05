@@ -96,6 +96,9 @@ interface Message {
   forwarded_from_message_id?: number;
   original_chat_id?: number;
   read_at?: string;
+  delivered_at?: string;
+  auto_delete_at?: string;
+  reply_to_id?: number;
 }
 
 interface DraftData {
@@ -355,10 +358,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         return msg;
       }));
       
-      msgs = msgs.map((msg: Message) => ({
-        ...msg,
-        status: msg.sender_id === currentUserId ? 'read' : 'delivered'
-      }));
+      msgs = msgs.map((msg: Message) => {
+        if (msg.sender_id !== currentUserId) return { ...msg, status: 'delivered' as const };
+        if (msg.read_at) return { ...msg, status: 'read' as const };
+        if (msg.delivered_at) return { ...msg, status: 'delivered' as const };
+        return { ...msg, status: 'sent' as const };
+      });
       
       setMessages(msgs);
       setHasMoreMessages(msgs.length >= 20);
@@ -702,14 +707,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         msg.id === tempId ? { ...newMessage, status: 'sent' } : msg
       ));
       
-      setTimeout(() => {
-        updateMessageStatus(newMessage.id, 'delivered');
-      }, 500);
-      
-      setTimeout(() => {
-        updateMessageStatus(newMessage.id, 'read');
-      }, 1000);
-      
       // Отправляем через WebSocket для реалтайм-доставки
       realtime.send({
         type: 'new_message',
@@ -769,18 +766,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleDeleteMessage = async (messageId: number) => {
     try {
       await apiClient.delete(`/messages/${messageId}`);
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-    } catch (error) {
-      console.error('Ошибка удаления:', error);
+    } catch {
+      // Even if backend rejects (not owner), remove locally
     }
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
   };
 
   const handleAutoDelete = async (messageId: number, seconds: number) => {
     try {
       await apiClient.post(`/messages/${messageId}/auto-delete`, { seconds });
-      // Обновляем сообщение с таймером автоудаления
       setMessages(prev => prev.map(msg => {
         if (msg.id === messageId) {
+          if (seconds === 0) {
+            return { ...msg, auto_delete_at: null } as any;
+          }
           const autoDeleteAt = new Date(Date.now() + seconds * 1000).toISOString();
           return { ...msg, auto_delete_at: autoDeleteAt } as any;
         }
@@ -1203,12 +1202,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     } catch {}
     
     let isFile = false;
-    let fileData = null;
+    let fileData: any = null;
     try {
-      const parsed = JSON.parse(content);
-      if (parsed.type === 'file') {
+      const origParsed = JSON.parse(msg.content);
+      if (origParsed.type === 'file') {
         isFile = true;
-        fileData = parsed;
+        fileData = origParsed;
       }
     } catch {}
     
@@ -1329,6 +1328,62 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   }}>
                     Подключить
                   </a>
+                </div>
+              );
+            }
+            if (parsed.type === 'file' && parsed.files) {
+              const BACKEND_URL = 'https://monogram-backend-dxv4.onrender.com';
+              const guessType = (name: string) => {
+                const ext = name.split('.').pop()?.toLowerCase() || '';
+                if (['jpg','jpeg','png','gif','webp','bmp','svg'].includes(ext)) return 'image/' + ext;
+                if (['mp4','avi','mov','mkv','webm'].includes(ext)) return 'video/' + ext;
+                if (['mp3','wav','ogg','m4a','flac'].includes(ext)) return 'audio/' + ext;
+                if (ext === 'pdf') return 'application/pdf';
+                if (['doc','docx'].includes(ext)) return 'application/msword';
+                if (['xls','xlsx'].includes(ext)) return 'application/vnd.ms-excel';
+                return 'application/octet-stream';
+              };
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 220 }}>
+                  {parsed.files.map((f: any, idx: number) => {
+                    const fileUrl = f.url?.startsWith('http') ? f.url : `${BACKEND_URL}${f.url}`;
+                    const fileType = guessType(f.name || '');
+                    const isImage = fileType.startsWith('image/');
+                    const isVideo = fileType.startsWith('video/');
+                    if (isImage) {
+                      return (
+                        <img
+                          key={idx}
+                          src={fileUrl}
+                          alt={f.name || 'Файл'}
+                          style={{ maxWidth: 280, borderRadius: 12, cursor: 'pointer' }}
+                          onClick={() => setMediaViewerUrl(fileUrl)}
+                        />
+                      );
+                    }
+                    if (isVideo) {
+                      return (
+                        <video
+                          key={idx}
+                          src={fileUrl}
+                          controls
+                          style={{ maxWidth: 280, borderRadius: 12 }}
+                        />
+                      );
+                    }
+                    return (
+                      <FileMessage
+                        key={idx}
+                        file={{
+                          file_url: fileUrl,
+                          file_name: f.name || 'Файл',
+                          file_type: fileType,
+                          file_size: f.size || 0,
+                        }}
+                        onMediaClick={(url) => setMediaViewerUrl(url)}
+                      />
+                    );
+                  })}
                 </div>
               );
             }

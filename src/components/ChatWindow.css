@@ -1179,3 +1179,63 @@
   justify-content: center;
   margin-right: 4px;
 }
+
+/* File Message */
+.file-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--bg-secondary, rgba(0,0,0,0.04));
+  cursor: pointer;
+  transition: background 0.15s;
+  min-width: 200px;
+}
+.file-message:hover {
+  background: var(--bg-tertiary, rgba(0,0,0,0.08));
+}
+.file-message .file-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.file-message .file-info {
+  flex: 1;
+  min-width: 0;
+}
+.file-message .file-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+.file-message .file-size {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+.file-message .file-download-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.file-message .file-download-btn:hover {
+  opacity: 0.85;
+}
