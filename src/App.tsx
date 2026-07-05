@@ -17,8 +17,10 @@ import ChatInfoModal from './components/ChatInfoModal';
 import ConfirmModal from './components/ConfirmModal';
 import QRScanner from './components/QRScanner';
 import QRLogin from './components/Auth/QRLogin';
-import Stories from './components/Stories/Stories';
-import type { StoryUser } from './components/Stories/Stories';
+import StoriesBar from './components/Stories/StoriesBar';
+import StoryViewer from './components/Stories/StoryViewer';
+import StoryCreator from './components/Stories/StoryCreator';
+import type { StoryData } from './components/Stories/StoryViewer';
 const PremiumModal = React.lazy(() => import('./components/Premium/PremiumModal'));
 import NewDeviceAlert from './components/Security/NewDeviceAlert';
 import Login from './components/Login';
@@ -135,6 +137,10 @@ const App: React.FC = () => {
   const [showQRLogin, setShowQRLogin] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
   const [forwardMessageId, setForwardMessageId] = useState<number | null>(null);
+  // Stories
+  const [showStoryCreator, setShowStoryCreator] = useState(false);
+  const [viewingStories, setViewingStories] = useState<StoryData[] | null>(null);
+  const [viewingStoryIndex, setViewingStoryIndex] = useState(0);
   const chatsLoadedRef = useRef(false);
 
   // QuarkPay

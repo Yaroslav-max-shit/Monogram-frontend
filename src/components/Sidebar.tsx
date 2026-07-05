@@ -204,6 +204,18 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
+      {/* Stories лента */}
+      {isMobileLayout && userData && (
+        <StoriesBar
+          currentUserId={userData.id}
+          onOpenStory={(stories, idx) => {
+            setViewingStories(stories);
+            setViewingStoryIndex(idx);
+          }}
+          onCreateStory={() => setShowStoryCreator(true)}
+        />
+      )}
+
       <div className="sidebar-chats">
         {debouncedSearch && searchUsers.length > 0 && (
           <div style={{padding: '4px 0'}}>
