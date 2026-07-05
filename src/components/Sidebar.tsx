@@ -58,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onAdminClick, onPremiumClick,
   onPinChat, onArchiveChat, onMuteChat,
   onDeleteChat, onBlockUser, onClearHistory, onAddToFolder,
-  isOpen, onClose, isMobileLayout
+  isOpen, onClose, isMobileLayout, connectionStatus
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);

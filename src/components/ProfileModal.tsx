@@ -113,7 +113,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ onClose, userData, onSave, 
           username: profile.username,
           firstName: profile.first_name,
           lastName: profile.last_name,
-          avatar: newAvatarUrl
+          avatar_url: newAvatarUrl
         });
       }
       
