@@ -1364,6 +1364,8 @@ const App: React.FC = () => {
                 onClose={closeSidebar}
                 isMobileLayout={true}
                 connectionStatus={connectionStatus}
+                onOpenStory={(stories, idx) => { setViewingStories(stories); setViewingStoryIndex(idx); }}
+                onCreateStory={() => setShowStoryCreator(true)}
               />
             )
           ) : (

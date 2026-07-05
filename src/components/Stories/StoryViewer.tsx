@@ -248,3 +248,4 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
 };
 
 export default StoryViewer;
+export type { StoryData };

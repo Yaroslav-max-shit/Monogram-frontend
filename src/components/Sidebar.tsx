@@ -3,6 +3,7 @@ import Icon from './Icon';
 import { useDebounce } from '../hooks/useDebounce';
 import { useAccounts } from '../hooks/useAccounts';
 import { FocusMode, isFocusModeActive } from './FocusMode';
+import StoriesBar from './Stories/StoriesBar';
 import './Sidebar.css';
 
 const BACKEND_URL = 'https://monogram-backend-dxv4.onrender.com';
@@ -35,6 +36,8 @@ interface SidebarProps {
   onClose: () => void;
   isMobileLayout?: boolean;
   connectionStatus?: 'online' | 'offline';
+  onOpenStory?: (stories: any[], idx: number) => void;
+  onCreateStory?: () => void;
 }
 
 const avatarColors = [
@@ -58,7 +61,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onAdminClick, onPremiumClick,
   onPinChat, onArchiveChat, onMuteChat,
   onDeleteChat, onBlockUser, onClearHistory, onAddToFolder,
-  isOpen, onClose, isMobileLayout, connectionStatus
+  isOpen, onClose, isMobileLayout, connectionStatus,
+  onOpenStory, onCreateStory
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
@@ -205,14 +209,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Stories лента */}
-      {isMobileLayout && userData && (
+      {isMobileLayout && userData && onOpenStory && onCreateStory && (
         <StoriesBar
           currentUserId={userData.id}
-          onOpenStory={(stories, idx) => {
-            setViewingStories(stories);
-            setViewingStoryIndex(idx);
-          }}
-          onCreateStory={() => setShowStoryCreator(true)}
+          onOpenStory={onOpenStory}
+          onCreateStory={onCreateStory}
         />
       )}
 
