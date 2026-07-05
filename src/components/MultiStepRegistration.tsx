@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Icon from './Icon';
 import apiClient from '../services/api';
+import AvatarUploader from './AvatarUploader';
 
 interface MultiStepRegistrationProps {
   onComplete: (token: string) => void;
 }
 
 const MultiStepRegistration: React.FC<MultiStepRegistrationProps> = ({ onComplete }) => {
+  const [showAvatarUploader, setShowAvatarUploader] = useState(false);
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
@@ -220,7 +222,7 @@ const MultiStepRegistration: React.FC<MultiStepRegistrationProps> = ({ onComplet
         <div className="step-personal">
           <h2>Расскажите о себе</h2>
           
-          <div className="avatar-upload" onClick={() => document.getElementById('avatar-input')?.click()}>
+          <div className="avatar-upload" onClick={() => setShowAvatarUploader(true)}>
             {avatarPreview ? (
               <img src={avatarPreview} alt="Avatar" />
             ) : (
@@ -229,7 +231,17 @@ const MultiStepRegistration: React.FC<MultiStepRegistrationProps> = ({ onComplet
               </div>
             )}
           </div>
-          <input id="avatar-input" type="file" accept="image/*" onChange={handleAvatarChange} hidden />
+          
+          {showAvatarUploader && (
+            <AvatarUploader
+              currentAvatar={avatarPreview}
+              onAvatarSaved={(url) => {
+                setAvatarPreview(url);
+                setShowAvatarUploader(false);
+              }}
+              onClose={() => setShowAvatarUploader(false)}
+            />
+          )}
           
           <input
             type="text"
