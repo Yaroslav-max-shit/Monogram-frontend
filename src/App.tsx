@@ -973,14 +973,17 @@ const App: React.FC = () => {
         if (pendingConnect) {
           sessionStorage.removeItem('pending_connect');
           setConnectCode(pendingConnect);
+          setIsLoading(false);
+          return;
         }
 
         // Также проверяем URL на наличие /connect/{code}
         const path = window.location.pathname;
         const connectMatch = path.match(/^\/connect\/(.+)$/);
-        if (connectMatch && !pendingConnect) {
+        if (connectMatch) {
           setConnectCode(connectMatch[1]);
           setIsLoading(false);
+          return;
         }
 
         // Проверяем, есть ли отложенное приглашение
