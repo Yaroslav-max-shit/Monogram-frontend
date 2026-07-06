@@ -18,31 +18,55 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getSession().then(session => {
-      if (session && session.user) {
-        setMyUsername(session.user.username);
-        setMyUserId(session.user.id);
-        setStatus('confirm');
-        if (cardRef.current) {
-          animate(cardRef.current, {
-            translate: ['40px 0', '0px 0'],
-            opacity: [0, 1],
-            duration: 400,
-            ease: 'outCubic',
-          });
+    const checkSession = async () => {
+      try {
+        const session = await getSession();
+        if (session && session.user) {
+          setMyUsername(session.user.username);
+          setMyUserId(session.user.id);
+          setStatus('confirm');
+          if (cardRef.current) {
+            animate(cardRef.current, {
+              translate: ['40px 0', '0px 0'],
+              opacity: [0, 1],
+              duration: 400,
+              ease: 'outCubic',
+            });
+          }
+          return;
         }
-      } else {
-        setStatus('login_required');
-        if (cardRef.current) {
-          animate(cardRef.current, {
-            translate: ['40px 0', '0px 0'],
-            opacity: [0, 1],
-            duration: 400,
-            ease: 'outCubic',
-          });
+      } catch {}
+
+      // Fallback: try API call (cookie-based auth)
+      try {
+        const res = await apiClient.get('/auth/me');
+        if (res.data && res.data.id) {
+          setMyUsername(res.data.username);
+          setMyUserId(res.data.id);
+          setStatus('confirm');
+          if (cardRef.current) {
+            animate(cardRef.current, {
+              translate: ['40px 0', '0px 0'],
+              opacity: [0, 1],
+              duration: 400,
+              ease: 'outCubic',
+            });
+          }
+          return;
         }
+      } catch {}
+
+      setStatus('login_required');
+      if (cardRef.current) {
+        animate(cardRef.current, {
+          translate: ['40px 0', '0px 0'],
+          opacity: [0, 1],
+          duration: 400,
+          ease: 'outCubic',
+        });
       }
-    });
+    };
+    checkSession();
   }, [code]);
 
   const handleConfirm = async () => {
@@ -52,20 +76,30 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
         connect_code: code,
       });
       if (res.data?.status === 'connected') {
+        let qpToken = null;
         try {
-          await apiClient.post('/payment/quarkpay-auto-register', {
+          const regRes = await apiClient.post('/payment/quarkpay-auto-register', {
             connect_code: code,
             monogram_user_id: myUserId,
             monogram_username: myUsername,
           });
+          if (regRes.data?.access_token) {
+            qpToken = regRes.data.access_token;
+          }
         } catch {}
 
         setStatus('success');
         try {
           const confetti = (await import('canvas-confetti')).default;
-          confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 }, colors: ['#10b981', '#059669', '#34d399'] });
+          confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 }, colors: ['#D4A017', '#B8860B', '#E8B41A', '#22C55E'] });
         } catch {}
-        setTimeout(() => onConnected(), 2000);
+
+        const redirectUrl = qpToken
+          ? `${QUARKPAY_DOMAIN}/login?token=${qpToken}`
+          : `${QUARKPAY_DOMAIN}/`;
+        setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 2000);
       } else {
         setStatus('error');
         setError('Не удалось связать аккаунты');

@@ -231,7 +231,7 @@ const TransferModal: React.FC<TransferModalProps> = ({
                     window.location.href = `${QUARKPAY_DOMAIN}/connect/${code}`;
                   }
                 } catch {
-                  window.location.href = `${QUARKPAY_DOMAIN}/connect`;
+                  alert('QuarkPay недоступен. Попробуйте позже.');
                 }
               }} style={{
                 display: 'block', width: '100%', padding: '12px',
