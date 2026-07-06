@@ -1,104 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { animate } from 'animejs';
 import apiClient from '../services/api';
-import { getSession } from '../services/cookies';
 
 const QUARKPAY_DOMAIN = 'https://f1w6ggb2-5174.euw.devtunnels.ms';
 
 interface ConnectPageProps {
   code: string;
+  userId: number;
+  username: string;
   onConnected: () => void;
 }
 
-const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
+const ConnectPage: React.FC<ConnectPageProps> = ({ code, userId, username, onConnected }) => {
   const [status, setStatus] = useState<'loading' | 'confirm' | 'linking' | 'success' | 'error' | 'login_required'>('loading');
   const [error, setError] = useState('');
-  const [myUsername, setMyUsername] = useState('');
-  const [myUserId, setMyUserId] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const checkSession = async () => {
-      // Method 1: sessionStorage
-      try {
-        const session = await getSession();
-        if (session && session.user) {
-          setMyUsername(session.user.username);
-          setMyUserId(session.user.id);
-          setStatus('confirm');
-          if (cardRef.current) {
-            animate(cardRef.current, {
-              translate: ['40px 0', '0px 0'],
-              opacity: [0, 1],
-              duration: 400,
-              ease: 'outCubic',
-            });
-          }
-          return;
-        }
-      } catch {}
-
-      // Method 2: try API call with whatever auth we have
-      try {
-        const res = await apiClient.get('/auth/me');
-        if (res.data && res.data.id) {
-          setMyUsername(res.data.username);
-          setMyUserId(res.data.id);
-          setStatus('confirm');
-          if (cardRef.current) {
-            animate(cardRef.current, {
-              translate: ['40px 0', '0px 0'],
-              opacity: [0, 1],
-              duration: 400,
-              ease: 'outCubic',
-            });
-          }
-          return;
-        }
-      } catch {}
-
-      // Method 3: try to read JWT directly from any storage
-      try {
-        const rawToken = sessionStorage.getItem('monogram_token')
-          || localStorage.getItem('monogram_token')
-          || localStorage.getItem('monogram_token_encrypted');
-        if (rawToken) {
-          // Try to decode as JWT
-          const parts = rawToken.split('.');
-          if (parts.length === 3) {
-            const payload = JSON.parse(atob(parts[1]));
-            const uid = payload.user_id || payload.sub;
-            const uname = payload.username || '';
-            if (uid) {
-              setMyUsername(uname);
-              setMyUserId(Number(uid));
-              setStatus('confirm');
-              if (cardRef.current) {
-                animate(cardRef.current, {
-                  translate: ['40px 0', '0px 0'],
-                  opacity: [0, 1],
-                  duration: 400,
-                  ease: 'outCubic',
-                });
-              }
-              return;
-            }
-          }
-        }
-      } catch {}
-
+    if (!userId || !username) {
+      // No user data from App.tsx — user is not logged in
       setStatus('login_required');
-      if (cardRef.current) {
-        animate(cardRef.current, {
-          translate: ['40px 0', '0px 0'],
-          opacity: [0, 1],
-          duration: 400,
-          ease: 'outCubic',
-        });
-      }
-    };
-    checkSession();
-  }, [code]);
+      return;
+    }
+    // User is logged in — show confirmation
+    setStatus('confirm');
+    if (cardRef.current) {
+      animate(cardRef.current, {
+        translate: ['40px 0', '0px 0'],
+        opacity: [0, 1],
+        duration: 400,
+        ease: 'outCubic',
+      });
+    }
+  }, [code, userId, username]);
 
   const handleConfirm = async () => {
     setStatus('linking');
@@ -111,8 +45,8 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
         try {
           const regRes = await apiClient.post('/payment/quarkpay-auto-register', {
             connect_code: code,
-            monogram_user_id: myUserId,
-            monogram_username: myUsername,
+            monogram_user_id: userId,
+            monogram_username: username,
           });
           if (regRes.data?.access_token) {
             qpToken = regRes.data.access_token;
@@ -158,7 +92,7 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
       }}>
         <div style={{
           width: 56, height: 56, borderRadius: 14,
-          background: 'linear-gradient(135deg, #00d4aa, #00b894)',
+          background: 'linear-gradient(135deg, #D4A017, #B8860B)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           margin: '0 auto 14px', fontSize: '1.3rem', fontWeight: 800, color: '#000',
         }}>Q</div>
@@ -184,8 +118,8 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
             </p>
             <button onClick={handleLogin} style={{
               width: '100%', padding: '12px',
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: 'white', border: 'none', borderRadius: 12,
+              background: 'linear-gradient(135deg, #D4A017, #B8860B)',
+              color: '#000', border: 'none', borderRadius: 12,
               fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
             }}>
               Войти
@@ -199,7 +133,7 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
               Связать с QuarkPay?
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 16px', lineHeight: 1.5 }}>
-              Аккаунт <strong style={{ color: 'var(--text-primary)' }}>@{myUsername}</strong> будет связан с <strong style={{ color: '#00d4aa' }}>QuarkPay</strong>
+              Аккаунт <strong style={{ color: 'var(--text-primary)' }}>@{username}</strong> будет связан с <strong style={{ color: '#D4A017' }}>QuarkPay</strong>
             </p>
 
             <div style={{
@@ -221,8 +155,8 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
 
             <button onClick={handleConfirm} style={{
               width: '100%', padding: '12px',
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: 'white', border: 'none', borderRadius: 12,
+              background: 'linear-gradient(135deg, #D4A017, #B8860B)',
+              color: '#000', border: 'none', borderRadius: 12,
               fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
             }}>
               Подтвердить
@@ -234,7 +168,7 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
           <div style={{ padding: '20px 0' }}>
             <div style={{
               width: 40, height: 40, border: '3px solid var(--border-color)',
-              borderTopColor: '#10b981', borderRadius: '50%',
+              borderTopColor: '#D4A017', borderRadius: '50%',
               animation: 'spin 1s linear infinite', margin: '0 auto 12px',
             }} />
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Связывание аккаунтов...</p>
@@ -244,11 +178,12 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
         {status === 'success' && (
           <div style={{ padding: '20px 0' }}>
             <div style={{
-              width: 56, height: 56, borderRadius: '50%', background: '#10b981',
+              width: 56, height: 56, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #D4A017, #B8860B)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 14px',
             }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>

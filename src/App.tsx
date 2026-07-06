@@ -515,11 +515,13 @@ const App: React.FC = () => {
         return;
       }
 
-      // Обработка подключения QuarkPay
+      // Обработка подключения QuarkPay — НЕ ставим connectCode сразу,
+      // ждём загрузки сессии в handleLogin
       if (connectMatch) {
+        // Сохраняем код, но НЕ рендерим ConnectPage пока сессия не загружена
         const connectCodeStr = connectMatch[1];
-        setConnectCode(connectCodeStr);
-        setIsLoading(false);
+        sessionStorage.setItem('pending_connect', connectCodeStr);
+        // Не ставим setIsLoading(false) — ждём handleLogin
         return;
       }
 
@@ -966,10 +968,19 @@ const App: React.FC = () => {
           setTimeout(loadUserChats, 500);
         if (window.location.pathname === '/config') checkAdmin();
 
+        // Проверяем pending_connect из sessionStorage
         const pendingConnect = sessionStorage.getItem('pending_connect');
         if (pendingConnect) {
           sessionStorage.removeItem('pending_connect');
           setConnectCode(pendingConnect);
+        }
+
+        // Также проверяем URL на наличие /connect/{code}
+        const path = window.location.pathname;
+        const connectMatch = path.match(/^\/connect\/(.+)$/);
+        if (connectMatch && !pendingConnect) {
+          setConnectCode(connectMatch[1]);
+          setIsLoading(false);
         }
 
         // Проверяем, есть ли отложенное приглашение
@@ -1136,6 +1147,8 @@ const App: React.FC = () => {
     return (
       <ConnectPage
         code={connectCode}
+        userId={userData?.id || 0}
+        username={userData?.username || ''}
         onConnected={() => { window.location.href = 'https://f1w6ggb2-5174.euw.devtunnels.ms/'; }}
       />
     );
