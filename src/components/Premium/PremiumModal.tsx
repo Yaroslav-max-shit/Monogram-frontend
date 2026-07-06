@@ -11,19 +11,23 @@ interface PremiumModalProps {
 const PremiumModal: React.FC<PremiumModalProps> = ({ onClose, initialPlan }) => {
   const [step, setStep] = useState<'payment' | 'success'>('payment');
   const [selectedPlan, setSelectedPlan] = useState<string>(initialPlan || 'month');
-  const [paymentCode] = useState(() => Math.random().toString(36).substring(2, 30));
+
+  const QUARKPAY_DOMAIN = 'https://f1w6ggb2-5174.euw.devtunnels.ms';
 
   const handleQuarkPay = () => {
-    window.open(`https://f1w6ggb2-5174.euw.devtunnels.ms/pay/${paymentCode}`, '_blank');
+    // Open QuarkPay with plan info — user pays from QuarkPay account
+    window.open(`${QUARKPAY_DOMAIN}/pay/${selectedPlan}`, '_blank');
   };
 
   const handleYooMoney = async () => {
     try {
       const { default: apiClient } = await import('../../services/api');
       const res = await apiClient.get(`/payment/yoomoney-form?plan=${selectedPlan}`);
-      if (res.data?.form_url) window.open(res.data.form_url, '_blank');
+      if (res.data?.form_url) {
+        window.open(res.data.form_url, '_blank');
+      }
     } catch {
-      window.open(`https://f1w6ggb2-5174.euw.devtunnels.ms/payment/yoomoney-form?plan=${selectedPlan}`, '_blank');
+      alert('ЮMoney недоступен. Попробуйте QuarkPay или тестовую оплату.');
     }
   };
 
@@ -113,7 +117,7 @@ const PremiumModal: React.FC<PremiumModalProps> = ({ onClose, initialPlan }) => 
             boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 24,
           }}>
             <QRCodeSVG
-              value={`https://f1w6ggb2-5174.euw.devtunnels.ms/pay/${paymentCode}`}
+              value={`https://monogram-one-mu.vercel.app/premium`}
               size={160}
               level="H"
               bgColor="#ffffff"

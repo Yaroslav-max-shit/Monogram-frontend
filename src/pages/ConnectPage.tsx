@@ -19,6 +19,7 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
 
   useEffect(() => {
     const checkSession = async () => {
+      // Method 1: sessionStorage
       try {
         const session = await getSession();
         if (session && session.user) {
@@ -37,7 +38,7 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
         }
       } catch {}
 
-      // Fallback: try API call (cookie-based auth)
+      // Method 2: try API call with whatever auth we have
       try {
         const res = await apiClient.get('/auth/me');
         if (res.data && res.data.id) {
@@ -53,6 +54,36 @@ const ConnectPage: React.FC<ConnectPageProps> = ({ code, onConnected }) => {
             });
           }
           return;
+        }
+      } catch {}
+
+      // Method 3: try to read JWT directly from any storage
+      try {
+        const rawToken = sessionStorage.getItem('monogram_token')
+          || localStorage.getItem('monogram_token')
+          || localStorage.getItem('monogram_token_encrypted');
+        if (rawToken) {
+          // Try to decode as JWT
+          const parts = rawToken.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1]));
+            const uid = payload.user_id || payload.sub;
+            const uname = payload.username || '';
+            if (uid) {
+              setMyUsername(uname);
+              setMyUserId(Number(uid));
+              setStatus('confirm');
+              if (cardRef.current) {
+                animate(cardRef.current, {
+                  translate: ['40px 0', '0px 0'],
+                  opacity: [0, 1],
+                  duration: 400,
+                  ease: 'outCubic',
+                });
+              }
+              return;
+            }
+          }
         }
       } catch {}
 
