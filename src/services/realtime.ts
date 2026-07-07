@@ -10,20 +10,22 @@ class RealtimeService {
   private userId: number | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private sseSource: EventSource | null = null;
+  private sseReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private isConnecting = false;
 
   async connect(userId: number, token: string) {
+    if (this.isConnecting) return;
+    this.isConnecting = true;
     this.userId = userId;
     this.disconnect();
 
-    // Подключаемся к бэкенду, а не к фронтенду (Vercel не проксирует WS)
     const wsUrl = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
 
     try {
       this.ws = new WebSocket(`${wsUrl}/ws/${userId}`);
 
       this.ws.onopen = () => {
-        console.debug('[Realtime] WebSocket connected to', wsUrl);
-        // Отправляем токен в первом сообщении (не в URL)
+        this.isConnecting = false;
         this.ws?.send(JSON.stringify({ type: 'auth', token }));
       };
 
@@ -35,53 +37,55 @@ class RealtimeService {
       };
 
       this.ws.onclose = () => {
-        console.debug('[Realtime] WebSocket disconnected');
-        this.scheduleReconnect();
-        this.connectSSE(userId);
+        // WS закрылся — подключаем SSE с задержкой
+        if (!this.sseSource) {
+          this.scheduleSSE(5000);
+        }
       };
 
       this.ws.onerror = () => {
         this.ws?.close();
       };
     } catch {
-      this.connectSSE(userId);
+      this.isConnecting = false;
+      this.scheduleSSE(2000);
     }
+  }
+
+  private scheduleSSE(delay: number) {
+    if (this.sseReconnectTimer) return;
+    this.sseReconnectTimer = setTimeout(() => {
+      this.sseReconnectTimer = null;
+      if (this.userId && !this.sseSource) {
+        this.connectSSE(this.userId);
+      }
+    }, delay);
   }
 
   private async connectSSE(userId: number) {
     if (this.sseSource) return;
 
-    // Получаем расшифрованный токен из сессии
     const session = await getSession();
     const token = session?.token || '';
     if (!token) return;
 
-    // SSE тоже на бэкенде, не на Vercel
-    this.sseSource = new EventSource(`${BACKEND_URL}/api/sse/${userId}?token=${encodeURIComponent(token)}`);
-    this.sseSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        this.emit(data.type, data);
-      } catch {}
-    };
-    this.sseSource.onerror = () => {
-      this.sseSource?.close();
-      this.sseSource = null;
-    };
-  }
-
-  private async scheduleReconnect() {
-    if (this.reconnectTimer) return;
-    this.reconnectTimer = setTimeout(async () => {
-      this.reconnectTimer = null;
-      if (this.userId) {
-        const session = await getSession();
-        const token = session?.token || '';
-        if (token) {
-          this.connect(this.userId, token);
-        }
-      }
-    }, 3000);
+    try {
+      this.sseSource = new EventSource(`${BACKEND_URL}/api/sse/${userId}?token=${encodeURIComponent(token)}`);
+      this.sseSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          this.emit(data.type, data);
+        } catch {}
+      };
+      this.sseSource.onerror = () => {
+        this.sseSource?.close();
+        this.sseSource = null;
+        // Переподключаемся с большой задержкой
+        this.scheduleSSE(10000);
+      };
+    } catch {
+      this.scheduleSSE(10000);
+    }
   }
 
   private emit(type: string, data: any) {
@@ -110,9 +114,14 @@ class RealtimeService {
     this.ws = null;
     this.sseSource?.close();
     this.sseSource = null;
+    this.isConnecting = false;
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+    if (this.sseReconnectTimer) {
+      clearTimeout(this.sseReconnectTimer);
+      this.sseReconnectTimer = null;
     }
   }
 }

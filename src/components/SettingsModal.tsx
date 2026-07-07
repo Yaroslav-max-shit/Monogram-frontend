@@ -1302,7 +1302,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                     <div className="settings-item-icon">
 
-                      <Icon name="crown" size={22} color="#f59e0b" />
+                      <Icon name="crown" size={22} color="#C76E00" />
 
                     </div>
 
@@ -3397,16 +3397,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
             {!showPremiumPlans ? (
               <>
-                <div style={{background: 'linear-gradient(135deg, #f59e0b, #d97706)', padding: '32px 24px', textAlign: 'center', color: 'white', margin: '-24px -24px 24px', borderRadius: '0 0 20px 20px'}}>
-                  <h2 style={{margin: '0 0 8px', fontSize: '1.5rem'}}>Monogram Premium</h2>
-                  <p style={{opacity: 0.9, fontSize: '0.9rem', margin: 0}}>Разблокируйте все возможности</p>
+                <div style={{background: 'linear-gradient(135deg, #C76E00, #D94F04)', padding: '32px 24px', textAlign: 'center', color: 'white', margin: '-24px -24px 24px', borderRadius: '0 0 20px 20px', position: 'relative', overflow: 'hidden'}}>
+                  <div style={{position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none'}} />
+                  <div style={{position: 'absolute', bottom: -30, left: -15, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none'}} />
+                  <h2 style={{margin: '0 0 8px', fontSize: '1.5rem', position: 'relative', zIndex: 1}}>Monogram Premium</h2>
+                  <p style={{opacity: 0.9, fontSize: '0.9rem', margin: 0, position: 'relative', zIndex: 1}}>Разблокируйте все возможности</p>
                 </div>
 
                 <div style={{marginBottom: 24}}>
                   <div style={{display: 'grid', gridTemplateColumns: '1fr 70px 70px', gap: 0, fontSize: '0.8rem'}}>
                     <div style={{padding: '10px 12px', fontWeight: 600, color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border-color)'}}>Функция</div>
                     <div style={{padding: '10px 6px', textAlign: 'center', fontWeight: 600, color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border-color)'}}>Free</div>
-                    <div style={{padding: '10px 6px', textAlign: 'center', fontWeight: 600, color: '#f59e0b', borderBottom: '1px solid var(--border-color)'}}>Premium</div>
+                    <div style={{padding: '10px 6px', textAlign: 'center', fontWeight: 600, color: '#C76E00', borderBottom: '1px solid var(--border-color)'}}>Premium</div>
                     {[
                       { name: 'Обои и темы', free: '10', premium: '∞' },
                       { name: 'Акцентные цвета', free: '5', premium: '∞' },
@@ -3423,14 +3425,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                       <React.Fragment key={i}>
                         <div style={{padding: '8px 12px', borderBottom: '1px solid var(--border-color)'}}>{f.name}</div>
                         <div style={{padding: '8px 6px', textAlign: 'center', borderBottom: '1px solid var(--border-color)', color: 'var(--text-tertiary)'}}>{f.free}</div>
-                        <div style={{padding: '8px 6px', textAlign: 'center', borderBottom: '1px solid var(--border-color)', color: '#f59e0b', fontWeight: 600}}>{f.premium}</div>
+                        <div style={{padding: '8px 6px', textAlign: 'center', borderBottom: '1px solid var(--border-color)', color: '#C76E00', fontWeight: 600}}>{f.premium}</div>
                       </React.Fragment>
                     ))}
                   </div>
                 </div>
 
                 <button onClick={() => setShowPremiumPlans(true)} style={{
-                  width: '100%', padding: 14, background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                  width: '100%', padding: 14, background: 'linear-gradient(135deg, #C76E00, #D94F04)',
                   color: 'white', border: 'none', borderRadius: 12, fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
                 }}>
                   Выбрать тариф
