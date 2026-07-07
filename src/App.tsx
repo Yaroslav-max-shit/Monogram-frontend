@@ -320,7 +320,7 @@ const App: React.FC = () => {
     return Math.abs(hash) % 900000 + 100000;
   }, []);
 
-  const handleArchiveChat = async (chatId: number) => {
+  const handleDeleteChat = async (chatId: number) => {
     // Optimistic update — сразу убираем из списка
     recentlyDeletedRef.current.add(chatId);
     setSavedChats(prev => prev.filter(c => c.id !== chatId));
@@ -328,14 +328,22 @@ const App: React.FC = () => {
       setActiveChat(null);
     }
     try {
-      await apiClient.post(`/chats/${chatId}/archive`);
-      // Через 5 сек убираем из блок-листа
-      setTimeout(() => recentlyDeletedRef.current.delete(chatId), 5000);
+      await apiClient.post(`/chats/${chatId}/leave`);
     } catch (error) {
-      console.error('Ошибка архивации чата:', error);
-      // Если ошибка — возвращаем чат
-      recentlyDeletedRef.current.delete(chatId);
-      loadUserChats();
+      console.log('Chat leave result:', error);
+    }
+  };
+
+  const handleArchiveChat = async (chatId: number) => {
+    recentlyDeletedRef.current.add(chatId);
+    setSavedChats(prev => prev.filter(c => c.id !== chatId));
+    if (activeChat?.id === chatId) {
+      setActiveChat(null);
+    }
+    try {
+      await apiClient.post(`/chats/${chatId}/archive`);
+    } catch (error) {
+      console.log('Chat archive result:', error);
     }
   };
 
@@ -1391,7 +1399,7 @@ const App: React.FC = () => {
                 onPinChat={handlePinChat}
                 onArchiveChat={handleArchiveChat}
                 onMuteChat={handleMuteChat}
-                onDeleteChat={(id) => { if (confirm('Удалить чат?')) handleArchiveChat(id); }}
+                onDeleteChat={(id) => { if (confirm('Удалить чат?')) handleDeleteChat(id); }}
                 onBlockUser={(id) => { if (confirm('Заблокировать пользователя?')) apiClient.post(`/users/block/${id}`).catch(() => {}); }}
                 onClearHistory={(id) => { if (confirm('Очистить историю?')) apiClient.delete(`/chats/${id}`).catch(() => {}); }}
                 onAddToFolder={(id) => { /* TODO: open folder modal */ }}
@@ -1425,7 +1433,7 @@ const App: React.FC = () => {
                 onPinChat={handlePinChat}
                 onArchiveChat={handleArchiveChat}
                 onMuteChat={handleMuteChat}
-                onDeleteChat={(id) => { if (confirm('Удалить чат?')) handleArchiveChat(id); }}
+                onDeleteChat={(id) => { if (confirm('Удалить чат?')) handleDeleteChat(id); }}
                 onBlockUser={(id) => { if (confirm('Заблокировать пользователя?')) apiClient.post(`/users/block/${id}`).catch(() => {}); }}
                 onClearHistory={(id) => { if (confirm('Очистить историю?')) apiClient.delete(`/chats/${id}`).catch(() => {}); }}
                 onAddToFolder={(id) => { /* TODO: open folder modal */ }}
