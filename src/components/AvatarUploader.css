@@ -17,7 +17,7 @@
 
 .avatar-uploader-modal {
   width: 100%;
-  max-width: 400px;
+  max-width: 360px;
   background: var(--bg-primary);
   border-radius: 16px;
   overflow: hidden;
@@ -79,35 +79,39 @@
   cursor: not-allowed;
 }
 
+/* Canvas — auto-size, aspect-ratio 1 */
 .avatar-uploader-canvas {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  max-height: 50vh;
+  max-height: 55vh;
   overflow: hidden;
-  background: #1a1a1a;
+  background: #111;
   user-select: none;
   -webkit-user-select: none;
 }
 
+/* Dark overlay outside circle */
 .avatar-uploader-bg {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.65);
   z-index: 1;
 }
 
+/* Circle crop area */
 .avatar-uploader-circle {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 280px;
-  height: 280px;
+  width: 260px;
+  height: 260px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   overflow: hidden;
   z-index: 2;
-  background: #2a2a2a;
+  background: #222;
+  cursor: pointer;
 }
 
 .avatar-uploader-circle img {
@@ -118,19 +122,21 @@
   transform-origin: center center;
 }
 
+/* White border around circle */
 .avatar-uploader-border {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 284px;
-  height: 284px;
+  width: 264px;
+  height: 264px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 3px solid rgba(255, 255, 255, 0.8);
+  border: 3px solid rgba(255, 255, 255, 0.7);
   z-index: 3;
   pointer-events: none;
 }
 
+/* Placeholder inside circle */
 .avatar-uploader-placeholder {
   display: flex;
   flex-direction: column;
@@ -138,38 +144,52 @@
   justify-content: center;
   height: 100%;
   color: var(--text-tertiary);
-  gap: 12px;
+  gap: 10px;
 }
 
 .avatar-uploader-placeholder p {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
 }
 
+/* Rotation handle — positioned above the circle */
+.avatar-uploader-rotate-handle {
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: ew-resize;
+  z-index: 4;
+  transition: background 0.15s, transform 0.15s;
+  backdrop-filter: blur(4px);
+}
+
+.avatar-uploader-rotate-handle:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateX(-50%) scale(1.1);
+}
+
+.avatar-uploader-rotate-handle:active {
+  transform: translateX(-50%) scale(0.95);
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Zoom controls */
 .avatar-uploader-controls {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
-}
-
-.avatar-uploader-rotate {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: var(--bg-tertiary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-primary);
-  transition: background 0.15s;
-  flex-shrink: 0;
-}
-
-.avatar-uploader-rotate:hover {
-  background: var(--border-color);
+  padding: 12px 16px;
+  color: var(--text-tertiary);
 }
 
 .avatar-uploader-zoom-slider {
@@ -185,8 +205,8 @@
 .avatar-uploader-zoom-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--accent);
   cursor: pointer;
@@ -194,18 +214,19 @@
 }
 
 .avatar-uploader-zoom-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--accent);
   cursor: pointer;
   border: 2px solid white;
 }
 
+/* Upload button */
 .avatar-uploader-actions {
   display: flex;
   justify-content: center;
-  padding: 24px 16px;
+  padding: 20px 16px;
 }
 
 .avatar-uploader-upload-btn {
@@ -214,7 +235,7 @@
   gap: 8px;
   padding: 12px 24px;
   background: var(--accent);
-  color: white;
+  color: #000;
   border-radius: 12px;
   cursor: pointer;
   font-size: 14px;
@@ -234,14 +255,14 @@
     max-height: 100vh;
     border-radius: 0;
   }
-  
+
   .avatar-uploader-circle {
-    width: 240px;
-    height: 240px;
+    width: 220px;
+    height: 220px;
   }
-  
+
   .avatar-uploader-border {
-    width: 244px;
-    height: 244px;
+    width: 224px;
+    height: 224px;
   }
 }

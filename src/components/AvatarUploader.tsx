@@ -13,29 +13,36 @@ interface AvatarUploaderProps {
 
 const AvatarUploader: React.FC<AvatarUploaderProps> = ({ onAvatarSaved, onClose, currentAvatar }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [rotateStart, setRotateStart] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [cropSize] = useState(280);
+  const [cropSize] = useState(260);
 
-  const minScale = 0.5;
-  const maxScale = 1.8;
+  const minScale = 0.3;
+  const maxScale = 2.5;
 
-  // Загрузка изображения
+  // Авто-размер при загрузке изображения
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (ev) => {
       const img = new Image();
       img.onload = () => {
+        // Авто-подгонка: чтобы изображение было видно полностью в круге
+        const containerSize = cropSize * 2;
+        const minDim = Math.min(img.width, img.height);
+        const autoScale = containerSize / minDim;
+        const fitScale = Math.max(minScale, Math.min(maxScale, autoScale * 0.85));
         setImage(img);
-        setScale(1);
+        setScale(fitScale);
         setPosition({ x: 0, y: 0 });
         setRotation(0);
       };
@@ -44,80 +51,101 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ onAvatarSaved, onClose,
     reader.readAsDataURL(file);
   };
 
-  // Зум колёсиком мыши
+  // Клик по кругу — открыть файл
+  const handleCircleClick = () => {
+    if (!image) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  // Зум колёсиком
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.05 : 0.05;
+    const delta = e.deltaY > 0 ? -0.08 : 0.08;
     setScale(prev => Math.max(minScale, Math.min(maxScale, prev + delta)));
   }, []);
 
-  // Начало перетаскивания
+  // Перетаскивание
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!image) return;
+    if (!image || isRotating) return;
+    e.preventDefault();
     setIsDragging(true);
     setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
   };
 
-  // Перетаскивание
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging || !image) return;
-    
-    const newX = e.clientX - dragStart.x;
-    const newY = e.clientY - dragStart.y;
-    
-    // Ограничиваем перемещение, чтобы изображение не выходило за круг
-    const maxOffset = (image.width * scale - cropSize) / 2;
-    const clampedX = Math.max(-maxOffset, Math.min(maxOffset, newX));
-    const clampedY = Math.max(-maxOffset, Math.min(maxOffset, newY));
-    
-    setPosition({ x: clampedX, y: clampedY });
-  }, [isDragging, dragStart, image, scale, cropSize]);
+    if (isDragging) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    }
+    if (isRotating) {
+      const dx = e.clientX - rotateStart;
+      setRotation(prev => prev + dx * 0.5);
+      setRotateStart(e.clientX);
+    }
+  }, [isDragging, isRotating, dragStart, rotateStart]);
 
-  // Конец перетаскивания
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
+    setIsRotating(false);
+  }, []);
+
+  // Поворот через ручку
+  const handleRotateStart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsRotating(true);
+    setRotateStart(e.clientX);
   };
 
-  // Поворот
-  const handleRotate = () => {
-    setRotation(prev => (prev + 90) % 360);
+  // Touch events
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!image) return;
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX - position.x, y: e.touches[0].clientY - position.y });
+    }
   };
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isDragging && e.touches.length === 1) {
+      setPosition({
+        x: e.touches[0].clientX - dragStart.x,
+        y: e.touches[0].clientY - dragStart.y,
+      });
+    }
+  }, [isDragging, dragStart]);
 
   // Сохранение
   const handleSave = async () => {
-    if (!image || !containerRef.current) return;
-    
+    if (!image) return;
     setLoading(true);
     try {
       const canvas = document.createElement('canvas');
-      canvas.width = cropSize * 2; // 2x для высокого качества
+      canvas.width = cropSize * 2;
       canvas.height = cropSize * 2;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Рисуем круглую маску
+      // Круглая маска
       ctx.beginPath();
       ctx.arc(cropSize, cropSize, cropSize, 0, Math.PI * 2);
       ctx.clip();
 
-      // Применяем трансформации
       ctx.translate(cropSize, cropSize);
       ctx.rotate((rotation * Math.PI) / 180);
       ctx.scale(scale, scale);
       ctx.translate(position.x / scale, position.y / scale);
 
-      // Рисуем изображение по центру
       const imgW = image.width;
       const imgH = image.height;
       ctx.drawImage(image, -imgW / 2, -imgH / 2, imgW, imgH);
 
-      // Конвертируем в blob и загружаем
       canvas.toBlob(async (blob) => {
         if (!blob) return;
-        
         const formData = new FormData();
         formData.append('avatar', blob, 'avatar.jpg');
-        
         try {
           const res = await apiClient.post('/users/avatar', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
@@ -138,7 +166,6 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ onAvatarSaved, onClose,
     }
   };
 
-  // Обработка Escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -155,8 +182,8 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ onAvatarSaved, onClose,
             <Icon name="x" size={20} />
           </button>
           <h3>Фото профиля</h3>
-          <button 
-            onClick={handleSave} 
+          <button
+            onClick={handleSave}
             className="avatar-uploader-save"
             disabled={!image || loading}
           >
@@ -164,7 +191,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ onAvatarSaved, onClose,
           </button>
         </div>
 
-        <div 
+        <div
           className="avatar-uploader-canvas"
           ref={containerRef}
           onWheel={handleWheel}
@@ -172,12 +199,14 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ onAvatarSaved, onClose,
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
-          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleMouseUp}
+          style={{ cursor: isDragging ? 'grabbing' : isRotating ? 'ew-resize' : 'pointer' }}
+          onClick={handleCircleClick}
         >
-          {/* Серый фон за пределами круга */}
           <div className="avatar-uploader-bg" />
-          
-          {/* Круглая область обрезки */}
+
           <div className="avatar-uploader-circle">
             {image ? (
               <img
@@ -186,26 +215,35 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ onAvatarSaved, onClose,
                 draggable={false}
                 style={{
                   transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-                  transition: isDragging ? 'none' : 'transform 0.15s ease',
+                  transition: (isDragging || isRotating) ? 'none' : 'transform 0.15s ease',
                 }}
               />
             ) : (
               <div className="avatar-uploader-placeholder">
                 <Icon name="camera" size={48} />
-                <p>Выберите фото</p>
+                <p>Нажмите чтобы выбрать фото</p>
               </div>
             )}
           </div>
-          
-          {/* Граница круга */}
+
           <div className="avatar-uploader-border" />
+
+          {/* Ручка поворота */}
+          {image && (
+            <div
+              className="avatar-uploader-rotate-handle"
+              onMouseDown={handleRotateStart}
+              onTouchStart={(e) => { e.stopPropagation(); setIsRotating(true); setRotateStart(e.touches[0].clientX); }}
+            >
+              <Icon name="rotate-cw" size={16} />
+            </div>
+          )}
         </div>
 
+        {/* Зум-слайдер */}
         {image && (
           <div className="avatar-uploader-controls">
-            <button onClick={handleRotate} className="avatar-uploader-rotate" title="Повернуть">
-              <Icon name="rotate-cw" size={20} />
-            </button>
+            <Icon name="zoom-out" size={16} />
             <input
               type="range"
               min={minScale * 100}
@@ -214,15 +252,18 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ onAvatarSaved, onClose,
               onChange={(e) => setScale(Number(e.target.value) / 100)}
               className="avatar-uploader-zoom-slider"
             />
+            <Icon name="zoom-in" size={16} />
           </div>
         )}
 
+        {/* Кнопка загрузки */}
         {!image && (
           <div className="avatar-uploader-actions">
             <label className="avatar-uploader-upload-btn">
               <Icon name="image" size={20} />
               Выбрать фото
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleFileSelect}
