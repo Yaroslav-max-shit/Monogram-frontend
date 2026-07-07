@@ -365,15 +365,22 @@ const App: React.FC = () => {
       if (!chatId) return prev;
       const exists = prev.find(c => c.id === chatId);
       
+      // Не увеличиваем unread для активного чата
+      const isActiveChat = activeChat?.id === chatId;
+      
       if (exists) {
-        return prev.map(c => 
+        // Перемещаем чат наверх списка
+        const updated = prev.map(c => 
           c.id === chatId ? { 
             ...c, 
-            lastMessage: msg.content?.substring(0, 30) || 'Новое сообщение',
+            lastMessage: msg.content?.substring(0, 50) || 'Новое сообщение',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            unreadCount: (c.unreadCount || 0) + 1 
+            unreadCount: isActiveChat ? 0 : (c.unreadCount || 0) + 1 
           } : c
         );
+        const chat = updated.find(c => c.id === chatId);
+        const rest = updated.filter(c => c.id !== chatId);
+        return chat ? [chat, ...rest] : updated;
       }
       
       // Новый чат — загружаем имя собеседника
@@ -383,9 +390,9 @@ const App: React.FC = () => {
         id: chatId,
         name: chatName,
         type: msg.chat_type || 'private',
-        lastMessage: msg.content?.substring(0, 30) || 'Новое сообщение',
+        lastMessage: msg.content?.substring(0, 50) || 'Новое сообщение',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        unreadCount: 1,
+        unreadCount: isActiveChat ? 0 : 1,
         isPinned: false,
       }, ...prev];
     });
@@ -881,12 +888,12 @@ const App: React.FC = () => {
     });
   }, [isLoggedIn]);
 
-  // Polling: refresh chat list every 10 seconds (reduced from 5)
+  // Fallback polling: only every 60 seconds (real-time updates come via WebSocket)
   useEffect(() => {
     if (!isLoggedIn) return;
     const interval = setInterval(() => {
       loadUserChats();
-    }, 5000);
+    }, 60000);
     return () => clearInterval(interval);
   }, [isLoggedIn]);
 
