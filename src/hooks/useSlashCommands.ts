@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import apiClient from '../services/api';
 
 interface ChatMember {
   id: number;
@@ -9,16 +10,42 @@ interface ChatMember {
   role?: string;
 }
 
-const COMMANDS = ['/mute', '/kick', '/ban', '/unmute', '/pin', '/admin'];
+interface BotCommand {
+  command: string;
+  description: string;
+}
 
-export function useSlashCommands(chatType: string, members: ChatMember[]) {
+const GROUP_COMMANDS = ['/mute', '/kick', '/ban', '/unmute', '/pin', '/admin'];
+
+export function useSlashCommands(chatType: string, members: ChatMember[], isBot: boolean = false) {
   const [command, setCommand] = useState<string>('');
   const [args, setArgs] = useState<string>('');
   const [showMemberList, setShowMemberList] = useState(false);
   const [filteredMembers, setFilteredMembers] = useState<ChatMember[]>([]);
+  const [botCommands, setBotCommands] = useState<BotCommand[]>([]);
+
+  // Load bot commands when it's a bot chat
+  useEffect(() => {
+    if (!isBot) return;
+    // Try to load bot commands from local storage or API
+    const stored = localStorage.getItem('bot_commands');
+    if (stored) {
+      try {
+        setBotCommands(JSON.parse(stored));
+      } catch {}
+    }
+  }, [isBot]);
+
+  const allCommands = isBot
+    ? botCommands.map(c => `/${c.command}`)
+    : GROUP_COMMANDS;
+
+  const allCommandsWithDesc = isBot
+    ? botCommands.map(c => ({ cmd: `/${c.command}`, desc: c.description }))
+    : GROUP_COMMANDS.map(c => ({ cmd: c, desc: '' }));
 
   const handleInput = useCallback((text: string) => {
-    if (!text.startsWith('/') || chatType === 'private') {
+    if (!text.startsWith('/') || (chatType === 'private' && !isBot)) {
       setCommand('');
       setArgs('');
       setShowMemberList(false);
@@ -32,8 +59,8 @@ export function useSlashCommands(chatType: string, members: ChatMember[]) {
     setCommand(cmd);
     setArgs(argText);
 
-    // After /command + space, show member autocomplete
-    if (parts.length >= 2 && COMMANDS.includes(cmd)) {
+    // After /command + space, show member autocomplete (for group commands)
+    if (parts.length >= 2 && GROUP_COMMANDS.includes(cmd)) {
       const searchText = argText.replace('@', '').toLowerCase();
       const filtered = members.filter(m =>
         m.username.toLowerCase().includes(searchText) ||
@@ -48,13 +75,14 @@ export function useSlashCommands(chatType: string, members: ChatMember[]) {
     setShowMemberList(false);
 
     // Show command list when typing /
-    if (parts.length === 1 && COMMANDS.some(c => c.startsWith(cmd))) {
-      const filtered = COMMANDS.filter(c => c.startsWith(cmd));
-      return { showCommands: true, filteredCommands: filtered };
+    if (parts.length === 1) {
+      const filtered = allCommands.filter(c => c.startsWith(cmd));
+      const filteredWithDesc = allCommandsWithDesc.filter(c => c.cmd.startsWith(cmd));
+      return { showCommands: true, filteredCommands: filteredWithDesc.map(c => c.cmd) };
     }
 
     return { showCommands: false, filteredCommands: [] as string[] };
-  }, [chatType, members]);
+  }, [chatType, members, isBot, allCommands, allCommandsWithDesc]);
 
   const selectMember = useCallback((username: string) => {
     const newText = `${command} @${username} `;
@@ -71,7 +99,7 @@ export function useSlashCommands(chatType: string, members: ChatMember[]) {
   }, []);
 
   return {
-    command, args, showMemberList, filteredMembers,
-    handleInput, selectMember, reset, commands: COMMANDS,
+    command, args, showMemberList, filteredMembers, botCommands,
+    handleInput, selectMember, reset, commands: allCommands,
   };
 }

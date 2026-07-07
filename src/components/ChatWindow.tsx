@@ -118,6 +118,7 @@ interface ChatWindowProps {
   onSaveDraft?: (chatId: number, text: string) => void;
   onStartCall?: (peerId: number, peerName: string) => void;
   onMessageSent?: () => void;
+  isBot?: boolean;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ 
@@ -131,6 +132,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   onSaveDraft,
   onStartCall,
   onMessageSent,
+  isBot = false,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -176,7 +178,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const mentionTriggerIndex = useRef(-1);
   
   // Slash Commands
-  const slashCommands = useSlashCommands(chatType, chatMembers);
+  const slashCommands = useSlashCommands(chatType, chatMembers, isBot);
   const [showCommandList, setShowCommandList] = useState(false);
   const [filteredCommands, setFilteredCommands] = useState<string[]>([]);
   const [commandSelected, setCommandSelected] = useState(false);
@@ -864,8 +866,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       setShowMentions(false);
     }
 
-    // Slash commands detection (group chats only)
-    if (value.startsWith('/') && chatType !== 'private') {
+    // Slash commands detection (group chats AND bot chats)
+    if (value.startsWith('/') && (chatType !== 'private' || isBot)) {
       const cmdResult = slashCommands.handleInput(value);
       setShowCommandList(cmdResult.showCommands);
       setFilteredCommands(cmdResult.filteredCommands);
@@ -1928,15 +1930,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Slash Commands List */}
       {showCommandList && filteredCommands.length > 0 && (
         <div className="command-list-dropdown">
-          {filteredCommands.map(cmd => (
-            <div
-              key={cmd}
-              className="command-item"
-              onClick={() => handleCommandSelect(cmd)}
-            >
-              <span className="command-name">{cmd}</span>
-            </div>
-          ))}
+          {filteredCommands.map(cmd => {
+            const botCmd = slashCommands.botCommands?.find((c: any) => `/${c.command}` === cmd);
+            return (
+              <div
+                key={cmd}
+                className="command-item"
+                onClick={() => handleCommandSelect(cmd)}
+              >
+                <span className="command-name">{cmd}</span>
+                {botCmd && <span className="command-desc">{botCmd.description}</span>}
+              </div>
+            );
+          })}
         </div>
       )}
 
