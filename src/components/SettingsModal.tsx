@@ -1146,7 +1146,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="settings-item-icon">
 
-                  <Icon name="logo" size={22} />
+                  <Icon name="message-circle" size={22} />
 
                 </div>
 
@@ -1400,7 +1400,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="settings-item-icon">
 
-                  <Icon name="logo" size={22} />
+                  <Icon name="message-circle" size={22} />
 
                 </div>
 

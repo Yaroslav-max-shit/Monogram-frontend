@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import Icon from './Icon';
 import apiClient from '../services/api';
+import './AvatarUploader.css';
 
 const BACKEND_URL = 'https://monogram-backend-dxv4.onrender.com';
 
