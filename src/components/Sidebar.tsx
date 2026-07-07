@@ -260,7 +260,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               >
                 <div className="chat-avatar" style={{background: 'var(--accent)', overflow: 'hidden'}}>
                   {user.avatar_url ? (
-                    <img src={user.avatar_url} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                    <img src={getAvatarUrl(user.avatar_url)} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
                   ) : (
                     (user.first_name || user.username || '?').charAt(0).toUpperCase()
                   )}
