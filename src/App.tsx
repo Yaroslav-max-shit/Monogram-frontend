@@ -1161,6 +1161,11 @@ const App: React.FC = () => {
     return <ResetPassword />;
   }
 
+  if (window.location.pathname === '/bot-docs') {
+    const BotDocsPage = React.lazy(() => import('./pages/BotDocsPage'));
+    return <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center' }}>Загрузка...</div>}><BotDocsPage /></React.Suspense>;
+  }
+
   const registerMatch = window.location.pathname === '/register-username';
   if (registerMatch) {
     return <RegisterUsername />;
