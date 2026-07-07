@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getSession, saveSession } from './cookies';
+import { getSession, saveSession, clearSession } from './cookies';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com';
 
@@ -66,10 +66,9 @@ apiClient.interceptors.response.use(
                 }
             } catch (refreshError) {
                 processQueue(refreshError, null);
-                const path = window.location.pathname;
-                if (path !== '/' && path !== '/login' && !path.startsWith('/invite') && !path.startsWith('/verify')) {
-                    window.location.href = '/';
-                }
+                // Токен истёк — выходим из аккаунта
+                clearSession();
+                window.location.href = '/';
             } finally {
                 isRefreshing = false;
             }
