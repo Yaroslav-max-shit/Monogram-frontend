@@ -91,11 +91,11 @@
   -webkit-user-select: none;
 }
 
-/* Dark overlay outside circle */
+/* Dark overlay outside circle — radial gradient: clear center, dark outside */
 .avatar-uploader-bg {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: radial-gradient(circle at 50% 50%, transparent 160px, rgba(0, 0, 0, 0.6) 162px);
   z-index: 1;
 }
 
@@ -104,8 +104,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 260px;
-  height: 260px;
+  width: 320px;
+  height: 320px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   overflow: hidden;
@@ -127,8 +127,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 264px;
-  height: 264px;
+  width: 324px;
+  height: 324px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   border: 3px solid rgba(255, 255, 255, 0.7);
@@ -257,12 +257,12 @@
   }
 
   .avatar-uploader-circle {
-    width: 220px;
-    height: 220px;
+    width: 260px;
+    height: 260px;
   }
 
   .avatar-uploader-border {
-    width: 224px;
-    height: 224px;
+    width: 264px;
+    height: 264px;
   }
 }

@@ -23,7 +23,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ onAvatarSaved, onClose,
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [rotateStart, setRotateStart] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [cropSize] = useState(260);
+  const [cropSize] = useState(320);
 
   const minScale = 0.3;
   const maxScale = 2.5;
@@ -36,11 +36,11 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({ onAvatarSaved, onClose,
     reader.onload = (ev) => {
       const img = new Image();
       img.onload = () => {
-        // Авто-подгонка: чтобы изображение было видно полностью в круге
+        // Авто-подгонка: фото полностью видно в круге
         const containerSize = cropSize * 2;
-        const minDim = Math.min(img.width, img.height);
-        const autoScale = containerSize / minDim;
-        const fitScale = Math.max(minScale, Math.min(maxScale, autoScale * 0.85));
+        const maxDim = Math.max(img.width, img.height);
+        const autoScale = containerSize / maxDim;
+        const fitScale = Math.max(minScale, Math.min(maxScale, autoScale * 0.9));
         setImage(img);
         setScale(fitScale);
         setPosition({ x: 0, y: 0 });
