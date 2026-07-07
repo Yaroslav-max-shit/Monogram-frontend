@@ -829,7 +829,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     typingTimeoutRef.current = setTimeout(() => {}, 1000);
   };
 
-  const saveDraftTimer = useRef<ReturnType<typeof setTimeout>>();
+  // Save draft only when leaving chat (unmount or chat change)
+  useEffect(() => {
+    return () => {
+      if (onSaveDraft && inputText.trim()) {
+        onSaveDraft(chatId, inputText);
+      }
+    };
+  }, [chatId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setInputText(value);
@@ -863,13 +871,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       setFilteredCommands(cmdResult.filteredCommands);
     } else {
       setShowCommandList(false);
-    }
-
-    if (onSaveDraft) {
-      if (saveDraftTimer.current) clearTimeout(saveDraftTimer.current);
-      saveDraftTimer.current = setTimeout(() => {
-        onSaveDraft(chatId, value);
-      }, 300);
     }
   };
 

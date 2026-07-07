@@ -53,6 +53,19 @@ function getChatAvatar(chat: any): { letter: string; color: string } {
   return { letter, color: avatarColors[colorIndex] };
 }
 
+function getDraftPreview(chatId: number): string | null {
+  try {
+    const raw = localStorage.getItem(`draft_${chatId}`);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    const text = typeof data === 'string' ? data : data.content || '';
+    if (!text || !text.trim()) return null;
+    return text.substring(0, 40);
+  } catch {
+    return null;
+  }
+}
+
 const Sidebar: React.FC<SidebarProps> = ({
   chats, activeChatId, onChatSelect,
   onProfileClick, onSettingsClick, onNotificationsClick, onLogout,
@@ -276,8 +289,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {chat.name || chat.title || 'Чат'}
                   {chat.isPinned && <Icon name="pin" size={12} className="chat-pin-icon" />}
                 </span>
-                <span className="chat-last-message">
-                  {chat.last_message?.content?.substring(0, 30) || chat.lastMessage?.substring(0, 30) || ''}
+                <span className="chat-last-message" style={getDraftPreview(chat.id) ? { color: 'var(--accent)' } : undefined}>
+                  {getDraftPreview(chat.id)
+                    ? `Черновик: ${getDraftPreview(chat.id)}...`
+                    : chat.last_message?.content?.substring(0, 30) || chat.lastMessage?.substring(0, 30) || ''}
                 </span>
               </div>
               {chat.unreadCount > 0 && (
