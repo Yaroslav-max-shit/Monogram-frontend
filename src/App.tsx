@@ -120,6 +120,7 @@ const App: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [activeChat, setActiveChat] = useState<{ id: number; name: string; type?: string } | null>(null);
   const [savedChats, setSavedChats] = useState<ChatInfo[]>([]);
+  const recentlyDeletedRef = useRef(new Set<number>());
   const [isPremium, setIsPremium] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline'>('online');
   
@@ -292,6 +293,9 @@ const App: React.FC = () => {
           });
         }
         
+        // Фильтруем недавно удалённые
+        chats = chats.filter((c: any) => !recentlyDeletedRef.current.has(c.id));
+        
         setSavedChats(chats);
         // Кэшируем для оффлайн-доступа
         cacheChats(chats);
@@ -317,11 +321,21 @@ const App: React.FC = () => {
   }, []);
 
   const handleArchiveChat = async (chatId: number) => {
+    // Optimistic update — сразу убираем из списка
+    recentlyDeletedRef.current.add(chatId);
+    setSavedChats(prev => prev.filter(c => c.id !== chatId));
+    if (activeChat?.id === chatId) {
+      setActiveChat(null);
+    }
     try {
       await apiClient.post(`/chats/${chatId}/archive`);
-      loadUserChats();
+      // Через 5 сек убираем из блок-листа
+      setTimeout(() => recentlyDeletedRef.current.delete(chatId), 5000);
     } catch (error) {
       console.error('Ошибка архивации чата:', error);
+      // Если ошибка — возвращаем чат
+      recentlyDeletedRef.current.delete(chatId);
+      loadUserChats();
     }
   };
 

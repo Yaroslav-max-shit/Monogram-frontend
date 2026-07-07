@@ -362,7 +362,7 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
           Войти через Google
         </button>
 
-        <button onClick={() => { window.location.href = `${window.location.origin}/auth/yandex` }} className="yandex-login-btn" disabled={loading}>
+        <button onClick={() => { window.location.href = `https://monogram-backend-dxv4.onrender.com/auth/yandex` }} className="yandex-login-btn" disabled={loading}>
           <img src="/assets/images/Yandex_icon.svg" alt="Я" style={{ width: 20, height: 20 }} />
           Войти через Яндекс
         </button>
