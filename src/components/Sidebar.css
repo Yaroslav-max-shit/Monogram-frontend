@@ -96,7 +96,7 @@
   right: 0;
   margin-top: 6px;
   background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  border: none;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   padding: 6px;
@@ -209,6 +209,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chat-name .chat-pin-icon,
+.chat-name .chat-mute-icon {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.chat-mute-icon {
+  color: var(--text-tertiary);
 }
 
 .chat-last-message {
@@ -229,6 +242,11 @@
   min-width: 18px;
   text-align: center;
   flex-shrink: 0;
+}
+
+.chat-unread.muted {
+  background: var(--text-tertiary);
+  opacity: 0.6;
 }
 
 .sidebar-footer {

@@ -66,6 +66,13 @@ function getDraftPreview(chatId: number): string | null {
   }
 }
 
+function formatPreview(text: string | undefined | null): string {
+  if (!text) return '';
+  const clean = text.replace(/\n/g, ' ').trim();
+  if (clean.length <= 50) return clean;
+  return clean.substring(0, 50) + '...';
+}
+
 const Sidebar: React.FC<SidebarProps> = ({
   chats, activeChatId, onChatSelect,
   onProfileClick, onSettingsClick, onNotificationsClick, onLogout,
@@ -162,9 +169,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     setOrderedChats(reordered);
   }, [orderedChats, userData?.id]);
 
-  const filteredChats = orderedChats.filter(chat =>
-    !debouncedSearch || chat.name?.toLowerCase().includes(debouncedSearch.toLowerCase())
-  );
+  const filteredChats = orderedChats
+    .filter(chat =>
+      !debouncedSearch || chat.name?.toLowerCase().includes(debouncedSearch.toLowerCase())
+    )
+    .sort((a, b) => {
+      // Pinned chats first
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    });
 
   const handleAddClick = () => {
     setShowAddMenu(!showAddMenu);
@@ -288,15 +302,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <span className="chat-name">
                   {chat.name || chat.title || 'Чат'}
                   {chat.isPinned && <Icon name="pin" size={12} className="chat-pin-icon" />}
+                  {chat.isMuted && <Icon name="volume-off" size={12} className="chat-mute-icon" />}
                 </span>
                 <span className="chat-last-message" style={getDraftPreview(chat.id) ? { color: 'var(--accent)' } : undefined}>
                   {getDraftPreview(chat.id)
                     ? `Черновик: ${getDraftPreview(chat.id)}...`
-                    : chat.last_message?.content?.substring(0, 30) || chat.lastMessage?.substring(0, 30) || ''}
+                    : formatPreview(chat.last_message?.content) || formatPreview(chat.lastMessage) || ''}
                 </span>
               </div>
               {chat.unreadCount > 0 && (
-                <span className="chat-unread">{chat.unreadCount}</span>
+                <span className={`chat-unread ${chat.isMuted ? 'muted' : ''}`}>{chat.unreadCount}</span>
               )}
             </div>
           );
