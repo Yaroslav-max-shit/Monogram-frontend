@@ -39,6 +39,8 @@ const AdminPanel: React.FC<{ onBack: () => void; onLogout: () => void }> = ({ on
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
+  const [expandedUserData, setExpandedUserData] = useState<any>(null);
+  const [expandedUserLoading, setExpandedUserLoading] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; userId: number } | null>(null);
   const [selectedAdmins, setSelectedAdmins] = useState<number[]>([]);
   const [newAdminUsername, setNewAdminUsername] = useState('');
@@ -144,6 +146,23 @@ const AdminPanel: React.FC<{ onBack: () => void; onLogout: () => void }> = ({ on
     } catch (e: any) {
       alert(e.response?.data?.detail || 'Ошибка');
     }
+  };
+
+  const handleExpandUser = async (userId: number) => {
+    if (expandedUser === userId) {
+      setExpandedUser(null);
+      setExpandedUserData(null);
+      return;
+    }
+    setExpandedUser(userId);
+    setExpandedUserLoading(true);
+    try {
+      const res = await apiClient.get(`/admin/user/${userId}`);
+      setExpandedUserData(res.data);
+    } catch (e) {
+      console.error('Failed to load user data:', e);
+    }
+    setExpandedUserLoading(false);
   };
 
   const filteredUsers = users.filter(u =>
@@ -260,7 +279,7 @@ const AdminPanel: React.FC<{ onBack: () => void; onLogout: () => void }> = ({ on
                 <div key={user.id} className="user-item-wrapper">
                   <div
                     className={`user-item ${expandedUser === user.id ? 'expanded' : ''}`}
-                    onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
+                    onClick={() => handleExpandUser(user.id)}
                     onContextMenu={(e) => handleContextMenu(e, user.id)}
                   >
                     <div className="user-avatar">
@@ -280,10 +299,72 @@ const AdminPanel: React.FC<{ onBack: () => void; onLogout: () => void }> = ({ on
                   </div>
                   {expandedUser === user.id && (
                     <div className="user-details">
-                      <div className="detail-row"><span>ID:</span><span>{user.id}</span></div>
-                      <div className="detail-row"><span>Email:</span><span>{user.email}</span></div>
-                      <div className="detail-row"><span>Имя:</span><span>{user.first_name} {user.last_name}</span></div>
-                      <div className="detail-row"><span>Админ:</span><span>{selectedAdmins.includes(user.id) ? 'Да' : 'Нет'}</span></div>
+                      {expandedUserLoading ? (
+                        <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-tertiary)' }}>Загрузка...</div>
+                      ) : expandedUserData ? (
+                        <>
+                          {/* Основная информация */}
+                          <div className="detail-section">
+                            <div className="detail-section-title">Профиль</div>
+                            <div className="detail-row"><span>ID</span><span>{expandedUserData.id}</span></div>
+                            <div className="detail-row"><span>Username</span><span>@{expandedUserData.username}</span></div>
+                            <div className="detail-row"><span>Email</span><span>{expandedUserData.email}</span></div>
+                            <div className="detail-row"><span>Имя</span><span>{expandedUserData.first_name} {expandedUserData.last_name}</span></div>
+                            {expandedUserData.profile?.phone && <div className="detail-row"><span>Телефон</span><span>{expandedUserData.profile.phone}</span></div>}
+                            {expandedUserData.profile?.bio && <div className="detail-row"><span>О себе</span><span>{expandedUserData.profile.bio}</span></div>}
+                            {expandedUserData.profile?.location && <div className="detail-row"><span>Локация</span><span>{expandedUserData.profile.location}</span></div>}
+                            {expandedUserData.language && <div className="detail-row"><span>Язык</span><span>{expandedUserData.language}</span></div>}
+                            <div className="detail-row"><span>Админ</span><span>{selectedAdmins.includes(expandedUserData.id) ? 'Да' : 'Нет'}</span></div>
+                            <div className="detail-row"><span>Бот</span><span>{expandedUserData.is_bot ? 'Да' : 'Нет'}</span></div>
+                            <div className="detail-row"><span>Сообщений</span><span>{expandedUserData.total_messages}</span></div>
+                            <div className="detail-row"><span>Создан</span><span>{expandedUserData.created_at ? new Date(expandedUserData.created_at).toLocaleString('ru') : '—'}</span></div>
+                            {expandedUserData.last_login && <div className="detail-row"><span>Последний вход</span><span>{new Date(expandedUserData.last_login).toLocaleString('ru')}</span></div>}
+                            {expandedUserData.premium_until && <div className="detail-row"><span>Premium до</span><span style={{ color: '#f59e0b' }}>{new Date(expandedUserData.premium_until).toLocaleDateString('ru')}</span></div>}
+                          </div>
+
+                          {/* QuarkPay */}
+                          <div className="detail-section">
+                            <div className="detail-section-title">QuarkPay</div>
+                            <div className="detail-row">
+                              <span>Подключён</span>
+                              <span style={{ color: expandedUserData.quarkpay?.connected ? '#22C55E' : 'var(--text-tertiary)' }}>
+                                {expandedUserData.quarkpay?.connected ? 'Да' : 'Нет'}
+                              </span>
+                            </div>
+                            {expandedUserData.quarkpay?.username && (
+                              <div className="detail-row"><span>QP Username</span><span>{expandedUserData.quarkpay.username}</span></div>
+                            )}
+                          </div>
+
+                          {/* Чаты */}
+                          <div className="detail-section">
+                            <div className="detail-section-title">Чаты ({expandedUserData.chats?.length || 0})</div>
+                            {expandedUserData.chats?.length > 0 ? (
+                              expandedUserData.chats.map((chat: any) => (
+                                <div key={chat.id} className="detail-chat-item">
+                                  <div className="detail-chat-icon">
+                                    {chat.type === 'channel' ? <Icon name="share" size={14} /> :
+                                     chat.type === 'group' ? <Icon name="useradd" size={14} /> :
+                                     <Icon name="profile" size={14} />}
+                                  </div>
+                                  <div className="detail-chat-info">
+                                    <div className="detail-chat-name">{chat.name || `Чат ${chat.id}`}</div>
+                                    <div className="detail-chat-meta">
+                                      {chat.type === 'channel' ? 'Канал' : chat.type === 'group' ? 'Группа' : 'Личный'}
+                                      {' · '}{chat.members_count} участн. · {chat.messages_count} сообщ.
+                                    </div>
+                                    {chat.last_message && (
+                                      <div className="detail-chat-last">{chat.last_message.substring(0, 60)}...</div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div style={{ padding: 12, color: 'var(--text-tertiary)', fontSize: '0.82rem' }}>Нет чатов</div>
+                            )}
+                          </div>
+                        </>
+                      ) : null}
                     </div>
                   )}
                 </div>

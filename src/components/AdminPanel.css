@@ -376,17 +376,36 @@
 /* Детали пользователя */
 .admin-panel .user-details {
   padding: 16px 18px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
   background: var(--bg-primary);
+}
+
+.admin-panel .detail-section {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-panel .detail-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.admin-panel .detail-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  margin-bottom: 10px;
 }
 
 .admin-panel .detail-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  padding: 4px 0;
 }
 
 .admin-panel .detail-row span:first-child {
@@ -397,6 +416,58 @@
 
 .admin-panel .detail-row span:last-child {
   color: var(--text-primary);
+}
+
+.admin-panel .detail-chat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.admin-panel .detail-chat-item:hover {
+  background: var(--bg-secondary);
+}
+
+.admin-panel .detail-chat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.admin-panel .detail-chat-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-panel .detail-chat-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-panel .detail-chat-meta {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+}
+
+.admin-panel .detail-chat-last {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ============================================ */
