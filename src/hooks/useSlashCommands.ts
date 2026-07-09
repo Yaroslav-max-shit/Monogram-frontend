@@ -17,24 +17,18 @@ interface BotCommand {
 
 const GROUP_COMMANDS = ['/mute', '/kick', '/ban', '/unmute', '/pin', '/admin'];
 
-export function useSlashCommands(chatType: string, members: ChatMember[], isBot: boolean = false) {
+export function useSlashCommands(chatType: string, members: ChatMember[], isBot: boolean = false, botCommandsData: BotCommand[] = []) {
   const [command, setCommand] = useState<string>('');
   const [args, setArgs] = useState<string>('');
   const [showMemberList, setShowMemberList] = useState(false);
   const [filteredMembers, setFilteredMembers] = useState<ChatMember[]>([]);
-  const [botCommands, setBotCommands] = useState<BotCommand[]>([]);
+  const [botCommands, setBotCommands] = useState<BotCommand[]>(botCommandsData);
 
-  // Load bot commands when it's a bot chat
   useEffect(() => {
-    if (!isBot) return;
-    // Try to load bot commands from local storage or API
-    const stored = localStorage.getItem('bot_commands');
-    if (stored) {
-      try {
-        setBotCommands(JSON.parse(stored));
-      } catch {}
+    if (botCommandsData.length > 0) {
+      setBotCommands(botCommandsData);
     }
-  }, [isBot]);
+  }, [botCommandsData]);
 
   const allCommands = isBot
     ? botCommands.map(c => `/${c.command}`)

@@ -178,7 +178,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const mentionTriggerIndex = useRef(-1);
   
   // Slash Commands
-  const slashCommands = useSlashCommands(chatType, chatMembers, isBot);
+  const [botCommandsData, setBotCommandsData] = useState<any[]>([]);
+
+  // Загружаем команды бота при открытии бот-чата
+  useEffect(() => {
+    if (isBot && messages.length === 0) {
+      // Получаем команды из последнего сообщения с bot_id или из API
+      apiClient.get(`/chats/`).then(res => {
+        const chat = res.data?.find((c: any) => c.id === chatId);
+        if (chat?.bot_commands) {
+          setBotCommandsData(chat.bot_commands);
+        }
+      }).catch(() => {});
+    }
+  }, [isBot, chatId]);
+
+  const slashCommands = useSlashCommands(chatType, chatMembers, isBot, botCommandsData);
   const [showCommandList, setShowCommandList] = useState(false);
   const [filteredCommands, setFilteredCommands] = useState<string[]>([]);
   const [commandSelected, setCommandSelected] = useState(false);
