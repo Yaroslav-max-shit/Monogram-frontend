@@ -149,7 +149,12 @@ const getPrivateKey = async (userId: number): Promise<CryptoKey | null> => {
   
   if (!stored || !stored.privateKey) return null;
   
-  // Импортируем ключ из Raw формата
+  // IndexedDB нативно хранит CryptoKey — возвращаем напрямую
+  if (stored.privateKey instanceof CryptoKey) {
+    return stored.privateKey as CryptoKey;
+  }
+  
+  // Фоллбэк: если ключ сохранён как base64 строка — импортируем
   const privateKeyRaw = base64ToArrayBuffer(stored.privateKey);
   return crypto.subtle.importKey(
     'raw',

@@ -16,6 +16,42 @@ export function useGroupCall(roomId: string, userId: number) {
 
   const wsUrl = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/calls/room/${roomId}/${userId}`;
 
+  const endCall = useCallback(() => {
+    peerConnections.current.forEach(pc => pc.close());
+    peerConnections.current.clear();
+    setParticipants([]);
+  }, []);
+
+  const handleOffer = useCallback(async (data: any) => {
+    const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    peerConnections.current.set(data.sender_id, pc);
+    if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    pc.onicecandidate = (e) => {
+      if (e.candidate && wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'ice-candidate', candidate: e.candidate, target: data.sender_id }));
+      }
+    };
+    pc.ontrack = (e) => {
+      setParticipants(prev => prev.map(p => p.id === data.sender_id ? { ...p, stream: e.streams[0] } : p));
+    };
+    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'answer', answer, target: data.sender_id }));
+    }
+  }, [localStream]);
+
+  const handleAnswer = useCallback(async (data: any) => {
+    const pc = peerConnections.current.get(data.sender_id);
+    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+  }, []);
+
+  const handleIceCandidate = useCallback(async (data: any) => {
+    const pc = peerConnections.current.get(data.sender_id);
+    if (pc && data.candidate) await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+  }, []);
+
   useEffect(() => {
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -50,9 +86,9 @@ export function useGroupCall(roomId: string, userId: number) {
 
     return () => {
       ws.close();
-      localStream?.getTracks().forEach(t => t.stop());
+      endCall();
     };
-  }, []);
+  }, [wsUrl, handleOffer, handleAnswer, handleIceCandidate, endCall]);
 
   const sendSignal = (data: any) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -93,14 +129,14 @@ export function useGroupCall(roomId: string, userId: number) {
 
   const toggleMute = useCallback(() => {
     if (localStream) {
-      localStream.getAudioTracks().forEach(t => { t.enabled = isMuted; });
+      localStream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
       setIsMuted(!isMuted);
     }
   }, [localStream, isMuted]);
 
   const toggleVideo = useCallback(() => {
     if (localStream) {
-      localStream.getVideoTracks().forEach(t => { t.enabled = isVideoOff; });
+      localStream.getVideoTracks().forEach(t => { t.enabled = !isVideoOff; });
       setIsVideoOff(!isVideoOff);
     }
   }, [localStream, isVideoOff]);

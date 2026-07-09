@@ -5,6 +5,8 @@ const SharePage: React.FC = () => {
   const [sharedText, setSharedText] = useState('');
   const [sharedTitle, setSharedTitle] = useState('');
   const [sharedUrl, setSharedUrl] = useState('');
+  const [targetChatId, setTargetChatId] = useState<number | null>(null);
+  const [chats, setChats] = useState<any[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'sent' | 'error'>('loading');
 
   useEffect(() => {
@@ -15,14 +17,20 @@ const SharePage: React.FC = () => {
     setSharedText(text);
     setSharedTitle(title);
     setSharedUrl(url);
+    
+    apiClient.get('/chats/').then(res => {
+      if (Array.isArray(res.data)) setChats(res.data);
+    }).catch(() => {});
+    
     setStatus('ready');
   }, []);
 
   const handleSend = async () => {
+    if (!targetChatId) return;
     setStatus('loading');
     const content = [sharedTitle, sharedText, sharedUrl].filter(Boolean).join('\n');
     try {
-      await apiClient.post('/messages/', { content, chat_id: 0 });
+      await apiClient.post('/messages/', { content, chat_id: targetChatId });
       setStatus('sent');
     } catch {
       setStatus('error');
@@ -39,7 +47,13 @@ const SharePage: React.FC = () => {
             {sharedText && <div className="share-text">{sharedText}</div>}
             {sharedUrl && <div className="share-url">{sharedUrl}</div>}
           </div>
-          <button className="share-send-btn" onClick={handleSend}>Отправить</button>
+          <select value={targetChatId || ''} onChange={e => setTargetChatId(Number(e.target.value))}>
+            <option value="">Выберите чат</option>
+            {chats.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <button className="share-send-btn" onClick={handleSend} disabled={!targetChatId}>Отправить</button>
         </div>
       )}
       {status === 'sent' && <div className="share-success">Отправлено!</div>}

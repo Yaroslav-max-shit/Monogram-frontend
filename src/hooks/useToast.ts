@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export interface Toast {
   id: string;
@@ -9,12 +9,20 @@ export interface Toast {
 
 export function useToast() {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const addToast = (type: Toast['type'], message: string, duration = 3000) => {
     const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { id, type, message, duration }]);
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
+      if (mountedRef.current) {
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }
     }, duration);
   };
 

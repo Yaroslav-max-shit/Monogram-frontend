@@ -41,7 +41,7 @@ const CallScreen: React.FC<CallScreenProps> = ({ chatId, userId, peerId, peerNam
 
   const toggleMute = () => {
     if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = isMuted; });
+      localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
       setIsMuted(!isMuted);
     }
   };

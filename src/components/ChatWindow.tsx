@@ -823,18 +823,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       await apiClient.post('/messages/react', { message_id: messageId, emoji });
       setMessages(prev => prev.map(msg => {
         if (msg.id !== messageId) return msg;
-        const reactions = msg.reactions || [];
+        const reactions = [...(msg.reactions || [])];
         const existing = reactions.findIndex((r: any) => r.user_id === currentUserId);
         if (existing >= 0) {
           if (reactions[existing].emoji === emoji) {
             reactions.splice(existing, 1);
           } else {
-            reactions[existing].emoji = emoji;
+            reactions[existing] = { ...reactions[existing], emoji };
           }
         } else {
           reactions.push({ user_id: currentUserId, emoji });
         }
-        return { ...msg, reactions: [...reactions] };
+        return { ...msg, reactions };
       }));
     } catch {}
   };
@@ -920,9 +920,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     inputRef.current?.focus();
   };
 
-  const handleScheduleMessage = (scheduledFor: string) => {
+  const handleScheduleMessage = async (scheduledFor: string) => {
+    if (!inputText.trim()) return;
+    
+    let recipientUserId = currentUserId;
+    if (chatMembers.length > 0) {
+      const otherMember = chatMembers.find(m => m.id !== currentUserId);
+      if (otherMember) recipientUserId = otherMember.id;
+    }
+    
+    const encryptedContent = await encryptMessage(inputText, recipientUserId, currentUserId, chatId);
+    
     apiClient.post('/messages/schedule', {
-      content: inputText,
+      content: encryptedContent,
       chat_id: chatId,
       scheduled_for: scheduledFor,
     }).then(() => {
@@ -1036,6 +1046,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           setSelectedSticker(null);
         }).catch(err => console.error('Sticker send error:', err));
         return;
+      }
+      if (selectedSticker && inputText.trim()) {
+        const stickerContent = JSON.stringify({ type: 'sticker', url: selectedSticker });
+        apiClient.post('/messages/', { content: stickerContent, chat_id: chatId }).catch(() => {});
+        setSelectedSticker(null);
       }
       handleSendMessage();
     }

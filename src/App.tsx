@@ -117,7 +117,7 @@ const App: React.FC = () => {
   // ============================================
   const [isLoading, setIsLoading] = useState(true);
   const [showAvatarDrawer, setShowAvatarDrawer] = useState(false);
-  const [avatarTimer, setAvatarTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const avatarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [activeChat, setActiveChat] = useState<{ id: number; name: string; type?: string; isBot?: boolean; botId?: number } | null>(null);
@@ -200,9 +200,14 @@ const App: React.FC = () => {
   } | null>(null);
 
   // Group call state
-  const [groupCall, setGroupCall] = useState<{ roomId: string; userId: number } | null>(null);
+  const groupCallRef = useRef<{ roomId: string; userId: number } | null>(null);
 
-  // Toast уведомления
+  const savedChatsRef = useRef<ChatInfo[]>([]);
+  
+  // Sync savedChats to ref
+  useEffect(() => {
+    savedChatsRef.current = savedChats;
+  }, [savedChats]);
   const { toasts, addToast, removeToast } = useToast();
 
   // ============================================
@@ -255,56 +260,59 @@ const App: React.FC = () => {
     // Потом синхронизируем с сервером в фоне
     try {
       const response = await apiClient.get('/chats/');
-      const FAVORITES_ID = userData?.id ? userData.id * 1000000 + 999999 : 999999;
-      if (response.data && Array.isArray(response.data)) {
-        let chats = response.data
-          .filter((chat: any) => chat.id && chat.name)
-          .map((chat: any) => ({
-            id: chat.id,
-            name: chat.name || `Чат ${chat.id}`,
-            type: chat.type || 'private',
-            lastMessage: '',
-            time: '',
-            unreadCount: 0,
-            isPinned: false,
-          }));
+      setUserData(current => {
+        const uid = current?.id;
+        if (!uid) return current;
         
-        const hasFavorites = chats.some(c => c.id === 999999);
-        const hasMonogram = chats.some(c => c.id === 999998);
-        
-        if (!hasFavorites) {
-          chats.unshift({ 
-            id: 999999, 
-            name: 'Избранное', 
-            type: 'private', 
-            lastMessage: 'Сохранённые сообщения', 
-            time: '',
-            unreadCount: 0,
-            isPinned: false,
-          });
+        if (response.data && Array.isArray(response.data)) {
+          let chats = response.data
+            .filter((chat: any) => chat.id && chat.name)
+            .map((chat: any) => ({
+              id: chat.id,
+              name: chat.name || `Чат ${chat.id}`,
+              type: chat.type || 'private',
+              lastMessage: '',
+              time: '',
+              unreadCount: 0,
+              isPinned: false,
+            }));
+          
+          const hasFavorites = chats.some(c => c.id === 999999);
+          const hasMonogram = chats.some(c => c.id === 999998);
+          
+          if (!hasFavorites) {
+            chats.unshift({ 
+              id: 999999, 
+              name: 'Избранное', 
+              type: 'private', 
+              lastMessage: 'Сохранённые сообщения', 
+              time: '',
+              unreadCount: 0,
+              isPinned: false,
+            });
+          }
+          if (!hasMonogram) {
+            chats.unshift({ 
+              id: 999998, 
+              name: 'Monogram', 
+              type: 'channel', 
+              lastMessage: 'Новости мессенджера', 
+              time: '',
+              unreadCount: 0,
+              isPinned: false,
+            });
+          }
+          
+          // Фильтруем недавно удалённые
+          chats = chats.filter((c: any) => !recentlyDeletedRef.current.has(c.id));
+          
+          setSavedChats(chats);
+          cacheChats(chats);
         }
-        if (!hasMonogram) {
-          chats.unshift({ 
-            id: 999998, 
-            name: 'Monogram', 
-            type: 'channel', 
-            lastMessage: 'Новости мессенджера', 
-            time: '',
-            unreadCount: 0,
-            isPinned: false,
-          });
-        }
-        
-        // Фильтруем недавно удалённые
-        chats = chats.filter((c: any) => !recentlyDeletedRef.current.has(c.id));
-        
-        setSavedChats(chats);
-        // Кэшируем для оффлайн-доступа
-        cacheChats(chats);
-      }
+        return current;
+      });
     } catch (error) {
       console.error('Ошибка загрузки чатов:', error);
-      // Если сервер недоступен — показываем кэш (уже загружен выше)
     }
   }, []);
 
@@ -496,7 +504,7 @@ const App: React.FC = () => {
         }
       }
     }, 10000);
-    setAvatarTimer(timer);
+    avatarTimerRef.current = timer;
 
     const initApp = async () => {
       window.updatePreloadProgress?.(70, 'Загрузка профиля...');
@@ -812,7 +820,7 @@ const App: React.FC = () => {
       }
       
       window.updatePreloadProgress?.(100, 'Готово!');
-      if (avatarTimer) clearTimeout(avatarTimer);
+      if (avatarTimerRef.current) clearTimeout(avatarTimerRef.current);
       setIsLoading(false);
     };
     
@@ -826,15 +834,13 @@ const App: React.FC = () => {
     
     // Navigate event from deeplink
     const navigateHandler = (e: Event) => {
-
       const detail = (e as CustomEvent).detail;
-
       if (!detail) return;
 
       if (detail.type === 'user') {
         handleStartChat(detail.username);
       } else if (detail.type === 'chat') {
-        const existing = savedChats.find(c => c.id === detail.chatId);
+        const existing = savedChatsRef.current.find(c => c.id === detail.chatId);
         if (existing) setActiveChat(existing);
       } else if (detail.type === 'join') {
         // handle join
@@ -914,22 +920,35 @@ const App: React.FC = () => {
 
   // Desktop notifications when tab is not focused
   useEffect(() => {
+    let msgHandler: ((msg: any) => void) | null = null;
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        const msgHandler = (msg: any) => {
-          if (msg.content) {
-            showDesktopNotification('Monogram', {
-              body: msg.content.substring(0, 100),
-              tag: `msg-${msg.id || Date.now()}`,
-            });
-          }
-        };
-        window.addEventListener('new-message', () => {});
-        return () => window.removeEventListener('new-message', () => {});
+        if (!msgHandler) {
+          msgHandler = (msg: any) => {
+            if (msg.content) {
+              showDesktopNotification('Monogram', {
+                body: msg.content.substring(0, 100),
+                tag: `msg-${msg.id || Date.now()}`,
+              });
+            }
+          };
+          window.addEventListener('new-message', msgHandler as EventListener);
+        }
+      } else {
+        if (msgHandler) {
+          window.removeEventListener('new-message', msgHandler as EventListener);
+          msgHandler = null;
+        }
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (msgHandler) {
+        window.removeEventListener('new-message', msgHandler as EventListener);
+      }
+    };
   }, []);
 
   // ============================================
@@ -948,8 +967,9 @@ const App: React.FC = () => {
   // Р”Р•Р™РЎРўР’РРЇ РЎ Р§РђРўРђРњР
   // ============================================
   const handleStartChat = useCallback((username: string) => {
-    const chatId = generatePrivateChatId(userData?.username || '', username);
-    const existing = savedChats.find(c => c.id === chatId);
+    const uname = userData?.username || '';
+    const chatId = generatePrivateChatId(uname, username);
+    const existing = savedChatsRef.current.find(c => c.id === chatId);
     
     if (existing) {
       setActiveChat(existing);
@@ -967,7 +987,7 @@ const App: React.FC = () => {
       setActiveChat(newChat);
     }
     setInviteUsername(null);
-  }, [userData?.username, savedChats, generatePrivateChatId]);
+  }, [userData?.username, generatePrivateChatId]);
 
   const handleAddNewChat = useCallback((chat: ChatInfo) => {
     if (!savedChats.find(c => c.id === chat.id)) {
