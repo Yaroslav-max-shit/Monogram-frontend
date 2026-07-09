@@ -83,6 +83,8 @@ interface ChatInfo {
   type?: 'private' | 'group' | 'channel';
   unreadCount?: number;
   isPinned?: boolean;
+  isBot?: boolean;
+  botId?: number;
 }
 
 interface UserData {
@@ -118,7 +120,7 @@ const App: React.FC = () => {
   const [avatarTimer, setAvatarTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [activeChat, setActiveChat] = useState<{ id: number; name: string; type?: string } | null>(null);
+  const [activeChat, setActiveChat] = useState<{ id: number; name: string; type?: string; isBot?: boolean; botId?: number } | null>(null);
   const [savedChats, setSavedChats] = useState<ChatInfo[]>([]);
   const recentlyDeletedRef = useRef(new Set<number>());
   const [isPremium, setIsPremium] = useState(false);
@@ -267,12 +269,12 @@ const App: React.FC = () => {
             isPinned: false,
           }));
         
-        const hasFavorites = chats.some(c => c.id === FAVORITES_ID || c.id === 999999);
+        const hasFavorites = chats.some(c => c.id === 999999);
         const hasMonogram = chats.some(c => c.id === 999998);
         
         if (!hasFavorites) {
           chats.unshift({ 
-            id: FAVORITES_ID, 
+            id: 999999, 
             name: 'Избранное', 
             type: 'private', 
             lastMessage: 'Сохранённые сообщения', 
@@ -1376,6 +1378,7 @@ const App: React.FC = () => {
                     onForwardMessage={(id) => setForwardMessageId(id)}
                     onSaveDraft={(chatId, text) => saveDraft(chatId, text)}
                     chatType={activeChat.type || 'private'}
+                    isBot={activeChat.isBot}
                     onStartCall={(peerId, peerName) => setActiveCall({
                       chatId: activeChat.id,
                       userId: userData?.id || 1,

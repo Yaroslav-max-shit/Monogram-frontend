@@ -1597,9 +1597,55 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         )}
         {messages.length === 0 && (
           <div className="chat-empty">
-            <Icon name="logo" size={48} />
-            <h3>Нет сообщений</h3>
-            <p>Напишите первое сообщение</p>
+            {isBot ? (
+              <>
+                <div className="chat-empty-icon" style={{
+                  width: 64, height: 64, borderRadius: 16,
+                  background: 'linear-gradient(135deg, #D4A017, #B8860B)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 16px', fontSize: '1.5rem', fontWeight: 800, color: '#000',
+                }}>Q</div>
+                <h3>{chatName}</h3>
+                <p>Отправьте /start чтобы начать</p>
+                <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6, width: '100%', maxWidth: 280 }}>
+                  {slashCommands.botCommands?.length > 0 ? (
+                    slashCommands.botCommands.map((cmd: any) => (
+                      <button
+                        key={cmd.command}
+                        onClick={() => { setInputText(`/${cmd.command} `); inputRef.current?.focus(); }}
+                        style={{
+                          padding: '10px 14px', background: 'var(--bg-card)',
+                          border: '1px solid var(--border-color)', borderRadius: 10,
+                          color: 'var(--text-primary)', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          transition: 'var(--transition)', textAlign: 'left',
+                        }}
+                      >
+                        <span style={{ color: 'var(--accent)', fontWeight: 600 }}>/{cmd.command}</span>
+                        <span style={{ color: 'var(--text-tertiary)', fontSize: '0.78rem' }}>{cmd.description}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <button
+                      onClick={() => { setInputText('/start '); inputRef.current?.focus(); }}
+                      style={{
+                        padding: '12px 16px', background: 'linear-gradient(135deg, #D4A017, #B8860B)',
+                        border: 'none', borderRadius: 12, color: '#000',
+                        fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
+                      }}
+                    >
+                      Начать
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <Icon name="logo" size={48} />
+                <h3>Нет сообщений</h3>
+                <p>Напишите первое сообщение</p>
+              </>
+            )}
           </div>
         )}
         {messages.map(renderMessage)}

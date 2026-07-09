@@ -4,8 +4,8 @@ import apiClient from '../services/api';
 
 const BotCreator: React.FC<{ onClose: () => void; onCreated: (bot: any) => void }> = ({ onClose, onCreated }) => {
   const [step, setStep] = useState(1);
-  const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
+  const [name, setName] = useState('BotCreator');
+  const [username, setUsername] = useState('creator_bot');
   const [description, setDescription] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [error, setError] = useState('');
