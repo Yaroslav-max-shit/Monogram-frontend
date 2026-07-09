@@ -87,7 +87,16 @@ const BotCreator: React.FC<{ onClose: () => void; onCreated: (bot: any) => void 
               <p><strong>{createdBot.name}</strong> @{createdBot.username}</p>
               <div className="input-group">
                 <label>API Ключ (сохраните его!)</label>
-                <input value={apiKey} readOnly onClick={e => e.currentTarget.select()} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input value={apiKey} readOnly onClick={e => e.currentTarget.select()} style={{ flex: 1 }} />
+                  <button
+                    className="modal-btn-primary"
+                    onClick={() => { navigator.clipboard.writeText(apiKey); }}
+                    style={{ padding: '8px 16px', whiteSpace: 'nowrap' }}
+                  >
+                    Копировать
+                  </button>
+                </div>
               </div>
               <button className="modal-btn-primary" onClick={onClose}>Готово</button>
             </div>
