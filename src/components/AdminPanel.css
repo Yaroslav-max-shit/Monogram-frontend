@@ -662,6 +662,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: none;
 }
 
 .admin-panel .context-menu-item:hover {
