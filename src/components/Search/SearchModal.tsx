@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import BlobLoader from '../BlobLoader';
 import apiClient from '../../services/api';
 import Icon from '../Icon';
 import './SearchModal.css';
@@ -227,7 +228,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ onClose, onChatSelect }) => {
         <div className="search-results">
           {loading ? (
             <div className="search-loading">
-              <div className="loading-spinner" />
+              <BlobLoader size={40} />
               <p>Поиск...</p>
             </div>
           ) : getVisibleResults().length === 0 ? (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import BlobLoader from '../BlobLoader';
 import Icon from '../Icon';
 import apiClient from '../../services/api';
 import MediaViewer from '../MediaViewer';
@@ -171,7 +172,7 @@ const MediaGallery: React.FC<MediaGalleryProps> = ({ chatId, onClose, onMediaCli
             <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
           </div>
           <div style={{ padding: '2rem', textAlign: 'center' }}>
-            <div className="loading-spinner" style={{ width: '40px', height: '40px', margin: '0 auto' }} />
+            <BlobLoader size={40} />
             <p style={{ marginTop: '1rem', color: 'var(--text-tertiary)' }}>Загрузка...</p>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import BlobLoader from './BlobLoader';
 import Icon from './Icon';
 import apiClient from '../services/api';
 import jsQR from 'jsqr';
@@ -326,7 +327,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose, onScanSuccess }) => {
           
           {loading && (
             <div className="scanner-loading">
-              <div className="loading-spinner-small" />
+              <BlobLoader size={20} />
               <span>РћР±СЂР°Р±РѕС‚РєР°...</span>
             </div>
           )}

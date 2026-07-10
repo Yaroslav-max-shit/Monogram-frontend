@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, ReactNode } from 'react';
+import BlobLoader from '../BlobLoader';
 import Icon from '../Icon';
 
 interface PullToRefreshProps {
@@ -117,7 +118,7 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({
         }}
       >
         {isRefreshing ? (
-          <div className="loading-spinner-small" style={{ width: 24, height: 24 }} />
+          <BlobLoader size={24} />
         ) : (
           <Icon
             name="arrow"

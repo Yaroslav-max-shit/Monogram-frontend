@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import BlobLoader from './BlobLoader';
 import Icon from './Icon';
 import { QRCodeSVG } from 'qrcode.react';
 import apiClient from '../services/api';
@@ -66,7 +67,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onLogin, onRegister, onOp
     return (
       <div className="welcome-telegram">
         <div className="welcome-telegram-content">
-          <div className="loading-spinner"></div>
+          <BlobLoader size={40} />
           <p style={{ color: '#9ca3af', marginTop: '16px' }}>Загрузка QR кода...</p>
         </div>
       </div>

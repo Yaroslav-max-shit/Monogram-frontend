@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import BlobLoader from './BlobLoader';
 import apiClient from '../services/api';
 import Icon from './Icon';
 
@@ -37,7 +38,7 @@ const GamificationModal: React.FC<Props> = ({ onClose }) => {
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 440, padding: '2rem' }}>
-          <div className="loading-spinner" />
+          <BlobLoader size={40} />
         </div>
       </div>
     );

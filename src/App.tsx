@@ -1229,7 +1229,7 @@ const App: React.FC = () => {
   if (shareMatch) {
     return (
       <ErrorBoundary>
-        <React.Suspense fallback={<div className="loading-spinner" />}>
+        <React.Suspense fallback={<BlobLoader size={40} />}>
           <SharePage />
         </React.Suspense>
       </ErrorBoundary>
@@ -1261,11 +1261,11 @@ const App: React.FC = () => {
         </div>
       );
     }
-    return <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}><AdminPanel onBack={() => { window.location.href = '/'; setShowAdmin(false); }} onLogout={() => setShowLogoutConfirm(true)} /></React.Suspense></ErrorBoundary>;
+    return <ErrorBoundary><React.Suspense fallback={<BlobLoader size={40} />}><AdminPanel onBack={() => { window.location.href = '/'; setShowAdmin(false); }} onLogout={() => setShowLogoutConfirm(true)} /></React.Suspense></ErrorBoundary>;
   }
 
   if (showAdmin && !isLoggedIn) return <Login onLogin={handleLogin} />;
-  if (notFound) return <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="404" message="Такой страницы не существует" description="Страница не найдена." onClose={() => { setNotFound(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense></ErrorBoundary>;
+  if (notFound) return <ErrorBoundary><React.Suspense fallback={<BlobLoader size={40} />}><NotFound title="404" message="Такой страницы не существует" description="Страница не найдена." onClose={() => { setNotFound(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense></ErrorBoundary>;
   if (isLoading) {
     const savedAvatar = localStorage.getItem('avatar_drawing');
     if (savedAvatar && !showAvatarDrawer) {
@@ -1293,7 +1293,7 @@ const App: React.FC = () => {
     }
     if (showAvatarDrawer) {
       const AvatarDrawer = React.lazy(() => import('./components/AvatarDrawer'));
-      return <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}>
+      return <ErrorBoundary><React.Suspense fallback={<BlobLoader size={40} />}>
         <AvatarDrawer
           currentAvatar={userData?.avatar_url}
           onSave={(avatar) => {
@@ -1339,7 +1339,7 @@ const App: React.FC = () => {
       
       {/* Приглашения и ошибки */}
       {inviteError && !isLoggedIn && (
-        <ErrorBoundary><React.Suspense fallback={<div className="loading-spinner" />}><NotFound title="Ошибка" message="Чат не найден" description="Ссылка недействительна." onClose={() => { setInviteError(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense></ErrorBoundary>
+        <ErrorBoundary><React.Suspense fallback={<BlobLoader size={40} />}><NotFound title="Ошибка" message="Чат не найден" description="Ссылка недействительна." onClose={() => { setInviteError(false); window.history.replaceState({}, '', '/'); }} /></React.Suspense></ErrorBoundary>
       )}
       {inviteUsername && isLoggedIn && !inviteError && (
         <InviteModal
@@ -1506,7 +1506,7 @@ const App: React.FC = () => {
       {/* Модальные окна */}
       {showProfile && (
         <ErrorBoundary>
-          <React.Suspense fallback={<div className="loading-spinner" />}>
+          <React.Suspense fallback={<BlobLoader size={40} />}>
             <ProfilePage 
               onBack={() => setShowProfile(false)} 
               onSettings={() => { setShowProfile(false); setShowSettings(true); }}
@@ -1516,7 +1516,7 @@ const App: React.FC = () => {
       )}
       {showSettings && (
         <ErrorBoundary>
-          <React.Suspense fallback={<div className="loading-spinner" />}>
+          <React.Suspense fallback={<BlobLoader size={40} />}>
             <SettingsModal 
               onClose={() => setShowSettings(false)} 
               e2eeEnabled={e2eeEnabled}
@@ -1560,14 +1560,14 @@ const App: React.FC = () => {
       {showQRLogin && <QRLogin onClose={() => setShowQRLogin(false)} />}
       {showPremium && (
         <ErrorBoundary>
-          <React.Suspense fallback={<div className="loading-spinner" />}>
+          <React.Suspense fallback={<BlobLoader size={40} />}>
             <PremiumModal onClose={() => setShowPremium(false)} />
           </React.Suspense>
         </ErrorBoundary>
       )}
       {forwardMessageId && (
         <ErrorBoundary>
-          <React.Suspense fallback={<div className="loading-spinner" />}>
+          <React.Suspense fallback={<BlobLoader size={40} />}>
             <ForwardDialog
               messageId={forwardMessageId}
               onClose={() => setForwardMessageId(null)}
@@ -1580,7 +1580,7 @@ const App: React.FC = () => {
       {/* Call Screen */}
       {activeCall && (
         <ErrorBoundary>
-          <React.Suspense fallback={<div className="loading-spinner" />}>
+          <React.Suspense fallback={<BlobLoader size={40} />}>
             <CallScreen
               chatId={activeCall.chatId}
               userId={activeCall.userId}
@@ -1595,7 +1595,7 @@ const App: React.FC = () => {
       {/* Group Call Screen */}
       {groupCallRef.current && (
         <ErrorBoundary>
-          <React.Suspense fallback={<div className="loading-spinner" />}>
+          <React.Suspense fallback={<BlobLoader size={40} />}>
             <GroupCallScreen
               roomId={groupCallRef.current.roomId}
               userId={groupCallRef.current.userId}
