@@ -18,6 +18,10 @@
   transition: background var(--transition-fast);
   font-size: 14px;
   color: var(--text-primary);
+  border: none;
+  background: none;
+  width: 100%;
+  outline: none;
 }
 
 .context-menu-item:hover {

@@ -14,7 +14,7 @@
 }
 
 .btn-primary:hover, .start-button:hover {
-  background: #5a6fd8;
+  background: color-mix(in srgb, var(--accent) 85%, black);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(199, 110, 0, 0.3);
 }
@@ -45,7 +45,7 @@
 }
 
 .submit-btn:hover {
-  background: #5a6fd8;
+  background: color-mix(in srgb, var(--accent) 85%, black);
 }
 
 .send-button {
@@ -60,7 +60,7 @@
 }
 
 .send-button:hover {
-  background: #2563eb;
+  background: color-mix(in srgb, var(--sent-bg) 85%, black);
 }
 
 .toggle-btn {
@@ -75,7 +75,7 @@
 }
 
 .toggle-btn:hover {
-  color: #5a6fd8;
+  color: color-mix(in srgb, var(--accent) 80%, white);
   text-decoration: underline;
 }
 

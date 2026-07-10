@@ -250,11 +250,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
         setReadReceipts(res.data.read_receipts ?? true);
 
-        setLastSeenPrivacy(res.data.last_seen_privacy ?? 'everyone');
+        setLastSeenPrivacy(res.data.who_can_see_last_seen ?? res.data.last_seen_privacy ?? 'everyone');
 
-        setPhonePrivacy(res.data.phone_privacy ?? 'contacts');
+        setPhonePrivacy(res.data.who_can_see_bio ?? res.data.phone_privacy ?? 'contacts');
 
-        setPhotoPrivacy(res.data.photo_privacy ?? 'everyone');
+        setPhotoPrivacy(res.data.who_can_see_photo ?? res.data.photo_privacy ?? 'everyone');
 
         setAutoDownloadMedia(res.data.auto_download_media ?? true);
 
@@ -992,6 +992,43 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // Главное меню настроек
 
+  const sectionMeta: Record<string, { icon: string; title: string; parent?: string }> = {
+    profile: { icon: 'profile', title: 'Профиль' },
+    appearance: { icon: 'paint', title: 'Оформление' },
+    notifications: { icon: 'bell', title: 'Уведомления' },
+    privacy: { icon: 'lock', title: 'Конфиденциальность' },
+    data: { icon: 'folder', title: 'Данные и память' },
+    chats: { icon: 'message-circle', title: 'Чаты' },
+    messages: { icon: 'note', title: 'Сообщения' },
+    stickers: { icon: 'emoji', title: 'Стикеры и эмодзи' },
+    language: { icon: 'globe', title: 'Язык' },
+    wallpapers: { icon: 'picture', title: 'Фон чата' },
+    sessions: { icon: 'phone', title: 'Устройства' },
+    sounds: { icon: 'volume', title: 'Звуки' },
+    appicon: { icon: 'image', title: 'Иконка приложения' },
+    storage: { icon: 'folder', title: 'Память' },
+    quickreplies: { icon: 'message-circle', title: 'Быстрые ответы' },
+    premium: { icon: 'crown', title: 'Premium' },
+  };
+
+  const renderBreadcrumbs = () => {
+    if (!activeSection) return null;
+    const meta = sectionMeta[activeSection];
+    if (!meta) return null;
+    return (
+      <div className="settings-breadcrumbs">
+        <button className="settings-breadcrumb-item" onClick={() => setActiveSection(null)}>
+          <Icon name="settings" size={14} />
+        </button>
+        <Icon name="chevron-right" size={14} className="settings-breadcrumb-sep" />
+        <span className="settings-breadcrumb-current">
+          <Icon name={meta.icon} size={14} />
+          {meta.title}
+        </span>
+      </div>
+    );
+  };
+
   if (!activeSection) {
 
     return (
@@ -1624,6 +1661,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
         <div className="settings-modal" onClick={e => e.stopPropagation()}>
 
+          {renderBreadcrumbs()}
+
           <div className="settings-modal-header">
 
             <button className="settings-back-btn" onClick={() => setActiveSection(null)}>
@@ -1928,7 +1967,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <label className="toggle">
 
-                  <input type="checkbox" checked={messagePreview} onChange={e => setMessagePreview(e.target.checked)} />
+                  <input type="checkbox" checked={messagePreview} onChange={e => { setMessagePreview(e.target.checked); saveSettings({ message_preview: e.target.checked }); }} />
 
                   <span className="toggle-slider" />
 
@@ -2108,7 +2147,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="settings-select-desc">Кто может видеть мою аватарку</div>
 
-                <select value={photoPrivacy} onChange={e => setPhotoPrivacy(e.target.value as any)}>
+                <select value={photoPrivacy} onChange={e => { setPhotoPrivacy(e.target.value as any); saveSettings({ whoCanSeePhoto: e.target.value }); }}>
 
                   <option value="everyone">Все</option>
 
@@ -2132,7 +2171,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div className="settings-select-desc">Кто видит когда я был в сети</div>
 
-                <select value={lastSeenPrivacy} onChange={e => setLastSeenPrivacy(e.target.value as any)}>
+                <select value={lastSeenPrivacy} onChange={e => { setLastSeenPrivacy(e.target.value as any); saveSettings({ whoCanSeeLastSeen: e.target.value }); }}>
 
                   <option value="everyone">Все</option>
 
@@ -2186,7 +2225,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <label className="toggle">
 
-                  <input type="checkbox" checked={readReceipts} onChange={e => setReadReceipts(e.target.checked)} />
+                  <input type="checkbox" checked={readReceipts} onChange={e => { setReadReceipts(e.target.checked); saveSettings({ read_receipts: e.target.checked }); }} />
 
                   <span className="toggle-slider" />
 
@@ -2212,7 +2251,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <label className="toggle">
 
-                  <input type="checkbox" checked={onlineStatus} onChange={e => setOnlineStatus(e.target.checked)} />
+                  <input type="checkbox" checked={onlineStatus} onChange={e => { setOnlineStatus(e.target.checked); saveSettings({ online_status: e.target.checked }); }} />
 
                   <span className="toggle-slider" />
 
@@ -2486,7 +2525,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <label className="toggle">
 
-                  <input type="checkbox" checked={typingIndicator} onChange={e => setTypingIndicator(e.target.checked)} />
+                  <input type="checkbox" checked={typingIndicator} onChange={e => { setTypingIndicator(e.target.checked); saveSettings({ typing_indicator: e.target.checked }); }} />
 
                   <span className="toggle-slider" />
 
@@ -2600,7 +2639,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <label className="toggle">
 
-                  <input type="checkbox" checked={doubleClickReaction} onChange={e => setDoubleClickReaction(e.target.checked)} />
+                  <input type="checkbox" checked={doubleClickReaction} onChange={e => { setDoubleClickReaction(e.target.checked); saveSettings({ double_click_reaction: e.target.checked }); }} />
 
                   <span className="toggle-slider" />
 
@@ -2626,7 +2665,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <label className="toggle">
 
-                  <input type="checkbox" checked={showForwardedTag} onChange={e => setShowForwardedTag(e.target.checked)} />
+                  <input type="checkbox" checked={showForwardedTag} onChange={e => { setShowForwardedTag(e.target.checked); saveSettings({ show_forwarded_tag: e.target.checked }); }} />
 
                   <span className="toggle-slider" />
 
@@ -2652,7 +2691,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <label className="toggle">
 
-                  <input type="checkbox" checked={showEditedTag} onChange={e => setShowEditedTag(e.target.checked)} />
+                  <input type="checkbox" checked={showEditedTag} onChange={e => { setShowEditedTag(e.target.checked); saveSettings({ show_edited_tag: e.target.checked }); }} />
 
                   <span className="toggle-slider" />
 
@@ -3016,7 +3055,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <div className="settings-modal-body settings-content-scroll">
 
-            <SessionManager onOpenScanner={() => setShowScanner(true)} />
+            <SessionManager onOpenScanner={() => setShowScanner(true)} isMobile={isMobile} />
 
           </div>
 

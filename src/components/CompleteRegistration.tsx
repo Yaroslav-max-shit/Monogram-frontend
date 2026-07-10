@@ -66,25 +66,40 @@ const CompleteRegistration: React.FC<CompleteRegistrationProps> = ({
 
   const completeRegistration = async () => {
     if (!username || usernameAvailable !== true) {
-      setError('Р’С‹Р±РµСЂРёС‚Рµ РґРѕСЃС‚СѓРїРЅРѕРµ РёРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ');
+      setError('Выберите доступное имя пользователя');
       return;
     }
     
     setLoading(true);
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('email', email);
-    formData.append('google_id', googleId);
-    formData.append('first_name', displayName);
-    formData.append('last_name', displayLastName);
-    formData.append('bio', bio);
-    if (avatarFile) formData.append('avatar', avatarFile);
+    const payload: any = {
+      username,
+      email,
+      google_id: googleId,
+      first_name: displayName,
+      last_name: displayLastName,
+      bio,
+    };
+    
+    // Если есть новый аватар — загружаем отдельно
+    if (avatarFile) {
+      try {
+        const fd = new FormData();
+        fd.append('file', avatarFile);
+        const uploadRes = await apiClient.post('/users/avatar', fd);
+        if (uploadRes.data?.url) {
+          payload.avatar_url = uploadRes.data.url;
+        }
+      } catch {}
+    } else if (avatarUrl && !avatarUrl.startsWith('data:')) {
+      payload.avatar_url = avatarUrl;
+    }
     
     try {
-      const res = await apiClient.post('/auth/google/complete', formData);
-      onComplete(res.data.token);
+      const endpoint = googleId === 'yandex' ? '/auth/yandex/complete' : '/auth/google/complete';
+      const res = await apiClient.post(endpoint, payload);
+      onComplete(res.data.access_token);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'РћС€РёР±РєР° Р·Р°РІРµСЂС€РµРЅРёСЏ СЂРµРіРёСЃС‚СЂР°С†РёРё');
+      setError(err.response?.data?.detail || 'Ошибка завершения регистрации');
     } finally {
       setLoading(false);
     }

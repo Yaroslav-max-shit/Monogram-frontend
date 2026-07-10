@@ -25,7 +25,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
     <div className="modal-overlay" onClick={onCancel}>
       <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
         <div className="confirm-icon">
-          {danger ? <Icon name="note" size={40} /> : <Icon name="bell" size={40} />}
+          {danger ? <Icon name="danger" size={40} /> : <Icon name="bell" size={40} />}
         </div>
         <h3 className="confirm-title">{title}</h3>
         <p className="confirm-message">{message}</p>

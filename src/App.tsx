@@ -673,29 +673,23 @@ const App: React.FC = () => {
       }
 
       if (path === '/google-success') {
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
-        if (token === 'error' || !token) {
-          alert('Ошибка входа через Google');
-          window.location.href = '/';
-          return;
-        }
-        if (token) {
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            await saveSession(token, {
-              id: payload.user_id,
-              username: payload.username || '',
-              firstName: payload.first_name || '',
-              lastName: payload.last_name || '',
-            });
+        // Токен теперь в HttpOnly cookie, читаем через getSession()
+        try {
+          const session = await getSession();
+          if (session) {
+            setIsLoggedIn(true);
+            setUserData(session.user);
+            await loadUserChats();
+            await loadPremiumStatus();
             window.location.href = '/';
-          } catch (e) {
-            console.error('Google callback error:', e);
-            window.location.href = '/';
+            return;
           }
-          return;
+        } catch (e) {
+          console.error('Google session load error:', e);
         }
+        alert('Ошибка входа через Google');
+        window.location.href = '/';
+        return;
       }
 
       if (path === '/google-register') {
@@ -723,27 +717,38 @@ const App: React.FC = () => {
       }
 
       if (path === '/ya-success') {
+        // Токен теперь в HttpOnly cookie, читаем через getSession()
+        try {
+          const session = await getSession();
+          if (session) {
+            setIsLoggedIn(true);
+            setUserData(session.user);
+            await loadUserChats();
+            await loadPremiumStatus();
+            window.location.href = '/';
+            return;
+          }
+        } catch (e) {
+          console.error('Yandex session load error:', e);
+        }
         const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
         const msg = params.get('message');
+        alert(msg || 'Ошибка входа через Яндекс');
+        window.location.href = '/';
+        return;
+      }
+
+      if (path === '/ya-register') {
+        const params = new URLSearchParams(window.location.search);
+        const email = params.get('email') || '';
+        const firstName = params.get('first_name') || '';
+        const lastName = params.get('last_name') || '';
+        const avatar = params.get('avatar') || '';
         
-        if (token === 'error') {
-          alert(msg || 'Ошибка входа через Яндекс');
-          window.location.href = '/';
-          return;
-        }
-        
-        if (token) {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          await saveSession(token, {
-            id: payload.user_id,
-            username: '',
-            firstName: '',
-            lastName: '',
-          });
-          window.location.href = '/';
-          return;
-        }
+        setCompleteRegistrationData({ email, googleId: 'yandex', firstName, lastName, avatar });
+        setShowCompleteRegistration(true);
+        setIsLoading(false);
+        return;
       }
 
       // Загружаем сессию перед обработкой маршрутов
@@ -1186,12 +1191,8 @@ const App: React.FC = () => {
         avatarUrl={completeRegistrationData.avatar}
         onComplete={async (token) => {
           await saveSession(token, { id: 0, username: '', firstName: '', lastName: '' });
-          if (window.opener && !window.opener.closed) {
-            window.opener.location.href = '/';
-            window.close();
-          } else {
-            window.location.href = '/';
-          }
+          window.location.href = '/';
+        }}
         }}
       />
     );
@@ -1480,6 +1481,14 @@ const App: React.FC = () => {
                     e2eeEnabled={e2eeEnabled}
                     onForwardMessage={(id) => setForwardMessageId(id)}
                     onSaveDraft={(chatId, text) => saveDraft(chatId, text)}
+                    chatType={activeChat.type || 'private'}
+                    isBot={activeChat.isBot}
+                    onStartCall={(peerId, peerName) => setActiveCall({
+                      chatId: activeChat.id,
+                      userId: userData?.id || 1,
+                      peerId,
+                      peerName,
+                    })}
                     onMessageSent={() => loadUserChats()}
                   />
                 ) : (
@@ -1586,13 +1595,13 @@ const App: React.FC = () => {
       )}
 
       {/* Group Call Screen */}
-      {groupCall && (
+      {groupCallRef.current && (
         <ErrorBoundary>
           <React.Suspense fallback={<div className="loading-spinner" />}>
             <GroupCallScreen
-              roomId={groupCall.roomId}
-              userId={groupCall.userId}
-            onEnd={() => setGroupCall(null)}
+              roomId={groupCallRef.current.roomId}
+              userId={groupCallRef.current.userId}
+            onEnd={() => { groupCallRef.current = null; }}
           />
         </React.Suspense>
         </ErrorBoundary>

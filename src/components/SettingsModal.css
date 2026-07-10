@@ -15,6 +15,49 @@
   animation: scaleIn 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Breadcrumbs */
+.settings-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.settings-breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  transition: background 0.15s;
+}
+
+.settings-breadcrumb-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.settings-breadcrumb-sep {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.settings-breadcrumb-current {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
 .settings-modal-header {
   display: flex;
   align-items: center;
@@ -1514,7 +1557,8 @@
   word-break: break-all;
 }
 
-/* SettingsModal.css - добавить в конец файла */
+.settings-item-icon {
+  width: 44px;
   height: 44px;
   border-radius: 12px;
   background: var(--bg-secondary);

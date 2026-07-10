@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { PREMIUM_PRICES, PREMIUM_DISCOUNT } from '../../services/premium';
 import Icon from '../Icon';
+import './PremiumModal.css';
 
 interface PremiumModalProps {
   onClose: () => void;
@@ -12,10 +13,9 @@ const PremiumModal: React.FC<PremiumModalProps> = ({ onClose, initialPlan }) => 
   const [step, setStep] = useState<'payment' | 'success'>('payment');
   const [selectedPlan, setSelectedPlan] = useState<string>(initialPlan || 'month');
 
-  const QUARKPAY_DOMAIN = 'https://f1w6ggb2-5174.euw.devtunnels.ms';
+  const QUARKPAY_DOMAIN = import.meta.env.VITE_QUARKPAY_URL || 'https://f1w6ggb2-5174.euw.devtunnels.ms';
 
   const handleQuarkPay = () => {
-    // Open QuarkPay with plan info — user pays from QuarkPay account
     window.open(`${QUARKPAY_DOMAIN}/pay/${selectedPlan}`, '_blank');
   };
 
@@ -67,19 +67,18 @@ const PremiumModal: React.FC<PremiumModalProps> = ({ onClose, initialPlan }) => 
   if (step === 'success') {
     return (
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content" onClick={e => e.stopPropagation()} style={{maxWidth: 400, borderRadius: 28, overflow: 'hidden', background: 'var(--bg-secondary)'}}>
-          <div style={{padding: '48px 32px', textAlign: 'center'}}>
-            <div style={{width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 8px 24px rgba(16,185,129,0.3)'}}>
+        <div className="premium-modal" onClick={e => e.stopPropagation()}>
+          <div className="premium-success">
+            <div className="premium-success-icon">
               <Icon name="check" size={40} />
             </div>
-            <h2 style={{marginBottom: 8, fontSize: '1.4rem'}}>Готово!</h2>
-            <p style={{color: 'var(--text-tertiary)', marginBottom: 32, fontSize: '0.95rem'}}>
+            <h2 className="premium-success-title">Готово!</h2>
+            <p className="premium-success-text">
               Premium на {selectedPlan === 'month' ? '1 месяц' : '12 месяцев'}
             </p>
-            <button onClick={onClose} style={{
-              width: '100%', padding: 14, background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              color: 'white', border: 'none', borderRadius: 14, fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
-            }}>Продолжить</button>
+            <button className="premium-btn premium-btn-continue" onClick={onClose}>
+              Продолжить
+            </button>
           </div>
         </div>
       </div>
@@ -88,68 +87,82 @@ const PremiumModal: React.FC<PremiumModalProps> = ({ onClose, initialPlan }) => 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{
-        maxWidth: 400, width: '100%', borderRadius: 28, overflow: 'hidden',
-        background: 'var(--bg-secondary)', position: 'relative',
-        boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
-      }}>
+      <div className="premium-modal" onClick={e => e.stopPropagation()}>
+        <div className="premium-header">
+          <div className="premium-header-bg" />
+          <button className="premium-close" onClick={onClose}>
+            <Icon name="close" size={18} />
+          </button>
+          <div className="premium-header-content">
+            <div className="premium-icon-wrap">
+              <Icon name="crown" size={32} />
+            </div>
+            <h2 className="premium-title">Premium</h2>
+            <p className="premium-subtitle">
+              {selectedPlan === 'month'
+                ? `${PREMIUM_PRICES.monthly}₽ / месяц`
+                : `${PREMIUM_PRICES.yearly}₽ / год (−${PREMIUM_DISCOUNT}%)`}
+            </p>
+          </div>
+        </div>
 
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 180,
-          background: 'linear-gradient(135deg, #7c3aed, #a855f7, #ec4899)',
-          borderRadius: '28px 28px 0 0',
-        }} />
+        <div className="premium-body">
+          <div className="premium-features">
+            <div className="premium-feature">
+              <Icon name="check" size={16} />
+              <span>Больше аккаунтов в QuarkPay</span>
+            </div>
+            <div className="premium-feature">
+              <Icon name="check" size={16} />
+              <span>Приоритетная поддержка</span>
+            </div>
+            <div className="premium-feature">
+              <Icon name="check" size={16} />
+              <span>Расширенные возможности ботов</span>
+            </div>
+            <div className="premium-feature">
+              <Icon name="check" size={16} />
+              <span>Эксклюзивные стикеры</span>
+            </div>
+          </div>
 
-        <div style={{position: 'relative', padding: '28px 24px', textAlign: 'center'}}>
-          <button onClick={onClose} style={{
-            position: 'absolute', top: 0, right: 0, background: 'rgba(255,255,255,0.15)',
-            border: 'none', color: 'white', cursor: 'pointer', fontSize: '0.9rem',
-            width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>✕</button>
+          <div className="premium-plan-toggle">
+            <button
+              className={`premium-plan-btn ${selectedPlan === 'month' ? 'active' : ''}`}
+              onClick={() => setSelectedPlan('month')}
+            >
+              1 мес
+            </button>
+            <button
+              className={`premium-plan-btn ${selectedPlan === 'year' ? 'active' : ''}`}
+              onClick={() => setSelectedPlan('year')}
+            >
+              12 мес
+              <span className="premium-plan-badge">−{PREMIUM_DISCOUNT}%</span>
+            </button>
+          </div>
 
-          <h2 style={{margin: '0 0 4px', fontSize: '1.2rem', fontWeight: 700, color: 'white'}}>Оплата Premium</h2>
-          <p style={{opacity: 0.85, fontSize: '0.85rem', margin: '0 0 24px', color: 'white'}}>
-            {selectedPlan === 'month' ? `${PREMIUM_PRICES.monthly}₽ / месяц` : `${PREMIUM_PRICES.yearly}₽ / год (−${PREMIUM_DISCOUNT}%)`}
-          </p>
-
-          <div style={{
-            display: 'inline-block', background: 'white', padding: 16, borderRadius: 20,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.15)', marginBottom: 24,
-          }}>
+          <div className="premium-qr">
             <QRCodeSVG
               value={`https://monogram-one-mu.vercel.app/premium`}
-              size={160}
+              size={140}
               level="H"
-              bgColor="#ffffff"
-              fgColor="#1a1a1a"
-              style={{borderRadius: 12, display: 'block'}}
+              bgColor="transparent"
+              fgColor="var(--text-primary)"
+              style={{ borderRadius: 12, display: 'block' }}
             />
           </div>
 
-          <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
-            <button onClick={handleQuarkPay} style={{
-              width: '100%', padding: 14, background: 'linear-gradient(135deg, #00d4aa, #00b894)',
-              color: 'white', border: 'none', borderRadius: 14, fontSize: '0.95rem', fontWeight: 600,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            }}>
-              <div style={{width: 24, height: 24, borderRadius: 6, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.8rem'}}>Q</div>
+          <div className="premium-pay-buttons">
+            <button className="premium-btn premium-btn-quarkpay" onClick={handleQuarkPay}>
+              <div className="premium-btn-icon">Q</div>
               QuarkPay
             </button>
-
-            <button onClick={handleYooMoney} style={{
-              width: '100%', padding: 14, background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-              color: 'white', border: 'none', borderRadius: 14, fontSize: '0.95rem', fontWeight: 600,
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            }}>
-              <span style={{fontWeight: 800, fontSize: '1rem'}}>Ю</span>
+            <button className="premium-btn premium-btn-yoomoney" onClick={handleYooMoney}>
+              <span className="premium-btn-icon">Ю</span>
               ЮMoney
             </button>
-
-            <button onClick={handleTestPay} style={{
-              width: '100%', padding: 12, background: 'transparent',
-              color: 'var(--text-tertiary)', border: 'none', borderRadius: 14,
-              fontSize: '0.85rem', cursor: 'pointer',
-            }}>
+            <button className="premium-btn premium-btn-test" onClick={handleTestPay}>
               Тестовая оплата
             </button>
           </div>

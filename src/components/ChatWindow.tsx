@@ -141,6 +141,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const [showChatHeaderMenu, setShowChatHeaderMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -1522,11 +1523,36 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); setShowMediaGallery(true); }} aria-label="Медиа">
             <Icon name="picture" size={20} />
           </button>
-          <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); setShowContextMenu(!showContextMenu); }}>
+          <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); setShowChatHeaderMenu(!showChatHeaderMenu); }}>
             <Icon name="more" size={20} />
           </button>
         </div>
       </div>
+
+      {showChatHeaderMenu && (
+        <div className="chat-header-dropdown" style={{
+          position: 'absolute', top: 56, right: 16, zIndex: 9999,
+          background: 'var(--bg-secondary)', borderRadius: 12,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)', minWidth: 180, padding: '8px 0',
+        }} onClick={(e) => e.stopPropagation()}>
+          <button className="context-menu-item" onClick={() => { setShowChatHeaderMenu(false); setShowChatInfo(true); }}>
+            <Icon name="info" size={16} /> Информация
+          </button>
+          <button className="context-menu-item" onClick={() => { setShowChatHeaderMenu(false); setShowChatSearch(true); }}>
+            <Icon name="search" size={16} /> Поиск
+          </button>
+          <button className="context-menu-item" onClick={() => { setShowChatHeaderMenu(false); }}>
+            <Icon name="mute" size={16} /> Выключить звук
+          </button>
+          <button className="context-menu-item" onClick={() => { setShowChatHeaderMenu(false); }}>
+            <Icon name="folder" size={16} /> Добавить в папку
+          </button>
+          <div className="context-menu-divider" />
+          <button className="context-menu-item danger" onClick={() => { setShowChatHeaderMenu(false); }}>
+            <Icon name="delete" size={16} /> Удалить чат
+          </button>
+        </div>
+      )}
       
       {forwardMode && selectedMessages.length > 0 && (
         <div className="forward-bar">

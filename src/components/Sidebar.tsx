@@ -334,7 +334,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
         <button className="sidebar-action-btn" onClick={onSettingsClick}><Icon name="settings" size={16} /> Настройки</button>
-        {isPremium && <button className="sidebar-action-btn premium" onClick={onPremiumClick}><Icon name="crown" size={16} /> Premium</button>}
+        {!isPremium && <button className="sidebar-action-btn premium" onClick={onPremiumClick}><Icon name="crown" size={16} /> Premium</button>}
+        {isPremium && <button className="sidebar-action-btn premium active" onClick={onPremiumClick}><Icon name="crown" size={16} /> Premium</button>}
         {isAdmin && <button className="sidebar-action-btn" onClick={onAdminClick}><Icon name="shield" size={16} /> Админка</button>}
       </div>
 

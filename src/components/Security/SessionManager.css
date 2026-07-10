@@ -1,0 +1,347 @@
+/* Session Manager */
+
+.session-manager {
+  padding: 0;
+}
+
+.session-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.session-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.session-count {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.session-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-tertiary);
+}
+
+.session-empty svg {
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-primary);
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  transition: border-color 0.2s;
+}
+
+.session-item:hover {
+  border-color: var(--accent);
+}
+
+.session-item.current {
+  border-color: var(--accent);
+  background: rgba(199, 110, 0, 0.05);
+}
+
+.session-item-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
+.session-item.current .session-item-icon {
+  color: var(--accent);
+  background: rgba(199, 110, 0, 0.1);
+}
+
+.session-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.session-item-device {
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.session-current-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: white;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.session-item-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.session-item-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+.session-terminate-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.session-terminate-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger, #ef4444);
+}
+
+.session-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.session-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.session-action-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+}
+
+.session-action-btn.danger {
+  color: var(--danger, #ef4444);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.session-action-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.session-hint {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.session-loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-tertiary);
+}
+
+/* QR Upload Overlay */
+.session-qr-upload-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.session-qr-upload-modal {
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  padding: 28px;
+  max-width: 400px;
+  width: calc(100% - 32px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.session-qr-upload-modal h3 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.session-qr-dropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: 16px;
+  padding: 40px 20px;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.session-qr-dropzone:hover {
+  border-color: var(--accent);
+  background: rgba(199, 110, 0, 0.03);
+}
+
+.session-qr-dropzone p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.session-qr-dropzone-hint {
+  font-size: 0.8rem !important;
+  color: var(--text-tertiary) !important;
+}
+
+.session-qr-upload-btn {
+  margin-top: 16px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.session-qr-upload-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* Terminate All Modal */
+.session-terminate-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  animation: fadeIn 0.2s ease;
+}
+
+.session-terminate-modal {
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 360px;
+  width: calc(100% - 32px);
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.session-terminate-modal svg {
+  color: var(--danger, #ef4444);
+  margin-bottom: 12px;
+}
+
+.session-terminate-modal h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.session-terminate-modal p {
+  margin: 0 0 24px;
+  color: var(--text-tertiary);
+  font-size: 0.9rem;
+}
+
+.session-terminate-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.session-terminate-cancel {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.session-terminate-cancel:hover {
+  background: var(--bg-tertiary);
+}
+
+.session-terminate-confirm {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: var(--danger, #ef4444);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.session-terminate-confirm:hover {
+  filter: brightness(1.1);
+}

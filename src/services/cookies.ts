@@ -38,6 +38,17 @@ export const getSession = async (): Promise<Session | null> => {
         
         if (token && userStr) {
             const user = JSON.parse(userStr);
+            // If avatar_url is missing, try to fetch it from API
+            if (!user.avatar_url) {
+                try {
+                    const { default: apiClient } = await import('./api');
+                    const res = await apiClient.get('/users/me');
+                    if (res.data?.avatar_url) {
+                        user.avatar_url = res.data.avatar_url;
+                        sessionStorage.setItem('monogram_user', JSON.stringify(user));
+                    }
+                } catch {}
+            }
             return { token, user };
         }
         
@@ -54,10 +65,22 @@ export const getSession = async (): Promise<Session | null> => {
                         username: payload.username || '',
                         firstName: payload.first_name || '',
                         lastName: payload.last_name || '',
+                        avatar_url: payload.avatar_url || '',
                     };
                     // Save for faster access next time
                     sessionStorage.setItem('monogram_token', token);
                     sessionStorage.setItem('monogram_user', JSON.stringify(user));
+                    
+                    // Fetch full profile with avatar from API
+                    try {
+                        const { default: apiClient } = await import('./api');
+                        const res = await apiClient.get('/users/me');
+                        if (res.data?.avatar_url) {
+                            user.avatar_url = res.data.avatar_url;
+                            sessionStorage.setItem('monogram_user', JSON.stringify(user));
+                        }
+                    } catch {}
+                    
                     return { token, user };
                 } catch {
                     // Invalid JWT format

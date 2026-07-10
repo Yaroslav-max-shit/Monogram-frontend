@@ -75,6 +75,11 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   'folderuser': Users, 'file-pdf': FileText, 'file-doc': FileText,
   'file-xls': FileSpreadsheet,
   'wallet': Briefcase, 'briefcase': Briefcase, 'palette': Paintbrush, 'film': Play,
+  'arrow-left': ChevronLeft, 'chevron-right': ChevronRight,
+  'info': Info, 'mute': VolumeX, 'quote': Reply,
+  'bell-off': BellRing, 'archive': Folder, 'trash-2': Trash2,
+  'ban': AlertCircle, 'rotate-cw': RotateCcw, 'alert': AlertCircle,
+  'danger': AlertCircle, 'sound': Volume2, 'sound-off': VolumeX,
 };
 
 const Icon: React.FC<{ name: string; className?: string; size?: number; style?: React.CSSProperties; color?: string }> = ({ 
