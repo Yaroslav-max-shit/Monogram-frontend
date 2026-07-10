@@ -109,24 +109,6 @@ export function useGroupCall(roomId: string, userId: number) {
     return pc;
   };
 
-  const handleOffer = async (data: any) => {
-    const pc = await createPeerConnection(data.sender_id);
-    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    sendSignal({ type: 'answer', answer, target: data.sender_id });
-  };
-
-  const handleAnswer = async (data: any) => {
-    const pc = peerConnections.current.get(data.sender_id);
-    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-  };
-
-  const handleIceCandidate = async (data: any) => {
-    const pc = peerConnections.current.get(data.sender_id);
-    if (pc && data.candidate) await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-  };
-
   const toggleMute = useCallback(() => {
     if (localStream) {
       localStream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
@@ -154,13 +136,6 @@ export function useGroupCall(roomId: string, userId: number) {
         }
       });
     } catch {}
-  }, [localStream]);
-
-  const endCall = useCallback(() => {
-    peerConnections.current.forEach(pc => pc.close());
-    peerConnections.current.clear();
-    localStream?.getTracks().forEach(t => t.stop());
-    wsRef.current?.close();
   }, [localStream]);
 
   return { participants, localStream, isMuted, isVideoOff, toggleMute, toggleVideo, shareScreen, endCall };

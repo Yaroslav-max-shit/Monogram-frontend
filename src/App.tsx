@@ -1193,7 +1193,6 @@ const App: React.FC = () => {
           await saveSession(token, { id: 0, username: '', firstName: '', lastName: '' });
           window.location.href = '/';
         }}
-        }}
       />
     );
   }
