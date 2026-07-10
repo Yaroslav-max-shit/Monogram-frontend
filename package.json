@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node -e \"const fs=require('fs'),p=require('path');const d='dist/assets';fs.readdirSync(d).filter(f=>f.endsWith('.tsx')).forEach(f=>{const old=p.join(d,f);const nw=p.join(d,f.replace(/\\.tsx$/,'.js'));fs.renameSync(old,nw);});const idx=p.join('dist/index.html');let c=fs.readFileSync(idx,'utf8');c=c.replace(/\\.tsx/g,'.js');fs.writeFileSync(idx,c);\"",
     "preview": "vite preview",
     "start": "concurrently \"cd ../backend && python main.py\" \"vite\"",
     "dev-start": "concurrently \"cd ../backend && python main.py\" \"vite\"",
