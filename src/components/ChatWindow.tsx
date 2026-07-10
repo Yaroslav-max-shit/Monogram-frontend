@@ -1753,6 +1753,27 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       )}
       
       <div className="chat-input-container">
+        {(isBot || (chatType !== 'private' && chatType !== 'channel')) && (
+          <button
+            className="chat-input-action slash-trigger"
+            onClick={() => {
+              if (inputText.startsWith('/')) {
+                setInputText('');
+                setShowCommandList(false);
+              } else {
+                setInputText('/');
+                const cmdResult = slashCommands.handleInput('/');
+                setShowCommandList(cmdResult.showCommands);
+                setFilteredCommands(cmdResult.filteredCommands);
+              }
+              inputRef.current?.focus();
+            }}
+            title="Команды бота"
+            style={{ fontWeight: 700, fontSize: '1.1rem', minWidth: 32 }}
+          >
+            /
+          </button>
+        )}
         <button
           className="chat-input-action"
           onClick={isMobile ? () => setShowAttachMenu(!showAttachMenu) : handleAttachClick}

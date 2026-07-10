@@ -70,9 +70,11 @@ export function useSlashCommands(chatType: string, members: ChatMember[], isBot:
 
     // Show command list when typing /
     if (parts.length === 1) {
-      const filtered = allCommands.filter(c => c.startsWith(cmd));
-      const filteredWithDesc = allCommandsWithDesc.filter(c => c.cmd.startsWith(cmd));
-      return { showCommands: true, filteredCommands: filteredWithDesc.map(c => c.cmd) };
+      const filtered = allCommandsWithDesc.filter(c =>
+        c.cmd.startsWith(cmd) ||
+        c.desc.toLowerCase().includes(cmd.replace('/', '').toLowerCase())
+      );
+      return { showCommands: true, filteredCommands: filtered.map(c => c.cmd) };
     }
 
     return { showCommands: false, filteredCommands: [] as string[] };

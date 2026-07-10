@@ -619,6 +619,20 @@
 }
 
 
+/* Slash Command Trigger Button */
+.slash-trigger {
+  font-family: monospace;
+  color: var(--accent) !important;
+  background: rgba(199, 110, 0, 0.1) !important;
+  border-radius: 8px !important;
+  transition: all 0.15s !important;
+}
+
+.slash-trigger:hover {
+  background: rgba(199, 110, 0, 0.2) !important;
+  transform: scale(1.05);
+}
+
 /* Command List */
 .command-list-dropdown {
   position: fixed;
