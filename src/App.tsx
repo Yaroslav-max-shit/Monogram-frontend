@@ -557,10 +557,9 @@ const App: React.FC = () => {
       // Обработка подключения QuarkPay — НЕ ставим connectCode сразу,
       // ждём загрузки сессии в handleLogin
       if (connectMatch) {
-        // Сохраняем код, но НЕ рендерим ConnectPage пока сессия не загружена
         const connectCodeStr = connectMatch[1];
         sessionStorage.setItem('pending_connect', connectCodeStr);
-        // Не ставим setIsLoading(false) — ждём handleLogin
+        setIsLoading(false);
         return;
       }
 
@@ -1203,7 +1202,7 @@ const App: React.FC = () => {
         code={connectCode}
         userId={userData?.id || 0}
         username={userData?.username || ''}
-        onConnected={() => { window.location.href = 'https://f1w6ggb2-5174.euw.devtunnels.ms/'; }}
+        onConnected={() => { window.location.href = import.meta.env.VITE_QUARKPAY_URL || 'https://f1w6ggb2-5174.euw.devtunnels.ms/'; }}
       />
     );
   }
