@@ -751,6 +751,11 @@ input[type="range"] {
   border-radius: 8px;
   transition: background 0.12s, transform 0.12s;
   animation: ctxItemIn 0.15s ease backwards;
+  outline: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
 }
 
 .context-menu-item:nth-child(1) { animation-delay: 0.02s; }
