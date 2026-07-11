@@ -1462,10 +1462,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   }).catch(() => {});
                 }
               };
+              const btnTitle = btn.action === 'open_url' ? `Ссылка: ${btn.url || ''}`
+                : btn.action === 'copy' ? `Текст для копирования: ${btn.value || ''}`
+                : btn.action === 'add_to_group' ? 'Добавить бота в группу'
+                : btn.action === 'callback' ? `Ответ: ${btn.data || ''}`
+                : '';
               return (
                 <button
                   key={idx}
                   onClick={handleBtnClick}
+                  title={btnTitle}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     padding: '8px 14px', borderRadius: 10,
@@ -1480,7 +1486,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   {btn.action === 'open_url' && <Icon name="arrow-right" size={12} style={{ opacity: 0.5, transform: 'rotate(-45deg)' }} />}
                   {btn.action === 'copy' && <Icon name="copy" size={12} style={{ opacity: 0.5 }} />}
                   {btn.action === 'add_to_group' && <Icon name="plus" size={12} style={{ opacity: 0.5 }} />}
-                  {btn.action === 'callback' && <Icon name="check" size={12} style={{ opacity: 0.5 }} />}
                 </button>
               );
             })}
