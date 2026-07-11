@@ -1657,12 +1657,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               <>
                 <div className="chat-empty-icon" style={{
                   width: 64, height: 64, borderRadius: 16,
-                  background: 'linear-gradient(135deg, #D4A017, #B8860B)',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 16px', fontSize: '1.5rem', fontWeight: 800, color: '#000',
-                }}>Q</div>
+                  margin: '0 auto 16px', fontSize: '1.5rem', fontWeight: 800,
+                  color: 'var(--text-primary)',
+                }}>
+                  {chatName?.charAt(0)?.toUpperCase() || 'B'}
+                </div>
                 <h3>{chatName}</h3>
-                <p>Отправьте /start чтобы начать</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  {slashCommands.botCommands?.length > 0
+                    ? `Доступно ${slashCommands.botCommands.length} команд. Выберите команду или напишите /start`
+                    : 'Отправьте /start чтобы начать'}
+                </p>
                 <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6, width: '100%', maxWidth: 280 }}>
                   {slashCommands.botCommands?.length > 0 ? (
                     slashCommands.botCommands.map((cmd: any) => (
