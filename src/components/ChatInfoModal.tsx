@@ -117,19 +117,18 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
             </div>
             <h2>{otherMember.first_name} {otherMember.last_name}</h2>
             <p className="profile-username">@{otherMember.username}</p>
-            {otherMember.birth_date && (
-              <p className="profile-birthdate">Дата рождения: {otherMember.birth_date}</p>
-            )}
             
             <div className="profile-section">
               <div className="profile-row">
                 <span className="profile-label">Имя</span>
                 <span className="profile-value">{otherMember.first_name || 'Не указано'}</span>
               </div>
-              <div className="profile-row">
-                <span className="profile-label">Фамилия</span>
-                <span className="profile-value">{otherMember.last_name || 'Не указано'}</span>
-              </div>
+              {otherMember.last_name && (
+                <div className="profile-row">
+                  <span className="profile-label">Фамилия</span>
+                  <span className="profile-value">{otherMember.last_name}</span>
+                </div>
+              )}
               <div className="profile-row">
                 <span className="profile-label">Username</span>
                 <span className="profile-value">@{otherMember.username}</span>
@@ -140,10 +139,6 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
                   <span className="profile-value">{otherMember.birth_date}</span>
                 </div>
               )}
-              <div className="profile-row">
-                <span className="profile-label">Статус</span>
-                <span className="profile-value">В сети</span>
-              </div>
             </div>
           </div>
         ) : (
