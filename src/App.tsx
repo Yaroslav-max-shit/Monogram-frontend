@@ -394,7 +394,7 @@ const App: React.FC = () => {
       }
       
       // Новый чат — загружаем имя собеседника
-      const chatName = msg.chat_name || msg.sender_name || `Чат ${chatId}`;
+      const chatName = msg.sender_name || msg.chat_name || `Чат ${chatId}`;
       
       return [{
         id: chatId,
