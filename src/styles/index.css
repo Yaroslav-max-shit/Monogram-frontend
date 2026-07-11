@@ -757,6 +757,13 @@ input[type="range"] {
   width: 100%;
   text-align: left;
   box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.context-menu-item:focus,
+.context-menu-item:focus-visible,
+.context-menu-item:active {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .context-menu-item:nth-child(1) { animation-delay: 0.02s; }

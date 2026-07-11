@@ -436,6 +436,13 @@
   transition: background 0.15s;
   outline: none !important;
   box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+.context-menu-item:focus,
+.context-menu-item:focus-visible,
+.context-menu-item:active {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .context-menu-item:hover {
