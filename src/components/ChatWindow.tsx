@@ -1211,6 +1211,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     let quoteMsg = null;
     let isVoice = false;
     let voiceDuration = 0;
+    let botButtons: any[] = null;
+    let botText = '';
     
     if (msg.is_deleted) {
       content = "🗑 Сообщение удалено";
@@ -1219,6 +1221,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     let voiceUrl = '';
     try {
       const parsed = JSON.parse(msg.content);
+      if (parsed.type === 'bot_inline' && parsed.buttons) {
+        botButtons = parsed.buttons;
+        botText = parsed.text || '';
+        content = parsed.text || '';
+      }
       if (parsed.reply_to) {
         content = parsed.text;
         replyToMsg = messages.find(m => m.id === parsed.reply_to);
@@ -1430,6 +1437,53 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             {urls.map((url, idx) => (
               <LinkPreview key={idx} url={url} />
             ))}
+          </div>
+        )}
+
+        {botButtons && botButtons.length > 0 && (
+          <div className="bot-inline-buttons" style={{
+            display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8,
+          }}>
+            {botButtons.map((btn: any, idx: number) => {
+              const handleBtnClick = () => {
+                if (btn.action === 'open_url' && btn.url) {
+                  const url = btn.url.startsWith('http') ? btn.url : `${window.location.origin}${btn.url}`;
+                  window.open(url, '_blank');
+                } else if (btn.action === 'copy' && btn.value) {
+                  navigator.clipboard.writeText(btn.value).then(() => {
+                    addToast('info', 'Скопировано!');
+                  });
+                } else if (btn.action === 'add_to_group') {
+                  window.open(`${window.location.origin}/groups?bot_id=${msg.bot_id || ''}`, '_blank');
+                } else if (btn.action === 'callback' && btn.data) {
+                  apiClient.post('/bots/api/answerCallbackQuery', {
+                    callback_query_id: msg.id,
+                    data: btn.data,
+                  }).catch(() => {});
+                }
+              };
+              return (
+                <button
+                  key={idx}
+                  onClick={handleBtnClick}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '8px 14px', borderRadius: 10,
+                    background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)', fontSize: '0.82rem', fontWeight: 500,
+                    cursor: 'pointer', transition: 'all 0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.background = 'rgba(199,110,0,0.05)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.background = 'var(--bg-primary)'; }}
+                >
+                  <span>{btn.text}</span>
+                  {btn.action === 'open_url' && <Icon name="arrow-right" size={12} style={{ opacity: 0.5, transform: 'rotate(-45deg)' }} />}
+                  {btn.action === 'copy' && <Icon name="copy" size={12} style={{ opacity: 0.5 }} />}
+                  {btn.action === 'add_to_group' && <Icon name="plus" size={12} style={{ opacity: 0.5 }} />}
+                  {btn.action === 'callback' && <Icon name="check" size={12} style={{ opacity: 0.5 }} />}
+                </button>
+              );
+            })}
           </div>
         )}
         

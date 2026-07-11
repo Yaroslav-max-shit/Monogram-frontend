@@ -619,6 +619,18 @@
 }
 
 
+/* Bot Inline Buttons */
+.bot-inline-buttons {
+  margin-top: 8px;
+}
+.bot-inline-buttons button {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.bot-inline-buttons button:active {
+  transform: scale(0.96);
+}
+
 /* Slash Command Trigger Button */
 .slash-trigger {
   font-family: monospace;
