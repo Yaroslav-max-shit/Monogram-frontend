@@ -115,10 +115,14 @@ const SearchModal: React.FC<SearchModalProps> = ({ onClose, onChatSelect }) => {
         </div>
         
         <div className="search-input-wrapper">
-          <Icon name="search" size={18} />
+          {loading ? (
+            <div className="search-input-spinner" />
+          ) : (
+            <Icon name="search" size={18} />
+          )}
           <input
             type="text"
-            placeholder="Поиск по чатам, сообщениям, пользователям..."
+            placeholder={loading ? "Поиск..." : "Поиск по чатам, сообщениям, пользователям..."}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
