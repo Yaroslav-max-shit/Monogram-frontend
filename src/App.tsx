@@ -1269,27 +1269,7 @@ const App: React.FC = () => {
   if (isLoading) {
     const savedAvatar = localStorage.getItem('avatar_drawing');
     if (savedAvatar && !showAvatarDrawer) {
-      return <div className="loading-screen" style={{
-        background: 'var(--bg-primary)',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        <div style={{animation: 'splashRise 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards'}}>
-          <img src="/assets/images/icon.svg" alt="Monogram" style={{width: 64, height: 64, marginBottom: 12}} />
-        </div>
-        <div style={{animation: 'splashFadeIn 0.6s 0.4s ease both'}}>
-          <BlobLoader size={120} />
-        </div>
-        <p style={{
-          color: 'var(--text-primary)', marginTop: 12,
-          fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: '1.5rem',
-          letterSpacing: -0.5,
-          animation: 'splashFadeIn 0.6s 0.6s ease both',
-        }}>Monogram</p>
-        <style>{`
-          @keyframes splashRise { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-20px) scale(0.9); } }
-          @keyframes splashFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        `}</style>
-      </div>;
+      return null;
     }
     if (showAvatarDrawer) {
       const AvatarDrawer = React.lazy(() => import('./components/AvatarDrawer'));
@@ -1304,23 +1284,7 @@ const App: React.FC = () => {
         />
       </React.Suspense></ErrorBoundary>;
     }
-    return <div className="loading-screen" style={{
-      background: 'var(--bg-primary)',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      <div style={{animation: 'splashRise 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards'}}>
-        <img src="/assets/images/icon.svg" alt="Monogram" style={{width: 64, height: 64, marginBottom: 12}} />
-      </div>
-      <div style={{animation: 'splashFadeIn 0.6s 0.4s ease both'}}>
-        <BlobLoader size={120} />
-      </div>
-      <p style={{
-        color: 'var(--text-primary)', marginTop: 12,
-        fontFamily: "'Manrope', sans-serif", fontWeight: 800, fontSize: '1.5rem',
-        letterSpacing: -0.5,
-        animation: 'splashFadeIn 0.6s 0.6s ease both',
-      }}>Monogram</p>
-    </div>;
+    return null;
   }
 
   // ============================================
