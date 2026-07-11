@@ -810,6 +810,23 @@ const App: React.FC = () => {
         // Подключаем WebSocket через realtime.ts
         realtime.connect(session.user.id, session.token);
         realtime.on('new_message', handleIncomingMessage);
+        realtime.on('new_chat', (data: any) => {
+          // Новый чат от другого пользователя — добавляем в список
+          const chatId = data.chat_id;
+          if (!chatId) return;
+          setSavedChats(prev => {
+            if (prev.find(c => c.id === chatId)) return prev;
+            return [{
+              id: chatId,
+              name: data.chat_name || `Чат ${chatId}`,
+              type: data.chat_type || 'private',
+              lastMessage: '',
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              unreadCount: 1,
+              isPinned: false,
+            }, ...prev];
+          });
+        });
         realtime.on('typing', (data: any) => {
           // Обработка typing индикаторов будет в ChatWindow
         });
@@ -898,15 +915,6 @@ const App: React.FC = () => {
         loadUserChats();
       }
     });
-  }, [isLoggedIn]);
-
-  // Fallback polling: only every 60 seconds (real-time updates come via WebSocket)
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    const interval = setInterval(() => {
-      loadUserChats();
-    }, 60000);
-    return () => clearInterval(interval);
   }, [isLoggedIn]);
 
   // URL-based chat loading
