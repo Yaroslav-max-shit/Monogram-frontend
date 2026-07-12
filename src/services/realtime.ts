@@ -12,11 +12,14 @@ class RealtimeService {
   private sseSource: EventSource | null = null;
   private sseReconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private isConnecting = false;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 10;
 
   async connect(userId: number, token: string) {
     if (this.isConnecting) return;
     this.isConnecting = true;
     this.userId = userId;
+    this.reconnectAttempts = 0;
     this.disconnect();
 
     const wsUrl = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
@@ -26,7 +29,9 @@ class RealtimeService {
 
       this.ws.onopen = () => {
         this.isConnecting = false;
+        this.reconnectAttempts = 0;
         this.ws?.send(JSON.stringify({ type: 'auth', token }));
+        console.log('[WS] Connected');
       };
 
       this.ws.onmessage = (event) => {
@@ -36,17 +41,28 @@ class RealtimeService {
         } catch {}
       };
 
-      this.ws.onclose = () => {
-        // WS закрылся — подключаем SSE с задержкой
-        if (!this.sseSource) {
-          this.scheduleSSE(5000);
+      this.ws.onclose = (event) => {
+        console.log(`[WS] Closed: ${event.code} ${event.reason}`);
+        this.isConnecting = false;
+        // WS закрылся — переподключаемся с backoff
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+          this.reconnectAttempts++;
+          this.reconnectTimer = setTimeout(() => {
+            if (this.userId) this.connect(this.userId, token);
+          }, delay);
+        } else {
+          // Переключаемся на SSE
+          this.scheduleSSE(2000);
         }
       };
 
-      this.ws.onerror = () => {
+      this.ws.onerror = (error) => {
+        console.error('[WS] Error:', error);
         this.ws?.close();
       };
-    } catch {
+    } catch (error) {
+      console.error('[WS] Connect error:', error);
       this.isConnecting = false;
       this.scheduleSSE(2000);
     }
@@ -80,7 +96,6 @@ class RealtimeService {
       this.sseSource.onerror = () => {
         this.sseSource?.close();
         this.sseSource = null;
-        // Переподключаемся с большой задержкой
         this.scheduleSSE(10000);
       };
     } catch {
@@ -115,6 +130,7 @@ class RealtimeService {
     this.sseSource?.close();
     this.sseSource = null;
     this.isConnecting = false;
+    this.reconnectAttempts = 0;
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;

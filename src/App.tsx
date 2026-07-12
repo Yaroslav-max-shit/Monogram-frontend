@@ -861,8 +861,8 @@ const App: React.FC = () => {
         
         // Подключаем WebSocket через realtime.ts
         realtime.connect(session.user.id, session.token);
-        realtime.on('new_message', handleIncomingMessage);
-        realtime.on('new_chat', (data: any) => {
+        const unsubMessage = realtime.on('new_message', handleIncomingMessage);
+        const unsubChat = realtime.on('new_chat', (data: any) => {
           // Новый чат от другого пользователя — добавляем в список
           const chatId = data.chat_id;
           if (!chatId) return;
@@ -879,7 +879,7 @@ const App: React.FC = () => {
             }, ...prev];
           });
         });
-        realtime.on('typing', (data: any) => {
+        const unsubTyping = realtime.on('typing', (data: any) => {
           // Обработка typing индикаторов будет в ChatWindow
         });
         

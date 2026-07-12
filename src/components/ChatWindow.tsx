@@ -126,6 +126,8 @@ interface ChatWindowProps {
   description?: string;
 }
 
+const MAX_MESSAGES = 500;
+
 const ChatWindow: React.FC<ChatWindowProps> = ({ 
   chatId, 
   chatName, 
@@ -225,6 +227,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const typingIndicatorTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const touchStartRef = useRef<{ x: number; y: number; messageId: number | null }>({ x: 0, y: 0, messageId: null });
   const [swipeOffset, setSwipeOffset] = useState<{ messageId: number; offset: number } | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -356,6 +359,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     loadWallpaper();
   }, [chatId]);
 
+  // Cleanup all timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingIndicatorTimeoutsRef.current.forEach(t => clearTimeout(t));
+      typingIndicatorTimeoutsRef.current = [];
+    };
+  }, []);
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -399,6 +411,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         return { ...msg, status: 'sent' as const };
       });
       
+      if (msgs.length > MAX_MESSAGES) {
+        msgs = msgs.slice(msgs.length - MAX_MESSAGES);
+      }
       setMessages(msgs);
       setHasMoreMessages(msgs.length >= 20);
       // Кэшируем сообщения
@@ -451,7 +466,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         status: msg.sender_id === currentUserId ? 'read' : 'delivered'
       }));
       
-      setMessages(prev => [...olderMsgs, ...prev]);
+      setMessages(prev => {
+        const combined = [...olderMsgs, ...prev];
+        if (combined.length > MAX_MESSAGES) {
+          return combined.slice(combined.length - MAX_MESSAGES);
+        }
+        return combined;
+      });
       setHasMoreMessages(olderMsgs.length >= 20);
     } catch (error) {
       console.error('Ошибка загрузки старых сообщений:', error);
@@ -493,17 +514,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       if (data.chat_id === chatId && data.user_id !== currentUserId) {
         setTypingUsers(prev => new Set([...prev, data.user_id]));
         // Убираем через 3 секунды
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
           setTypingUsers(prev => {
             const next = new Set(prev);
             next.delete(data.user_id);
             return next;
           });
         }, 3000);
+        typingIndicatorTimeoutsRef.current.push(timeout);
       }
     });
     
-    return unsubscribe;
+    return () => {
+      typingIndicatorTimeoutsRef.current.forEach(t => clearTimeout(t));
+      typingIndicatorTimeoutsRef.current = [];
+      unsubscribe();
+    };
   }, [chatId, currentUserId]);
 
   // Infinite scroll — загрузка старых сообщений при скролле вверх
@@ -598,33 +624,47 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   useEffect(() => {
     let cancelled = false;
-    loadChatMembers().then(() => { if (cancelled) setChatMembers([]); });
-    // Проверяем блокировку
-    if (isPrivate && !isBot) {
-      const otherMember = chatMembers.find(m => m.id !== currentUserId);
-      if (otherMember) {
-        apiClient.get(`/users/is-blocked/${otherMember.id}`).then(res => {
-          if (!cancelled) {
-            if (res.data.blocked_by_them) setIsBlocked('by_them');
-            else if (res.data.blocked_by_me) setIsBlocked('by_me');
-            else setIsBlocked('none');
-          }
-        }).catch(() => {});
+    // Объединённая загрузка: members + block check + draft за один проход
+    const loadData = async () => {
+      try {
+        const blockId = isPrivate && !isBot ? (chatMembers.find(m => m.id !== currentUserId)?.id || 0) : 0;
+        const requests: Promise<any>[] = [
+          apiClient.get(`/chats/${chatId}/members`),
+        ];
+        if (blockId > 0) requests.push(apiClient.get(`/users/is-blocked/${blockId}`).catch(() => null));
+        if (onSaveDraft) requests.push(apiClient.get(`/drafts/${chatId}`).catch(() => null));
+
+        const results = await Promise.all(requests);
+        if (cancelled) return;
+
+        const membersRes = results[0];
+        const blockRes = blockId > 0 ? results[1] : null;
+        const draftRes = onSaveDraft ? results[blockId > 0 ? 2 : 1] : null;
+
+        const members = (membersRes.data || []).map((m: any) => ({
+          id: m.user_id,
+          username: m.username,
+          first_name: m.first_name || '',
+          last_name: m.last_name || '',
+        }));
+        setChatMembers(members);
+
+        if (blockRes?.data) {
+          if (blockRes.data.blocked_by_them) setIsBlocked('by_them');
+          else if (blockRes.data.blocked_by_me) setIsBlocked('by_me');
+        }
+
+        if (draftRes?.data?.content) {
+          setInputText(draftRes.data.content);
+          inputTextRef.current = draftRes.data.content;
+        }
+      } catch (err) {
+        console.error('Failed to load chat data:', err);
       }
-    }
+    };
+    loadData();
     return () => { cancelled = true; };
   }, [chatId]);
-
-  // Load draft on chat change
-  useEffect(() => {
-    let mounted = true;
-    if (onSaveDraft && chatId) {
-      apiClient.get(`/drafts/${chatId}`).then(res => {
-        if (mounted && res.data?.content) setInputText(res.data.content);
-      }).catch(() => {});
-    }
-    return () => { mounted = false; };
-  }, [chatId, onSaveDraft]);
 
   const updateMessageStatus = (messageId: number, status: Message['status']) => {
     setMessages(prev => prev.map(msg => 
@@ -716,7 +756,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       edited: false,
       status: 'sending'
     };
-    setMessages(prev => [...prev, tempMessage]);
+    setMessages(prev => {
+      const updated = [...prev, tempMessage];
+      if (updated.length > MAX_MESSAGES) return updated.slice(updated.length - MAX_MESSAGES);
+      return updated;
+    });
     setInputText('');
     inputTextRef.current = '';
     setSelectedSticker(null);
@@ -1027,7 +1071,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           edited: false,
           status: 'sending'
         };
-        setMessages(prev => [...prev, tempMessage]);
+        setMessages(prev => {
+          const updated = [...prev, tempMessage];
+          if (updated.length > MAX_MESSAGES) return updated.slice(updated.length - MAX_MESSAGES);
+          return updated;
+        });
         scrollToBottom();
         
         const formData = new FormData();
