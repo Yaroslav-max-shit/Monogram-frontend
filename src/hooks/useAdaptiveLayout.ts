@@ -121,9 +121,11 @@ export const useAdaptiveLayout = (initialSidebarState: boolean = false) => {
     }
   }, [state.isDesktop]);
 
-  // На мобильном sidebar всегда открыт
+  // На мобильном sidebar открыт только если пользователь залогинен
+  // (не на экране логина/регистрации)
   useEffect(() => {
-    if (state.isMobile && !state.sidebarOpen) {
+    const isLoginPage = !document.querySelector('.app-main-layout');
+    if (state.isMobile && !state.sidebarOpen && !isLoginPage) {
       setState(prev => ({ ...prev, sidebarOpen: true }));
     }
   }, [state.isMobile]);
