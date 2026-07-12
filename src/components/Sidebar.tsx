@@ -301,6 +301,11 @@ const Sidebar: React.FC<SidebarProps> = ({
               <div className="chat-info">
                 <span className="chat-name">
                   {chat.name || chat.title || 'Чат'}
+                  {(chat as any).is_suspicious && (
+                    <span className="suspicious-icon" title={`Контакт подозрительный. Заблокирован ${(chat as any).blocked_count || 0} раз`}>
+                      <Icon name="danger" size={12} />
+                    </span>
+                  )}
                   {chat.isPinned && <Icon name="pin" size={12} className="chat-pin-icon" />}
                   {chat.isMuted && <Icon name="volume-off" size={12} className="chat-mute-icon" />}
                 </span>

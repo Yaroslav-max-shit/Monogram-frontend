@@ -421,6 +421,22 @@
   }
 }
 
+/* Подозрительный контакт */
+.suspicious-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--danger, #ef4444);
+  color: white;
+  margin-left: 4px;
+  vertical-align: middle;
+  cursor: help;
+  flex-shrink: 0;
+}
+
 /* Контекст-меню */
 .context-menu-item {
   display: flex;

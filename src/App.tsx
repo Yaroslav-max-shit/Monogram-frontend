@@ -86,6 +86,8 @@ interface ChatInfo {
   isBot?: boolean;
   botId?: number;
   description?: string;
+  is_suspicious?: boolean;
+  blocked_count?: number;
 }
 
 interface UserData {
@@ -145,6 +147,8 @@ const App: React.FC = () => {
   const [showQRLogin, setShowQRLogin] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
   const [forwardMessageId, setForwardMessageId] = useState<number | null>(null);
+  // Unknown contact prompt
+  const [unknownContact, setUnknownContact] = useState<{ chatId: number; name: string; senderId: number } | null>(null);
   // Stories
   const [showStoryCreator, setShowStoryCreator] = useState(false);
   const [viewingStories, setViewingStories] = useState<StoryData[] | null>(null);
@@ -405,6 +409,11 @@ const App: React.FC = () => {
       
       // Новый чат — загружаем имя собеседника
       const chatName = msg.sender_name || msg.chat_name || `Чат ${chatId}`;
+      
+      // Показываем prompt для неизвестных контактов
+      if (msg.sender_id && msg.sender_id !== userData?.id) {
+        setUnknownContact({ chatId, name: chatName, senderId: msg.sender_id });
+      }
       
       return [{
         id: chatId,
@@ -1548,6 +1557,50 @@ const App: React.FC = () => {
           onCancel={() => setShowLogoutConfirm(false)}
           danger
         />
+      )}
+      
+      {/* Неизвестный контакт */}
+      {unknownContact && (
+        <div className="modal-overlay" onClick={() => setUnknownContact(null)}>
+          <div className="unknown-contact-modal" onClick={e => e.stopPropagation()} style={{
+            background: 'var(--bg-secondary)', borderRadius: 20, padding: '28px 24px',
+            maxWidth: 380, width: '100%', textAlign: 'center',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: 'var(--bg-primary)', border: '2px solid var(--border-color)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 16px', fontSize: '1.5rem', fontWeight: 700,
+            }}>
+              {unknownContact.name?.charAt(0)?.toUpperCase() || '?'}
+            </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem' }}>Новый контакт</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 20px', lineHeight: 1.5 }}>
+              <strong>@{unknownContact.name}</strong> написал вам первым.<br />
+              Вы знаете этого человека?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button onClick={() => {
+                setActiveChat({ id: unknownContact.chatId, name: unknownContact.name });
+                setUnknownContact(null);
+              }} style={{
+                padding: '12px', borderRadius: 12, border: 'none',
+                background: 'var(--accent)', color: 'white',
+                fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
+              }}>Да, знаю</button>
+              <button onClick={async () => {
+                try { await apiClient.get(`/users/block/${unknownContact.senderId}`); } catch {}
+                setSavedChats(prev => prev.filter(c => c.id !== unknownContact.chatId));
+                setUnknownContact(null);
+              }} style={{
+                padding: '12px', borderRadius: 12, border: 'none',
+                background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger, #ef4444)',
+                fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer',
+              }}>Заблокировать</button>
+            </div>
+          </div>
+        </div>
       )}
       
       {/* QR и сканер */}
