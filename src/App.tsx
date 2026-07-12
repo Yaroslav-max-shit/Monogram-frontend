@@ -1502,6 +1502,7 @@ const App: React.FC = () => {
               />
               <div className="app-content">
                 {activeChat ? (
+                  <ErrorBoundary>
                   <ChatWindow 
                     chatId={activeChat.id} 
                     chatName={activeChat.name} 
@@ -1527,6 +1528,7 @@ const App: React.FC = () => {
                     }}
                     onMessageSent={() => loadUserChats()}
                   />
+                  </ErrorBoundary>
                 ) : (
                   <div className="welcome-screen">
                     <Icon name="logo" size={72} />
