@@ -691,7 +691,26 @@ const App: React.FC = () => {
       }
 
       if (path === '/google-success') {
-        // Токен теперь в HttpOnly cookie, читаем через getSession()
+        // Токен в URL (cookie не работает кросс-доменно)
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            await saveSession(token, {
+              id: payload.user_id || payload.sub,
+              username: payload.username || '',
+              firstName: payload.first_name || '',
+              lastName: payload.last_name || '',
+            });
+            window.location.href = '/';
+          } catch (e) {
+            console.error('Google callback error:', e);
+            window.location.href = '/';
+          }
+          return;
+        }
+        // Fallback: try cookie
         try {
           const session = await getSession();
           if (session) {
@@ -702,9 +721,7 @@ const App: React.FC = () => {
             window.location.href = '/';
             return;
           }
-        } catch (e) {
-          console.error('Google session load error:', e);
-        }
+        } catch {}
         alert('Ошибка входа через Google');
         window.location.href = '/';
         return;
@@ -735,7 +752,26 @@ const App: React.FC = () => {
       }
 
       if (path === '/ya-success') {
-        // Токен теперь в HttpOnly cookie, читаем через getSession()
+        // Токен в URL (cookie не работает кросс-доменно)
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            await saveSession(token, {
+              id: payload.user_id || payload.sub,
+              username: payload.username || '',
+              firstName: payload.first_name || '',
+              lastName: payload.last_name || '',
+            });
+            window.location.href = '/';
+          } catch (e) {
+            console.error('Yandex callback error:', e);
+            window.location.href = '/';
+          }
+          return;
+        }
+        // Fallback: try cookie
         try {
           const session = await getSession();
           if (session) {
@@ -746,10 +782,7 @@ const App: React.FC = () => {
             window.location.href = '/';
             return;
           }
-        } catch (e) {
-          console.error('Yandex session load error:', e);
-        }
-        const params = new URLSearchParams(window.location.search);
+        } catch {}
         const msg = params.get('message');
         alert(msg || 'Ошибка входа через Яндекс');
         window.location.href = '/';
