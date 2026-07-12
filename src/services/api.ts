@@ -8,6 +8,7 @@ const apiClient = axios.create({
 });
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 const processQueue = (error: any, token: string | null = null) => {
     failedQueue.forEach(prom => {
@@ -18,6 +19,26 @@ const processQueue = (error: any, token: string | null = null) => {
         }
     });
     failedQueue = [];
+};
+
+// Прораннее обновление токена каждые 6 дней (токен живёт 7 дней)
+const scheduleTokenRefresh = () => {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(async () => {
+        try {
+            const session = await getSession();
+            if (!session?.token) return;
+            const response = await axios.post(`${API_URL}/auth/refresh`, {}, {
+                headers: { Authorization: `Bearer ${session.token}` }
+            });
+            const newToken = response.data.access_token;
+            if (newToken) {
+                await saveSession(newToken, session.user);
+                apiClient.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+            }
+        } catch {}
+        scheduleTokenRefresh(); // Планируем следующее обновление
+    }, 6 * 24 * 60 * 60 * 1000); // 6 дней
 };
 
 apiClient.interceptors.request.use(async (config) => {
@@ -62,6 +83,7 @@ apiClient.interceptors.response.use(
                     apiClient.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
                     processQueue(null, newToken);
                     originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                    scheduleTokenRefresh();
                     return apiClient(originalRequest);
                 }
             } catch (refreshError) {
@@ -77,6 +99,9 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+// Запускаем прораннее обновление при старте
+scheduleTokenRefresh();
 
 export const searchUsers = async (query: string) => {
     const response = await apiClient.get(`/users/search?q=${query}`);
