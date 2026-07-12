@@ -36,6 +36,63 @@ import QuickReplies from './QuickReplies';
 
 import { setCustomSound, resetCustomSound } from '../services/sounds';
 
+// Компонент списка заблокированных
+const BlockedUsersList: React.FC = () => {
+  const [blocked, setBlocked] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiClient.get('/users/blocked').then(res => {
+      setBlocked(res.data || []);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  const handleUnblock = async (userId: number) => {
+    try {
+      await apiClient.delete(`/users/block/${userId}`);
+      setBlocked(prev => prev.filter(u => u.id !== userId));
+    } catch {}
+  };
+
+  if (loading) return <div style={{ padding: 12, color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>Загрузка...</div>;
+  if (blocked.length === 0) return <div style={{ padding: 12, color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>Нет заблокированных</div>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {blocked.map(user => (
+        <div key={user.id} style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+          background: 'var(--bg-primary)', borderRadius: 12,
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-tertiary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.85rem', fontWeight: 600, flexShrink: 0,
+          }}>
+            {user.avatar_url ? (
+              <img src={user.avatar_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              (user.first_name || user.username || '?').charAt(0).toUpperCase()
+            )}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 500, fontSize: '0.85rem' }}>{user.first_name} {user.last_name}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>@{user.username}</div>
+          </div>
+          <button onClick={() => handleUnblock(user.id)} style={{
+            padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-color)',
+            background: 'transparent', color: 'var(--text-primary)', fontSize: '0.78rem',
+            cursor: 'pointer', transition: 'all 0.15s',
+          }}>Разблокировать</button>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+
+
+
 import { FocusMode, isFocusModeActive } from './FocusMode';
 
 import { createFolder, getFolders, updateFolder, deleteFolder } from '../utils/features';
@@ -2650,6 +2707,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
             )}
+
+            {/* Заблокированные */}
+            <div className="settings-group">
+              <div className="settings-group-title">Заблокированные</div>
+              <BlockedUsersList />
+            </div>
 
           </div>
 

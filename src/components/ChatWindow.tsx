@@ -175,6 +175,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [chatSearchQuery, setChatSearchQuery] = useState('');
   const [chatSearchResults, setChatSearchResults] = useState<number[]>([]);
   const [currentSearchIdx, setCurrentSearchIdx] = useState(0);
+  const [isBlocked, setIsBlocked] = useState<'none' | 'by_me' | 'by_them'>('none');
 
   // Scroll animations
   const visibleMessages = useRef(new Set<number>());
@@ -598,6 +599,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   useEffect(() => {
     let cancelled = false;
     loadChatMembers().then(() => { if (cancelled) setChatMembers([]); });
+    // Проверяем блокировку
+    if (isPrivate && !isBot) {
+      const otherMember = chatMembers.find(m => m.id !== currentUserId);
+      if (otherMember) {
+        apiClient.get(`/users/is-blocked/${otherMember.id}`).then(res => {
+          if (!cancelled) {
+            if (res.data.blocked_by_them) setIsBlocked('by_them');
+            else if (res.data.blocked_by_me) setIsBlocked('by_me');
+            else setIsBlocked('none');
+          }
+        }).catch(() => {});
+      }
+    }
     return () => { cancelled = true; };
   }, [chatId]);
 
