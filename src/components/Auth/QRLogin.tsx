@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import apiClient from '../../services/api';
 import { saveSession } from '../../services/cookies';
 import Icon from '../Icon';
@@ -13,73 +13,78 @@ const QRLogin: React.FC<QRLoginProps> = ({ onClose }) => {
   const [status, setStatus] = useState<'waiting' | 'scanning' | 'confirmed' | 'expired'>('waiting');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     createSession();
+    return () => {
+      mountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, []);
 
   const createSession = async () => {
+    if (!mountedRef.current) return;
     try {
       const res = await apiClient.post('/auth/qr/create');
+      if (!mountedRef.current) return;
       setSessionId(res.data.session_id);
       setQrLink(res.data.qr_link);
       setStatus('waiting');
       setLoading(false);
       checkStatus(res.data.session_id);
     } catch (err) {
+      if (!mountedRef.current) return;
       setError('Не удалось создать QR-сессию');
       setLoading(false);
     }
   };
 
   const checkStatus = async (sid: string) => {
-    const interval = setInterval(async () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(async () => {
+      if (!mountedRef.current) {
+        clearInterval(intervalRef.current!);
+        return;
+      }
       try {
         const res = await apiClient.get(`/auth/qr/status/${sid}`);
+        if (!mountedRef.current) return;
         setStatus(res.data.status);
         
         if (res.data.status === 'confirmed') {
-          clearInterval(interval);
-          const tokenRes = await apiClient.post('/auth/qr/confirm', { 
-            session_id: sid, 
-            device_name: 'Web' 
-          });
-          if (tokenRes.data.token) {
-            await saveSession(tokenRes.data.token, tokenRes.data.user);
-            onClose();
-            window.location.href = '/';
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          try {
+            const tokenRes = await apiClient.post('/auth/qr/confirm', { 
+              session_id: sid, 
+              device_name: navigator.userAgent || 'Mobile' 
+            });
+            if (!mountedRef.current) return;
+            if (tokenRes.data.access_token) {
+              await saveSession(tokenRes.data.access_token, tokenRes.data.user || {});
+              onClose();
+              setTimeout(() => { window.location.href = '/'; }, 100);
+            } else if (tokenRes.data.token) {
+              await saveSession(tokenRes.data.token, tokenRes.data.user || {});
+              onClose();
+              setTimeout(() => { window.location.href = '/'; }, 100);
+            }
+          } catch (e) {
+            console.error('QR confirm error:', e);
           }
         } else if (res.data.status === 'expired') {
-          clearInterval(interval);
-          setError('Сессия истекла');
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          if (mountedRef.current) setError('Сессия истекла');
         }
       } catch (err) {
         console.error('Polling error:', err);
       }
     }, 2000);
-  };
-
-  const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
-    const notification = document.createElement('div');
-    notification.className = `custom-toast ${type}`;
-    notification.textContent = message;
-    notification.style.cssText = `
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : 'var(--accent)'};
-      color: white;
-      padding: 12px 24px;
-      border-radius: 50px;
-      z-index: 100000;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-      animation: slideUp 0.3s ease;
-    `;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
   };
 
   if (loading) {
@@ -91,7 +96,7 @@ const QRLogin: React.FC<QRLoginProps> = ({ onClose }) => {
             <button className="modal-close-btn" onClick={onClose}>✕</button>
           </div>
           <div className="qr-login-body">
-            <div className="loading-spinner" />
+            <BlobLoader size={40} />
             <p>Создание QR-кода...</p>
           </div>
         </div>
@@ -110,7 +115,7 @@ const QRLogin: React.FC<QRLoginProps> = ({ onClose }) => {
           <div className="qr-login-body">
             <div className="error-icon">⚠️</div>
             <p className="error-text">{error}</p>
-            <button className="retry-btn" onClick={createSession}>Попробовать снова</button>
+            <button className="retry-btn" onClick={() => { setError(null); setLoading(true); createSession(); }}>Попробовать снова</button>
           </div>
         </div>
       </div>
@@ -148,5 +153,7 @@ const QRLogin: React.FC<QRLoginProps> = ({ onClose }) => {
     </div>
   );
 };
+
+import BlobLoader from '../BlobLoader';
 
 export default QRLogin;
