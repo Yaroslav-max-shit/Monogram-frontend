@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { votePoll, closePoll } from '../utils/features';
+import React, { useState, useEffect } from 'react';
+import { votePoll, closePoll, getPollResults } from '../utils/features';
 
 interface Props {
   poll: any;
@@ -13,6 +13,18 @@ const PollView: React.FC<Props> = ({ poll, messageId, currentUserId, onTranslate
   const [results, setResults] = useState<Record<number, number>>({});
   const [totalVotes, setTotalVotes] = useState(0);
   const [isClosed, setIsClosed] = useState(poll.is_closed);
+
+  useEffect(() => {
+    if (poll.poll_id) {
+      getPollResults(poll.poll_id).then(data => {
+        if (data && data.results) {
+          setResults(data.results);
+          setTotalVotes(data.total_votes || 0);
+          if (data.is_closed) setIsClosed(true);
+        }
+      }).catch(() => {});
+    }
+  }, [poll.poll_id]);
 
   const handleVote = async (idx: number) => {
     if (voted || isClosed) return;

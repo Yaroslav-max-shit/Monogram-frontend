@@ -2,7 +2,7 @@
 // Chats and messages stored in IndexedDB, shown immediately on load
 
 const DB_NAME = 'monogram-cache';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
@@ -21,6 +21,10 @@ const openDB = (): Promise<IDBDatabase> => {
       if (!db.objectStoreNames.contains('meta')) {
         db.createObjectStore('meta');
       }
+      if (!db.objectStoreNames.contains('outbox')) {
+        const outbox = db.createObjectStore('outbox', { keyPath: 'tempId' });
+        outbox.createIndex('chat_id', 'chat_id', { unique: false });
+      }
     };
   });
 };
@@ -35,7 +39,6 @@ export const cacheChats = async (chats: any[]): Promise<void> => {
     for (const chat of chats) {
       store.put(chat);
     }
-    // Сохраняем время обновления
     const metaTx = db.transaction('meta', 'readwrite');
     metaTx.objectStore('meta').put(Date.now(), 'chats_updated');
     await new Promise(r => tx.oncomplete = r);
@@ -97,6 +100,70 @@ export const addCachedMessage = async (message: any): Promise<void> => {
     const tx = db.transaction('messages', 'readwrite');
     tx.objectStore('messages').put({ ...message, chat_id: message.chat_id });
   } catch {}
+};
+
+// ---- Outbox (offline message queue) ----
+
+export interface OutboxMessage {
+  tempId: number;
+  chatId: number;
+  content: string;
+  recipientId?: number;
+  timestamp: string;
+  retries: number;
+}
+
+export const addToOutbox = async (msg: OutboxMessage): Promise<void> => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction('outbox', 'readwrite');
+    tx.objectStore('outbox').put(msg);
+  } catch {}
+};
+
+export const getOutbox = async (): Promise<OutboxMessage[]> => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction('outbox', 'readonly');
+    return new Promise((resolve) => {
+      const request = tx.objectStore('outbox').getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => resolve([]);
+    });
+  } catch {
+    return [];
+  }
+};
+
+export const removeFromOutbox = async (tempId: number): Promise<void> => {
+  try {
+    const db = await openDB();
+    const tx = db.transaction('outbox', 'readwrite');
+    tx.objectStore('outbox').delete(tempId);
+  } catch {}
+};
+
+export const syncOutbox = async (sendFn: (msg: OutboxMessage) => Promise<boolean>): Promise<number> => {
+  const pending = await getOutbox();
+  let synced = 0;
+  for (const msg of pending) {
+    try {
+      const ok = await sendFn(msg);
+      if (ok) {
+        await removeFromOutbox(msg.tempId);
+        synced++;
+      } else {
+        msg.retries = (msg.retries || 0) + 1;
+        if (msg.retries > 5) await removeFromOutbox(msg.tempId);
+        else await addToOutbox(msg);
+      }
+    } catch {
+      msg.retries = (msg.retries || 0) + 1;
+      if (msg.retries > 5) await removeFromOutbox(msg.tempId);
+      else await addToOutbox(msg);
+    }
+  }
+  return synced;
 };
 
 // ---- Online status ----

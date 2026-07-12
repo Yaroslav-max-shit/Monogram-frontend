@@ -36,6 +36,10 @@ import QuickReplies from './QuickReplies';
 
 import { setCustomSound, resetCustomSound } from '../services/sounds';
 
+import { FocusMode, isFocusModeActive } from './FocusMode';
+
+import { createFolder, getFolders, updateFolder, deleteFolder } from '../utils/features';
+
 
 
 interface SettingsModalProps {
@@ -120,7 +124,24 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const [showStickerPackCreator, setShowStickerPackCreator] = useState(false);
 
-  
+  const [showFocusMode, setShowFocusMode] = useState(false);
+
+  const [focusModeActive, setFocusModeActive] = useState(() => isFocusModeActive());
+
+  const [isInvisible, setIsInvisible] = useState(false);
+
+  const [chatWallpaperTarget, setChatWallpaperTarget] = useState<string>('global');
+  const [chatWallpapers, setChatWallpapers] = useState<Record<string, string>>({});
+  const [chatList, setChatList] = useState<any[]>([]);
+
+  // 2FA
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const [showTwoFASetup, setShowTwoFASetup] = useState(false);
+  const [twoFASecret, setTwoFASecret] = useState('');
+  const [twoFAUri, setTwoFAUri] = useState('');
+  const [twoFABackupCodes, setTwoFABackupCodes] = useState<string[]>([]);
+  const [twoFACode, setTwoFACode] = useState('');
+  const [twoFALoading, setTwoFALoading] = useState(false);
 
   // Язык
 
@@ -178,6 +199,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const [delayedRead, setDelayedRead] = useState(() => localStorage.getItem('delayed_read') === 'true');
 
+  // Folders
+  const [folders, setFolders] = useState<any[]>([]);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [editingFolderId, setEditingFolderId] = useState<number | null>(null);
+  const [editingFolderName, setEditingFolderName] = useState('');
+
   
 
   const [settings, setSettings] = useState({
@@ -225,6 +252,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       const res = await apiClient.get('/auth/me');
 
       setUserData(res.data);
+
+      if (res.data?.is_2fa_enabled) {
+
+        setTwoFAEnabled(true);
+
+      }
+
+      if (res.data?.is_invisible !== undefined) setIsInvisible(res.data.is_invisible);
 
     } catch (error) {
 
@@ -520,13 +555,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const selectWallpaper = (wallpaper: any) => {
 
-    if (wallpaper.isCustom && wallpaper.url) {
+    if (chatWallpaperTarget === 'global') {
 
-      saveSettings({ wallpaper: wallpaper.url });
+      if (wallpaper.isCustom && wallpaper.url) {
+
+        saveSettings({ wallpaper: wallpaper.url });
+
+      } else {
+
+        saveSettings({ wallpaper: wallpaper.id });
+
+      }
 
     } else {
 
-      saveSettings({ wallpaper: wallpaper.id });
+      const wpValue = wallpaper.isCustom ? wallpaper.url : wallpaper.id;
+
+      const updated = { ...chatWallpapers, [chatWallpaperTarget]: wpValue };
+
+      setChatWallpapers(updated);
+
+      localStorage.setItem('chat_wallpapers', JSON.stringify(updated));
+
+      localStorage.setItem(`wallpaper_${chatWallpaperTarget}`, wpValue);
 
     }
 
@@ -886,6 +937,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   }
 
+  if (showFocusMode) {
+
+    return <FocusMode onClose={() => { setShowFocusMode(false); setFocusModeActive(isFocusModeActive()); }} />;
+
+  }
+
 
 
   if (showDeleteConfirm) {
@@ -1008,6 +1065,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     appicon: { icon: 'image', title: 'Иконка приложения' },
     storage: { icon: 'folder', title: 'Память' },
     quickreplies: { icon: 'message-circle', title: 'Быстрые ответы' },
+    folders: { icon: 'folder', title: 'Папки' },
     premium: { icon: 'crown', title: 'Premium' },
   };
 
@@ -1446,6 +1504,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="settings-item-title">Быстрые ответы</div>
 
                   <div className="settings-item-desc">Шаблоны сообщений</div>
+
+                </div>
+
+                <Icon name="arrow-right" size={18} className="settings-item-arrow" />
+
+              </div>
+
+
+
+              <div className="settings-main-item" onClick={() => { setActiveSection('folders'); getFolders().then(f => setFolders(f)).catch(() => {}); }}>
+
+                <div className="settings-item-icon">
+
+                  <Icon name="folder" size={22} />
+
+                </div>
+
+                <div className="settings-item-info">
+
+                  <div className="settings-item-title">Папки</div>
+
+                  <div className="settings-item-desc">Организация чатов</div>
 
                 </div>
 
@@ -2263,6 +2343,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
 
 
+            <div className="settings-group">
+
+              <div className="settings-toggle">
+
+                <div>
+
+                  <div className="settings-toggle-label">Режим фокуса</div>
+
+                  <div className="settings-toggle-desc">{focusModeActive ? 'Активен' : 'Отключить уведомления на время'}</div>
+
+                </div>
+
+                <label className="toggle">
+
+                  <input type="checkbox" checked={focusModeActive} onChange={() => { if (!focusModeActive) setShowFocusMode(true); else { localStorage.removeItem('focus_mode_until'); setFocusModeActive(false); } }} />
+
+                  <span className="toggle-slider" />
+
+                </label>
+
+              </div>
+
+            </div>
+
+
+
             {isPremium && (
 
               <div className="settings-group">
@@ -2271,25 +2377,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   <div>
 
-                    <div className="settings-toggle-label">Невидимка</div>
+                  <div className="settings-toggle-label">Невидимка</div>
 
-                    <div className="settings-toggle-desc">Никто не видит что вы онлайн</div>
+                  <div className="settings-toggle-desc">Никто не видит что вы онлайн</div>
 
-                  </div>
+                </div>
 
-                  <label className="toggle">
+                <label className="toggle">
 
-                    <input type="checkbox" onChange={async (e) => {
+                  <input type="checkbox" checked={isInvisible} onChange={async (e) => {
 
-                      try {
+                    try {
 
-                        const res = await apiClient.post('/premium/invisible');
+                      const res = await apiClient.post('/premium/invisible');
 
-                        alert(res.data.is_invisible ? 'Невидимка включена' : 'Невидимка отключена');
+                      setIsInvisible(res.data.is_invisible);
 
-                      } catch { alert('Требуется Premium'); }
+                    } catch { alert('Требуется Premium'); }
 
-                    }} />
+                  }} />
 
                     <span className="toggle-slider" />
 
@@ -2334,6 +2440,216 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
             </div>
+
+
+
+            <div className="settings-divider" />
+
+
+
+            <div className="settings-group">
+
+              <div className="settings-toggle">
+
+                <div>
+
+                  <div className="settings-toggle-label">Двухфакторная аутентификация (2FA)</div>
+
+                  <div className="settings-toggle-desc">Дополнительная защита аккаунта через TOTP-код</div>
+
+                </div>
+
+                <label className="toggle">
+
+                  <input type="checkbox" checked={twoFAEnabled} onChange={async (e) => {
+
+                    if (e.target.checked) {
+
+                      setTwoFALoading(true);
+
+                      try {
+
+                        const res = await apiClient.post('/auth/2fa/enable');
+
+                        setTwoFASecret(res.data.secret);
+
+                        setTwoFAUri(res.data.uri);
+
+                        setTwoFABackupCodes(res.data.backup_codes);
+
+                        setShowTwoFASetup(true);
+
+                        setTwoFAEnabled(true);
+
+                      } catch (err: any) {
+
+                        alert(err.response?.data?.detail || 'Ошибка включения 2FA');
+
+                        setTwoFAEnabled(false);
+
+                      } finally {
+
+                        setTwoFALoading(false);
+
+                      }
+
+                    } else {
+
+                      setTwoFALoading(true);
+
+                      try {
+
+                        await apiClient.post('/auth/2fa/disable');
+
+                        setTwoFAEnabled(false);
+
+                        setTwoFABackupCodes([]);
+
+                        setTwoFASecret('');
+
+                      } catch (err: any) {
+
+                        alert(err.response?.data?.detail || 'Ошибка отключения 2FA');
+
+                        setTwoFAEnabled(true);
+
+                      } finally {
+
+                        setTwoFALoading(false);
+
+                      }
+
+                    }
+
+                  }} />
+
+                  <span className="toggle-slider" />
+
+                </label>
+
+              </div>
+
+            </div>
+
+
+
+            {showTwoFASetup && twoFAEnabled && (
+
+              <div className="settings-group" style={{ padding: 16, background: 'var(--bg-secondary)', borderRadius: 12 }}>
+
+                <h4 style={{ margin: '0 0 12px' }}>Настройка 2FA</h4>
+
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+
+                  Отсканируйте QR-код в приложении аутентификатора (Google Authenticator, Authy и т.д.)
+
+                </p>
+
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 16px' }}>
+
+                  {twoFAUri && <QRCodeSVG value={twoFAUri} size={180} level="M" />}
+
+                </div>
+
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', wordBreak: 'break-all', textAlign: 'center', margin: '0 0 12px' }}>
+
+                  <span>Код вручную: </span>
+
+                  <code style={{ background: 'var(--bg-primary)', padding: '2px 8px', borderRadius: 4, fontSize: '0.85rem' }}>{twoFASecret}</code>
+
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+
+                  <input
+
+                    type="text"
+
+                    placeholder="Введите код из приложения"
+
+                    value={twoFACode}
+
+                    onChange={e => setTwoFACode(e.target.value)}
+
+                    style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.95rem' }}
+
+                    maxLength={6}
+
+                  />
+
+                  <button
+
+                    className="settings-action-btn"
+
+                    onClick={async () => {
+
+                      try {
+
+                        await apiClient.post('/auth/2fa/verify', { code: twoFACode });
+
+                        alert('2FA успешно настроена!');
+
+                        setShowTwoFASetup(false);
+
+                        setTwoFACode('');
+
+                      } catch (err: any) {
+
+                        alert(err.response?.data?.detail || 'Неверный код');
+
+                      }
+
+                    }}
+
+                    style={{ padding: '10px 16px' }}
+
+                  >
+
+                    Подтвердить
+
+                  </button>
+
+                </div>
+
+                {twoFABackupCodes.length > 0 && (
+
+                  <div style={{ marginTop: 12 }}>
+
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
+
+                      Резервные коды (сохраните в надёжном месте):
+
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+
+                      {twoFABackupCodes.map((code, i) => (
+
+                        <code key={i} style={{ padding: '4px 8px', background: 'var(--bg-primary)', borderRadius: 4, fontSize: '0.8rem', textAlign: 'center' }}>{code}</code>
+
+                      ))}
+
+                    </div>
+
+                  </div>
+
+                )}
+
+                <button
+
+                  onClick={() => { setShowTwoFASetup(false); setTwoFACode(''); }}
+
+                  style={{ marginTop: 12, padding: '8px 0', width: '100%', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem' }}
+
+                >
+
+                  Закрыть
+
+                </button>
+
+              </div>
+
+            )}
 
           </div>
 
@@ -2949,6 +3265,36 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <div className="settings-modal-body settings-content-scroll">
 
+            <div className="settings-group">
+
+              <div className="settings-select">
+
+                <div className="settings-select-label">Применить к</div>
+
+                <select value={chatWallpaperTarget} onChange={async (e) => {
+                  setChatWallpaperTarget(e.target.value);
+                  if (e.target.value !== 'global' && chatList.length === 0) {
+                    try {
+                      const res = await apiClient.get('/chats/');
+                      setChatList(res.data || []);
+                    } catch {}
+                  }
+                  const saved = JSON.parse(localStorage.getItem('chat_wallpapers') || '{}');
+                  setChatWallpapers(saved);
+                }}>
+
+                  <option value="global">Глобально (все чаты)</option>
+
+                  {chatList.map((c: any) => (
+                    <option key={c.id} value={String(c.id)}>{c.name}</option>
+                  ))}
+
+                </select>
+
+              </div>
+
+            </div>
+
             <div className="wallpapers-header">
 
               <button className="upload-wallpaper-btn" onClick={() => fileInputRef.current?.click()}>
@@ -2973,7 +3319,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {wallpapers.map((wp, idx) => (
 
-                <div key={wp.id} className={`wallpaper-card ${settings.wallpaper === wp.id || settings.wallpaper === wp.url ? 'selected' : ''}`} onClick={() => selectWallpaper(wp)}>
+                <div key={wp.id} className={`wallpaper-card ${(chatWallpaperTarget === 'global' ? (settings.wallpaper === wp.id || settings.wallpaper === wp.url) : chatWallpapers[chatWallpaperTarget] === wp.id || chatWallpapers[chatWallpaperTarget] === wp.url) ? 'selected' : ''}`} onClick={() => selectWallpaper(wp)}>
 
                   <div className="wallpaper-preview" style={
 
@@ -2987,7 +3333,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   <div className="wallpaper-name">{wp.name}</div>
 
-                  {(settings.wallpaper === wp.id || settings.wallpaper === wp.url) && <div className="wallpaper-check"><Icon name="checkmark" size={12} /></div>}
+                  {(chatWallpaperTarget === 'global' ? (settings.wallpaper === wp.id || settings.wallpaper === wp.url) : chatWallpapers[chatWallpaperTarget] === wp.id || chatWallpapers[chatWallpaperTarget] === wp.url) && <div className="wallpaper-check"><Icon name="checkmark" size={12} /></div>}
 
                   {wp.isCustom && (
 
@@ -3398,6 +3744,230 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         }}
 
       />
+
+    );
+
+  }
+
+
+
+  // === РАЗДЕЛ ПАПКИ ===
+
+  if (activeSection === 'folders') {
+
+    return (
+
+      <div className="modal-overlay" onClick={() => setActiveSection(null)}>
+
+        <div className="settings-modal" onClick={e => e.stopPropagation()}>
+
+          {renderBreadcrumbs()}
+
+          <div className="settings-modal-header">
+
+            <button className="settings-back-btn" onClick={() => setActiveSection(null)}>
+
+              <Icon name="arrow" size={20} />
+
+            </button>
+
+            <h2>{getTitle()}</h2>
+
+            <button className="settings-close-btn" onClick={onClose}>✕</button>
+
+          </div>
+
+          <div className="settings-modal-body settings-content-scroll">
+
+            <div className="settings-group">
+
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+
+                <input
+
+                  className="search-input"
+
+                  placeholder="Название папки..."
+
+                  value={newFolderName}
+
+                  onChange={e => setNewFolderName(e.target.value)}
+
+                  onKeyDown={async (e) => {
+
+                    if (e.key === 'Enter' && newFolderName.trim()) {
+
+                      try {
+
+                        const res = await createFolder(newFolderName.trim(), []);
+
+                        setFolders(prev => [...prev, { id: res.data?.id || Date.now(), name: newFolderName.trim(), chat_ids: [], icon: 'folder' }]);
+
+                        setNewFolderName('');
+
+                      } catch {}
+
+                    }
+
+                  }}
+
+                  style={{ flex: 1 }}
+
+                />
+
+                <button
+
+                  className="settings-action-btn"
+
+                  onClick={async () => {
+
+                    if (!newFolderName.trim()) return;
+
+                    try {
+
+                      const res = await createFolder(newFolderName.trim(), []);
+
+                      setFolders(prev => [...prev, { id: res.data?.id || Date.now(), name: newFolderName.trim(), chat_ids: [], icon: 'folder' }]);
+
+                      setNewFolderName('');
+
+                    } catch {}
+
+                  }}
+
+                  style={{ padding: '8px 16px', whiteSpace: 'nowrap' }}
+
+                >
+
+                  <Icon name="plus" size={16} /> Создать
+
+                </button>
+
+              </div>
+
+              {folders.length === 0 && (
+
+                <p style={{ color: 'var(--text-tertiary)', textAlign: 'center', padding: 24, fontSize: '0.85rem' }}>
+
+                  Нет папок. Создайте папку для организации чатов.
+
+                </p>
+
+              )}
+
+              {folders.map(folder => (
+
+                <div
+
+                  key={folder.id}
+
+                  style={{
+
+                    display: 'flex', alignItems: 'center', gap: 12,
+
+                    padding: '12px 16px', borderRadius: 12,
+
+                    background: 'var(--bg-primary)', marginBottom: 8,
+
+                    border: '1px solid var(--border-color)',
+
+                  }}
+
+                >
+
+                  <Icon name={folder.icon || 'folder'} size={20} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+
+                  {editingFolderId === folder.id ? (
+
+                    <input
+
+                      className="search-input"
+
+                      value={editingFolderName}
+
+                      onChange={e => setEditingFolderName(e.target.value)}
+
+                      onKeyDown={async (e) => {
+
+                        if (e.key === 'Enter' && editingFolderName.trim()) {
+
+                          await updateFolder(folder.id, { name: editingFolderName.trim() });
+
+                          setFolders(prev => prev.map(f => f.id === folder.id ? { ...f, name: editingFolderName.trim() } : f));
+
+                          setEditingFolderId(null);
+
+                        }
+
+                      }}
+
+                      autoFocus
+
+                      style={{ flex: 1, fontSize: '0.85rem' }}
+
+                    />
+
+                  ) : (
+
+                    <span style={{ flex: 1, fontSize: '0.9rem', fontWeight: 500 }}>{folder.name}</span>
+
+                  )}
+
+                  <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>
+
+                    {(folder.chat_ids || []).length} чатов
+
+                  </span>
+
+                  <button
+
+                    onClick={() => { setEditingFolderId(folder.id); setEditingFolderName(folder.name); }}
+
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--text-secondary)' }}
+
+                    title="Редактировать"
+
+                  >
+
+                    <Icon name="edit" size={16} />
+
+                  </button>
+
+                  <button
+
+                    onClick={async () => {
+
+                      if (confirm(`Удалить папку "${folder.name}"?`)) {
+
+                        await deleteFolder(folder.id);
+
+                        setFolders(prev => prev.filter(f => f.id !== folder.id));
+
+                      }
+
+                    }}
+
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#ef4444' }}
+
+                    title="Удалить"
+
+                  >
+
+                    <Icon name="delete" size={16} />
+
+                  </button>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
 
     );
 

@@ -85,6 +85,7 @@ interface ChatInfo {
   isPinned?: boolean;
   isBot?: boolean;
   botId?: number;
+  description?: string;
 }
 
 interface UserData {
@@ -120,7 +121,11 @@ const App: React.FC = () => {
   const avatarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [activeChat, setActiveChat] = useState<{ id: number; name: string; type?: string; isBot?: boolean; botId?: number } | null>(null);
+  const [activeChat, setActiveChat] = useState<{ id: number; name: string; type?: string; isBot?: boolean; botId?: number; description?: string; bot_commands?: any[] } | null>(null);
+  const activeChatRef = useRef(activeChat);
+  
+  // Sync activeChat to ref
+  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
   const [savedChats, setSavedChats] = useState<ChatInfo[]>([]);
   const recentlyDeletedRef = useRef(new Set<number>());
   const [isPremium, setIsPremium] = useState(false);
@@ -200,7 +205,7 @@ const App: React.FC = () => {
   } | null>(null);
 
   // Group call state
-  const groupCallRef = useRef<{ roomId: string; userId: number } | null>(null);
+  const [groupCallState, setGroupCallState] = useState<{ roomId: string; userId: number } | null>(null);
 
   const savedChatsRef = useRef<ChatInfo[]>([]);
   
@@ -275,6 +280,11 @@ const App: React.FC = () => {
               time: '',
               unreadCount: 0,
               isPinned: false,
+              isBot: chat.is_bot || false,
+              botId: chat.bot_id || undefined,
+              description: chat.description || undefined,
+              bot_commands: chat.bot_commands || undefined,
+              avatar_url: chat.avatar_url || undefined,
             }));
           
           const hasFavorites = chats.some(c => c.id === 999999);
@@ -376,7 +386,7 @@ const App: React.FC = () => {
       const exists = prev.find(c => c.id === chatId);
       
       // Не увеличиваем unread для активного чата
-      const isActiveChat = activeChat?.id === chatId;
+      const isActiveChat = activeChatRef.current?.id === chatId;
       
       if (exists) {
         // Перемещаем чат наверх списка
@@ -1370,12 +1380,19 @@ const App: React.FC = () => {
                     onSaveDraft={(chatId, text) => saveDraft(chatId, text)}
                     chatType={activeChat.type || 'private'}
                     isBot={activeChat.isBot}
+                    description={(activeChat as any).description}
                     onStartCall={(peerId, peerName) => setActiveCall({
                       chatId: activeChat.id,
                       userId: userData?.id || 1,
                       peerId,
                       peerName,
                     })}
+                    onStartGroupCall={() => {
+                      setGroupCallState({
+                        roomId: String(activeChat.id),
+                        userId: userData?.id || 1,
+                      });
+                    }}
                     onMessageSent={() => loadUserChats()}
                   />
               </div>
@@ -1453,12 +1470,19 @@ const App: React.FC = () => {
                     onSaveDraft={(chatId, text) => saveDraft(chatId, text)}
                     chatType={activeChat.type || 'private'}
                     isBot={activeChat.isBot}
+                    description={(activeChat as any).description}
                     onStartCall={(peerId, peerName) => setActiveCall({
                       chatId: activeChat.id,
                       userId: userData?.id || 1,
                       peerId,
                       peerName,
                     })}
+                    onStartGroupCall={() => {
+                      setGroupCallState({
+                        roomId: String(activeChat.id),
+                        userId: userData?.id || 1,
+                      });
+                    }}
                     onMessageSent={() => loadUserChats()}
                   />
                 ) : (
@@ -1565,13 +1589,13 @@ const App: React.FC = () => {
       )}
 
       {/* Group Call Screen */}
-      {groupCallRef.current && (
+      {groupCallState && (
         <ErrorBoundary>
           <React.Suspense fallback={<BlobLoader size={40} />}>
             <GroupCallScreen
-              roomId={groupCallRef.current.roomId}
-              userId={groupCallRef.current.userId}
-            onEnd={() => { groupCallRef.current = null; }}
+              roomId={groupCallState.roomId}
+              userId={groupCallState.userId}
+            onEnd={() => { setGroupCallState(null); }}
           />
         </React.Suspense>
         </ErrorBoundary>

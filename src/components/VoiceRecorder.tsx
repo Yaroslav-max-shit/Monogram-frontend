@@ -107,10 +107,19 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, chatId }) => {
       
       const formData = new FormData();
       formData.append('audio', blob, 'voice-message.webm');
+      if (chatId) formData.append('chat_id', String(chatId));
+      formData.append('duration', String(duration));
       
-      console.debug('Sending voice message...');
+      try {
+        await apiClient.post('/messages/upload-audio', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } catch (err) {
+        console.error('Failed to send voice message:', err);
+      }
       
       setAudioUrl(null);
+      setDuration(0);
       onSend();
     }
   };

@@ -25,6 +25,7 @@ const ForwardDialog: React.FC<Props> = ({ messageId, onClose, onDone }) => {
   const [groupMembers, setGroupMembers] = useState<Record<number, ChatMember[]>>({});
   const [memberSelections, setMemberSelections] = useState<Record<number, boolean>>({});
   const [selectEveryone, setSelectEveryone] = useState(true);
+  const [comment, setComment] = useState('');
 
   useEffect(() => {
     apiClient.get('/chats').then(res => {
@@ -96,7 +97,8 @@ const ForwardDialog: React.FC<Props> = ({ messageId, onClose, onDone }) => {
 
       await apiClient.post('/messages/forward', {
         message_id: messageId,
-        chat_ids: targetIds.length > 0 ? targetIds : selected
+        chat_ids: targetIds.length > 0 ? targetIds : selected,
+        comment: comment.trim() || undefined
       });
       onDone();
     } catch (err) { console.error('Forward error:', err); }
@@ -182,6 +184,17 @@ const ForwardDialog: React.FC<Props> = ({ messageId, onClose, onDone }) => {
           })}
           {filtered.length === 0 && <p className="empty-state">Nothing found</p>}
         </div>
+        {selected.length > 0 && (
+          <div style={{ padding: '8px 16px', borderTop: '1px solid var(--border-color)' }}>
+            <input
+              className="search-input"
+              placeholder="Комментарий к пересылке (необязательно)..."
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </div>
+        )}
         <div className="modal-footer">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>
           <button

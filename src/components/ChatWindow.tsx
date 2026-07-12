@@ -17,6 +17,9 @@ const VoiceMessagePlayer: React.FC<{ url: string; duration: number }> = ({ url, 
   const [progress, setProgress] = useState(0);
   const [bars] = useState(() => Array.from({ length: 30 }, () => Math.random() * 0.7 + 0.3));
 
+  const BACKEND_URL = 'https://monogram-backend-dxv4.onrender.com';
+  const audioUrl = url.startsWith('http') ? url : `${BACKEND_URL}${url}`;
+
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (isPlaying) {
@@ -37,7 +40,7 @@ const VoiceMessagePlayer: React.FC<{ url: string; duration: number }> = ({ url, 
     <div className="voice-message-player">
       <audio
         ref={audioRef}
-        src={url}
+        src={audioUrl}
         onTimeUpdate={() => {
           if (audioRef.current) {
             setProgress(audioRef.current.currentTime / audioRef.current.duration);
@@ -65,7 +68,7 @@ const VoiceMessagePlayer: React.FC<{ url: string; duration: number }> = ({ url, 
 };
 import PollView from './PollView';
 import apiClient from '../services/api';
-import { getCachedMessages, cacheMessages, isOnline } from '../services/cache';
+import { getCachedMessages, cacheMessages, isOnline, addToOutbox, OutboxMessage, syncOutbox, onOnlineStatusChange } from '../services/cache';
 import { decryptMessage, encryptMessage, isEncrypted } from '../services/encryption';
 import { realtime } from '../services/realtime';
 import MentionDropdown from './MentionDropdown';
@@ -117,8 +120,10 @@ interface ChatWindowProps {
   onForwardMessage?: (messageId: number) => void;
   onSaveDraft?: (chatId: number, text: string) => void;
   onStartCall?: (peerId: number, peerName: string) => void;
+  onStartGroupCall?: () => void;
   onMessageSent?: () => void;
   isBot?: boolean;
+  description?: string;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ 
@@ -131,11 +136,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   onForwardMessage,
   onSaveDraft,
   onStartCall,
+  onStartGroupCall,
   onMessageSent,
   isBot = false,
+  description,
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
+  const inputTextRef = useRef('');
+  const updateInputText = (val: string) => { inputTextRef.current = val; setInputText(val); };
   const [isLoading, setIsLoading] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -216,6 +225,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const touchStartRef = useRef<{ x: number; y: number; messageId: number | null }>({ x: 0, y: 0, messageId: null });
+  const [swipeOffset, setSwipeOffset] = useState<{ messageId: number; offset: number } | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
@@ -249,8 +259,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setShowScrollButton(!atBottom);
   };
 
-  const handleDoubleClick = (messageId: number) => {
-    handleReact(messageId, '👍');
+  const handleDoubleClick = (messageId: number, e?: React.MouseEvent) => {
+    if (e) {
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      setShowReactionPicker({ msgId: messageId, x: rect.left, y: rect.top - 40 });
+    } else {
+      handleReact(messageId, '👍');
+    }
   };
 
   const startLongPress = (messageId: number) => {
@@ -448,34 +463,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     loadMessages();
   }, [loadMessages]);
 
-  // Real-time: polling for new messages every 5 seconds (reduced from 2s)
+  // Sync outbox when coming back online
   useEffect(() => {
-    if (!chatId || !currentUserId) return;
-    let lastMsgId = 0;
-    let mounted = true;
-    const poll = async () => {
-      if (!mounted) return;
-      try {
-        // Только проверяем есть ли новые, не загружаем все
-        const res = await apiClient.get(`/messages/chat/${chatId}?limit=5`);
-        const msgs = res.data || [];
-        if (msgs.length > 0) {
-          const newest = msgs[msgs.length - 1];
-          if (lastMsgId === 0) {
-            lastMsgId = newest.id;
-            return;
-          }
-          if (newest.id > lastMsgId) {
-            // Есть новые — загружаем полный список
-            loadMessages();
-            lastMsgId = newest.id;
-          }
-        }
-      } catch {}
-    };
-    const interval = setInterval(poll, 5000);
-    return () => { mounted = false; clearInterval(interval); };
-  }, [chatId, currentUserId, loadMessages]);
+    const unsubscribe = onOnlineStatusChange(async (online) => {
+      if (online) {
+        await syncOutbox(async (msg) => {
+          try {
+            await apiClient.post('/messages/', {
+              content: msg.content,
+              chat_id: msg.chatId,
+              recipient_id: msg.recipientId,
+            });
+            return true;
+          } catch { return false; }
+        });
+        loadMessages();
+      }
+    });
+    return unsubscribe;
+  }, [loadMessages]);
+
 
   // Подписка на typing индикаторы через WebSocket
   useEffect(() => {
@@ -589,8 +596,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [chatId]);
 
   useEffect(() => {
-    loadChatMembers();
-  }, [loadChatMembers]);
+    let cancelled = false;
+    loadChatMembers().then(() => { if (cancelled) setChatMembers([]); });
+    return () => { cancelled = true; };
+  }, [chatId]);
 
   // Load draft on chat change
   useEffect(() => {
@@ -649,9 +658,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [chatId]);
 
   const handleSendMessage = async () => {
-    if (!inputText.trim()) return;
+    const text = inputTextRef.current;
+    if (!text.trim()) return;
     
-    let content = inputText;
+    let content = text;
     
     if (replyTo) {
       content = JSON.stringify({
@@ -685,7 +695,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const tempId = Date.now();
     const tempMessage: Message = {
       id: tempId,
-      content: inputText,
+      content: text,
       sender_id: currentUserId,
       chat_id: chatId,
       timestamp: new Date().toISOString(),
@@ -694,6 +704,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     };
     setMessages(prev => [...prev, tempMessage]);
     setInputText('');
+    inputTextRef.current = '';
     setSelectedSticker(null);
     if (onSaveDraft) {
       onSaveDraft(chatId, '');
@@ -702,23 +713,44 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setQuoteText('');
     scrollToBottom();
     
+    // If offline — queue in outbox for later sync
+    if (!isOnline()) {
+      const recipientMember = chatMembers.find(m => m.id !== currentUserId);
+      const recipientId = recipientMember?.id || undefined;
+      await addToOutbox({
+        tempId,
+        chatId,
+        content,
+        recipientId,
+        timestamp: new Date().toISOString(),
+        retries: 0,
+      });
+      updateMessageStatus(tempId, 'sent');
+      return;
+    }
+    
     try {
+      // Определяем recipient_id для нового чата
+      const recipientMember = chatMembers.find(m => m.id !== currentUserId);
+      const recipientId = recipientMember?.id || undefined;
+      
       const response = await apiClient.post('/messages/', {
         content: content,
-        chat_id: chatId
+        chat_id: chatId,
+        recipient_id: recipientId,
       });
       
       // Notify @mentions
-      if (inputText.includes('@')) {
+      if (text.includes('@')) {
         apiClient.post('/messages/mention', {
-          content: inputText,
+          content: text,
           chat_id: chatId
         }).catch(() => {});
       }
       
       const newMessage = response.data;
       if (e2eeEnabled && newMessage.sender_id === currentUserId) {
-        newMessage.content = inputText;
+        newMessage.content = text;
       }
       
       setMessages(prev => prev.map(msg => 
@@ -1143,10 +1175,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const deltaX = e.touches[0].clientX - touchStartRef.current.x;
     const deltaY = e.touches[0].clientY - touchStartRef.current.y;
     
-    if (deltaX < -50 && Math.abs(deltaY) < 30) {
+    if (deltaX > 10 && Math.abs(deltaY) < 40) {
+      setSwipeOffset({ messageId: touchStartRef.current.messageId!, offset: Math.min(deltaX, 120) });
+    }
+    
+    if (deltaX > 80 && Math.abs(deltaY) < 40) {
       const msg = messages.find(m => m.id === touchStartRef.current.messageId);
       if (msg) handleReply(msg);
       touchStartRef.current = { x: 0, y: 0, messageId: null };
+      setSwipeOffset(null);
     }
   };
 
@@ -1213,6 +1250,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     let voiceDuration = 0;
     let botButtons: any[] = null;
     let botText = '';
+    let forwardedComment = '';
     
     if (msg.is_deleted) {
       content = "🗑 Сообщение удалено";
@@ -1240,6 +1278,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         voiceUrl = parsed.url || '';
         content = '🎤 Голосовое сообщение';
       }
+      if (parsed.type === 'forwarded') {
+        content = parsed.original_content || '';
+        if (parsed.comment) {
+          forwardedComment = parsed.comment;
+        }
+      }
     } catch {}
     
     let isFile = false;
@@ -1260,8 +1304,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         key={msg.id}
         ref={(el) => { if (el) messageRefs.current.set(msg.id, el); else messageRefs.current.delete(msg.id); }}
         data-message-id={msg.id}
-        className={`message ${isOwn ? 'own' : 'other'} ${forwardMode ? 'selectable' : ''} ${selectedMessages.includes(msg.id) ? 'selected' : ''} ${chatSearchResults.includes(messages.indexOf(msg)) ? 'search-match' : ''} ${chatSearchResults.length > 0 && chatSearchResults[currentSearchIdx] === messages.indexOf(msg) ? 'search-current' : ''} ${isSelectionMode ? 'message-selectable' : ''} ${selectedIds.has(msg.id) ? 'message-selected' : ''}`}
-        onDoubleClick={() => handleDoubleClick(msg.id)}
+        className={`message ${isOwn ? 'own' : 'other'} ${forwardMode ? 'selectable' : ''} ${selectedMessages.includes(msg.id) ? 'selected' : ''} ${chatSearchResults.includes(messages.indexOf(msg)) ? 'search-match' : ''} ${chatSearchResults.length > 0 && chatSearchResults[currentSearchIdx] === messages.indexOf(msg) ? 'search-current' : ''} ${isSelectionMode ? 'message-selectable' : ''} ${selectedIds.has(msg.id) ? 'message-selected' : ''} ${swipeOffset?.messageId === msg.id ? 'swiping' : ''}`}
+        style={swipeOffset?.messageId === msg.id ? { transform: `translateX(${swipeOffset.offset}px)`, transition: 'none' } : swipeOffset?.messageId === msg.id ? undefined : undefined}
+        onDoubleClick={(e) => handleDoubleClick(msg.id, e)}
         onContextMenu={(e) => {
           e.preventDefault();
           if (isSelectionMode) {
@@ -1282,7 +1327,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           clearLongPress();
           handleTouchMove(e);
         }}
-        onTouchEnd={clearLongPress}
+        onTouchEnd={() => { clearLongPress(); setSwipeOffset(null); }}
         onClick={() => {
           if (isSelectionMode) {
             toggleMessageSelection(msg.id);
@@ -1312,6 +1357,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         )}
         
+        {forwardedComment && (
+          <div className="message-forwarded-comment" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 4, fontStyle: 'italic' }}>
+            {forwardedComment}
+          </div>
+        )}
+        
         {!isOwn && <div className="message-sender">{chatName}</div>}
         
         {editingMsgId === msg.id ? (
@@ -1336,7 +1387,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               return <TransferCard amount={parsed.amount} toUsername={parsed.to_username} toAvatar={parsed.to_avatar} status={parsed.status || 'completed'} time={new Date(msg.timestamp).toLocaleString('ru-RU')} txId={parsed.tx_id} comment={parsed.comment} isOwn={isOwn} />;
             }
             if (parsed.type === 'poll') {
-              return <PollView poll={parsed} messageId={msg.id} />;
+              return <PollView poll={parsed} messageId={msg.id} currentUserId={currentUserId} />;
             }
             if (parsed.type === 'connect_proposal') {
               return (
@@ -1428,6 +1479,22 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 </div>
               );
             }
+            if (parsed.type === 'location') {
+              const lat = parsed.lat;
+              const lng = parsed.lng;
+              return (
+                <div style={{minWidth: 220}}>
+                  <div style={{fontSize: '0.85rem', fontWeight: 600, marginBottom: 4}}>📍 Геолокация</div>
+                  <iframe
+                    title="location"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01},${lat - 0.01},${lng + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lng}`}
+                    style={{width: '100%', height: 160, border: 'none', borderRadius: 10, pointerEvents: 'none'}}
+                    loading="lazy"
+                  />
+                  <a href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=15/${lat}/${lng}`} target="_blank" rel="noopener" style={{fontSize: '0.75rem', color: 'var(--accent)'}}>Открыть на карте</a>
+                </div>
+              );
+            }
           } catch {}
           return <div className="message-text">{formatMessageText(content)}</div>;
         })()}
@@ -1451,7 +1518,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   window.open(url, '_blank');
                 } else if (btn.action === 'copy' && btn.value) {
                   navigator.clipboard.writeText(btn.value).then(() => {
-                    addToast('info', 'Скопировано!');
+                    // Toast notification
+                    const t = document.createElement('div');
+                    t.textContent = 'Скопировано!';
+                    t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--bg-secondary);color:var(--text-primary);padding:10px 20px;border-radius:10px;z-index:99999;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
+                    document.body.appendChild(t);
+                    setTimeout(() => t.remove(), 2000);
                   });
                 } else if (btn.action === 'add_to_group') {
                   window.open(`${window.location.origin}/groups?bot_id=${msg.bot_id || ''}`, '_blank');
@@ -1460,12 +1532,45 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     callback_query_id: msg.id,
                     data: btn.data,
                   }).catch(() => {});
+                } else if (btn.action === 'pay') {
+                  const payUrl = btn.url || btn.pay_url || btn.payment_url;
+                  if (payUrl) {
+                    window.open(payUrl.startsWith('http') ? payUrl : `${window.location.origin}${payUrl}`, '_blank');
+                  } else {
+                    const t = document.createElement('div');
+                    t.textContent = btn.text || 'Оплата';
+                    t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-secondary);color:var(--text-primary);padding:24px;border-radius:16px;z-index:99999;font-size:14px;box-shadow:0 8px 32px rgba(0,0,0,0.4);min-width:280;text-align:center;';
+                    t.innerHTML = `
+                      <div style="margin-bottom:16px;font-weight:600;font-size:1rem;">${btn.text || 'Оплата'}</div>
+                      ${btn.description ? `<div style="margin-bottom:16px;color:var(--text-secondary);font-size:0.85rem;">${btn.description}</div>` : ''}
+                      ${btn.amount ? `<div style="margin-bottom:16px;font-size:1.2rem;font-weight:700;color:var(--accent);">${btn.amount}</div>` : ''}
+                      <button id="pay-confirm-btn" style="width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.9rem;">Оплатить</button>
+                      <button id="pay-cancel-btn" style="width:100%;padding:10px;background:transparent;color:var(--text-secondary);border:none;border-radius:10px;cursor:pointer;font-size:0.85rem;margin-top:8px;">Отмена</button>
+                    `;
+                    document.body.appendChild(t);
+                    const backdrop = document.createElement('div');
+                    backdrop.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99998;';
+                    document.body.appendChild(backdrop);
+                    const cleanup = () => { t.remove(); backdrop.remove(); };
+                    backdrop.addEventListener('click', cleanup);
+                    t.querySelector('#pay-cancel-btn')?.addEventListener('click', cleanup);
+                    t.querySelector('#pay-confirm-btn')?.addEventListener('click', () => {
+                      cleanup();
+                      if (btn.data) {
+                        apiClient.post('/bots/api/answerCallbackQuery', {
+                          callback_query_id: msg.id,
+                          data: `pay:${btn.data}`,
+                        }).catch(() => {});
+                      }
+                    });
+                  }
                 }
               };
               const btnTitle = btn.action === 'open_url' ? `Ссылка: ${btn.url || ''}`
                 : btn.action === 'copy' ? `Текст для копирования: ${btn.value || ''}`
                 : btn.action === 'add_to_group' ? 'Добавить бота в группу'
                 : btn.action === 'callback' ? `Ответ: ${btn.data || ''}`
+                : btn.action === 'pay' ? `Оплата: ${btn.text || ''}`
                 : '';
               return (
                 <button
@@ -1486,6 +1591,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   {btn.action === 'open_url' && <Icon name="arrow-right" size={12} style={{ opacity: 0.5, transform: 'rotate(-45deg)' }} />}
                   {btn.action === 'copy' && <Icon name="copy" size={12} style={{ opacity: 0.5 }} />}
                   {btn.action === 'add_to_group' && <Icon name="plus" size={12} style={{ opacity: 0.5 }} />}
+                  {btn.action === 'pay' && <Icon name="wallet" size={12} style={{ opacity: 0.5 }} />}
                 </button>
               );
             })}
@@ -1564,7 +1670,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             <span>{chatName.charAt(0).toUpperCase()}</span>
           </div>
           <div className="chat-header-details">
-            <div className="chat-header-name">{chatName}</div>
+            <div className="chat-header-name">
+              {chatName}
+              {e2eeEnabled && (
+                <span style={{ marginLeft: 6, fontSize: '0.75rem', color: '#4CAF50', fontWeight: 500, display: 'inline-flex', alignItems: 'center' }}>
+                  <Icon name="lock" size={13} />
+                </span>
+              )}
+            </div>
             {typingUsers.size > 0 ? (
               <div className="chat-header-typing">печатает...</div>
             ) : !navigator.onLine ? (
@@ -1573,7 +1686,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
         <div className="chat-header-actions">
-          <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); onStartCall?.(currentUserId === 1 ? 2 : 1, chatName); }} title="Звонок">
+          <button className="chat-header-action" onClick={(e) => {
+            e.stopPropagation();
+            if (chatType === 'group' || chatType === 'channel') {
+              onStartGroupCall?.();
+            } else {
+              const peerMember = chatMembers.find(m => m.id !== currentUserId);
+              const peerId = peerMember?.id || 0;
+              onStartCall?.(peerId, chatName);
+            }
+          }} title="Звонок">
             <Icon name="phone" size={20} />
           </button>
           <button className="chat-header-action" onClick={(e) => { e.stopPropagation(); setShowChatSearch(!showChatSearch); }}>
@@ -1725,17 +1847,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   {chatName?.charAt(0)?.toUpperCase() || 'B'}
                 </div>
                 <h3>{chatName}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                  {slashCommands.botCommands?.length > 0
-                    ? `Доступно ${slashCommands.botCommands.length} команд. Выберите команду или напишите /start`
-                    : 'Отправьте /start чтобы начать'}
-                </p>
+                {description ? (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '4px 0 12px', lineHeight: 1.5 }}>
+                    {description}
+                  </p>
+                ) : (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    {slashCommands.botCommands?.length > 0
+                      ? `Доступно ${slashCommands.botCommands.length} команд. Выберите команду или напишите /start`
+                      : 'Отправьте /start чтобы начать'}
+                  </p>
+                )}
                 <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 6, width: '100%', maxWidth: 280 }}>
                   {slashCommands.botCommands?.length > 0 ? (
                     slashCommands.botCommands.map((cmd: any) => (
                       <button
                         key={cmd.command}
-                        onClick={() => { setInputText(`/${cmd.command} `); inputRef.current?.focus(); }}
+                        onClick={() => { updateInputText(`/${cmd.command} `); inputRef.current?.focus(); setTimeout(() => handleSendMessage(), 0); }}
                         style={{
                           padding: '10px 14px', background: 'var(--bg-card)',
                           border: '1px solid var(--border-color)', borderRadius: 10,
@@ -1750,7 +1878,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     ))
                   ) : (
                     <button
-                      onClick={() => { setInputText('/start '); inputRef.current?.focus(); }}
+                      onClick={() => { updateInputText('/start '); inputRef.current?.focus(); setTimeout(() => handleSendMessage(), 0); }}
                       style={{
                         padding: '12px 16px', background: 'linear-gradient(135deg, #D4A017, #B8860B)',
                         border: 'none', borderRadius: 12, color: '#000',
@@ -1929,6 +2057,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               <Icon name="clock" size={22} />
               <span style={{fontSize: '0.65rem'}}>Отложено</span>
             </button>
+            <button onClick={() => {
+              setShowAttachMenu(false);
+              if (!navigator.geolocation) {
+                alert('Геолокация не поддерживается');
+                return;
+              }
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  const { latitude, longitude } = pos.coords;
+                  const locContent = JSON.stringify({ type: 'location', lat: latitude, lng: longitude });
+                  apiClient.post('/messages/', { content: locContent, chat_id: chatId }).then(() => loadMessages()).catch(err => console.error('Location send error:', err));
+                },
+                () => alert('Не удалось определить местоположение'),
+                { enableHighAccuracy: true, timeout: 10000 }
+              );
+            }}
+              style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '10px 14px', background: 'none', border: 'none', borderRadius: 12, cursor: 'pointer', color: 'var(--text-primary)'}}>
+              <Icon name="pin" size={22} />
+              <span style={{fontSize: '0.65rem'}}>Геолокация</span>
+            </button>
           </div>
         )}
 
@@ -2044,6 +2192,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             setTranslateText(selectedMessage.content);
             setShowTranslator(true);
             setShowContextMenu(false);
+          }}
+          onPin={async () => {
+            try {
+              await apiClient.post(`/messages/${selectedMessage.id}/pin`);
+              setShowPinnedBar(true);
+            } catch {}
           }}
           isForwarded={!!selectedMessage.is_forwarded || !!selectedMessage.forwarded_from_message_id}
         />

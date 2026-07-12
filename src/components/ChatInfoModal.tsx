@@ -16,6 +16,9 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
   const [mediaFiles, setMediaFiles] = useState<any[]>([]);
   const [allMessages, setAllMessages] = useState<any[]>([]);
   const [botInfo, setBotInfo] = useState<any>(null);
+  const [exporting, setExporting] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
 
   const isPrivate = chat.type === 'private' || chat.type === 'personal';
   const isGroup = chat.type === 'group';
@@ -69,6 +72,46 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
 
   // Для личного чата — показываем профиль собеседника
   const otherMember = isPrivate ? members.find(m => m.user_id !== currentUserId) : null;
+
+  const exportChat = async (format: 'json' | 'html' | 'txt') => {
+    setExporting(true);
+    try {
+      if (allMessages.length === 0) {
+        const msgsRes = await apiClient.get(`/messages/chat/${chat.id}`);
+        setAllMessages(msgsRes.data || []);
+      }
+      const msgs = allMessages.length > 0 ? allMessages : [];
+      let content = '';
+      let filename = `chat_${chat.name}_${new Date().toISOString().slice(0,10)}`;
+      let mimeType = 'text/plain';
+
+      if (format === 'json') {
+        content = JSON.stringify({ chat: { id: chat.id, name: chat.name, type: chat.type }, messages: msgs.map((m: any) => ({ id: m.id, sender_id: m.sender_id, content: m.content, timestamp: m.timestamp })) }, null, 2);
+        filename += '.json';
+        mimeType = 'application/json';
+      } else if (format === 'html') {
+        const rows = msgs.map((m: any) => `<tr><td>${new Date(m.timestamp).toLocaleString()}</td><td>User ${m.sender_id}</td><td>${m.content}</td></tr>`).join('\n');
+        content = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Chat: ${chat.name}</title><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}</style></head><body><h1>Chat: ${chat.name}</h1><table><tr><th>Дата</th><th>Отправитель</th><th>Сообщение</th></tr>${rows}</table></body></html>`;
+        filename += '.html';
+        mimeType = 'text/html';
+      } else {
+        content = msgs.map((m: any) => `[${new Date(m.timestamp).toLocaleString()}] User ${m.sender_id}: ${m.content}`).join('\n');
+        filename += '.txt';
+      }
+
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -140,6 +183,62 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
                 </div>
               )}
             </div>
+
+            <div className="profile-section" style={{ marginTop: 12 }}>
+              <div className="profile-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="profile-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Icon name="lock" size={14} /> E2EE шифрование
+                </span>
+                <button
+                  style={{
+                    padding: '6px 12px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 500,
+                    background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)', cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    alert('E2EE настройки доступны в меню настроек чата (Оформление → E2EE шифрование)');
+                  }}
+                >
+                  Управление ключами
+                </button>
+              </div>
+            </div>
+
+            <div className="profile-section" style={{ marginTop: 12 }}>
+              {isBlocked ? (
+                <button
+                  className="settings-action-btn"
+                  style={{ width: '100%', color: '#4CAF50', border: '1px solid #4CAF50', background: 'transparent', padding: '10px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 500 }}
+                  onClick={async () => {
+                    try {
+                      await apiClient.delete(`/users/block/${otherMember.user_id || otherMember.id}`);
+                      setIsBlocked(false);
+                    } catch {}
+                  }}
+                >
+                  <Icon name="checkmark" size={16} /> Разблокировать
+                </button>
+              ) : (
+                <button
+                  className="settings-action-btn"
+                  style={{ width: '100%', color: '#ef4444', border: '1px solid #ef4444', background: 'transparent', padding: '10px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 500 }}
+                  disabled={blockLoading}
+                  onClick={async () => {
+                    setBlockLoading(true);
+                    try {
+                      await apiClient.get(`/users/block/${otherMember.user_id || otherMember.id}`);
+                      setIsBlocked(true);
+                    } catch {
+                      alert('Не удалось заблокировать пользователя');
+                    } finally {
+                      setBlockLoading(false);
+                    }
+                  }}
+                >
+                  <Icon name="delete" size={16} /> Заблокировать
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           // ПРОФИЛЬ ГРУППЫ/КАНАЛА
@@ -178,6 +277,38 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
               <div className="loading-members">Загрузка...</div>
             ) : (
               <div className="members-list">
+                {isGroup && (
+                  <div
+                    className="member-item"
+                    style={{ cursor: 'pointer', padding: '10px 12px', borderRadius: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 12 }}
+                    onClick={async () => {
+                      const username = prompt('Введите @username пользователя для добавления:');
+                      if (!username) return;
+                      try {
+                        const clean = username.replace('@', '').trim();
+                        const userRes = await apiClient.get(`/auth/check-username?username=${clean}`);
+                        if (!userRes.data.exists) {
+                          alert('Пользователь не найден');
+                          return;
+                        }
+                        await apiClient.post(`/chats/${chat.id}/add-member`, { username: clean });
+                        alert(`${username} добавлен(а) в группу`);
+                        loadData();
+                      } catch (err: any) {
+                        alert(err.response?.data?.detail || 'Не удалось добавить участника');
+                      }
+                    }}
+                  >
+                    <div className="member-avatar" style={{ background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.1rem', fontWeight: 600 }}>
+                      +
+                    </div>
+                    <div className="member-info">
+                      <div className="member-name" style={{ color: 'var(--accent)', fontWeight: 500 }}>
+                        Добавить участника
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {members.map(member => (
                   <div key={member.user_id} className="member-item">
                     <div className="member-avatar">
@@ -237,9 +368,35 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
             </div>
           )}
         </div>
+
+        <div style={{padding: '12px 16px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: 8}}>
+
+          <button disabled={exporting} onClick={() => exportChat('json')} style={{flex: 1, padding: '8px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.8rem'}}>
+
+            {exporting ? '...' : '📄 JSON'}
+
+          </button>
+
+          <button disabled={exporting} onClick={() => exportChat('html')} style={{flex: 1, padding: '8px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.8rem'}}>
+
+            {exporting ? '...' : '🌐 HTML'}
+
+          </button>
+
+          <button disabled={exporting} onClick={() => exportChat('txt')} style={{flex: 1, padding: '8px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.8rem'}}>
+
+            {exporting ? '...' : '📝 TXT'}
+
+          </button>
+
+        </div>
+
       </div>
+
     </div>
+
   );
+
 };
 
 export default ChatInfoModal;

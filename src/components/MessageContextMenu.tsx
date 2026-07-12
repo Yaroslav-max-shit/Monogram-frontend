@@ -26,6 +26,7 @@ interface MessageContextMenuProps {
   onForward: () => void;
   onWhoForwarded?: () => void;
   onTranslate?: () => void;
+  onPin?: () => void;
 }
 
 const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
@@ -45,6 +46,7 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   onForward,
   onWhoForwarded,
   onTranslate,
+  onPin,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [selectedText, setSelectedText] = React.useState('');
@@ -123,6 +125,13 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
         <Icon name="forward" size={18} />
         <span>Переслать</span>
       </div>
+
+      {onPin && (
+        <div className="context-menu-item" onClick={() => { onPin(); onClose(); }}>
+          <Icon name="pin" size={18} />
+          <span>Закрепить</span>
+        </div>
+      )}
       
       <div className="context-menu-item" onClick={onCopy}>
         <Icon name="copy" size={18} />
