@@ -27,7 +27,16 @@ class RealtimeService {
     try {
       this.ws = new WebSocket(`${wsUrl}/ws/${userId}`);
 
+      // Таймаут подключения — если WebSocket не открыл за 10 секунд, закрываем
+      const connectTimeout = setTimeout(() => {
+        if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+          console.warn('[WS] Connection timeout, closing');
+          this.ws.close();
+        }
+      }, 10000);
+
       this.ws.onopen = () => {
+        clearTimeout(connectTimeout);
         this.isConnecting = false;
         this.reconnectAttempts = 0;
         this.ws?.send(JSON.stringify({ type: 'auth', token }));
