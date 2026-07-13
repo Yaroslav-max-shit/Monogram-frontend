@@ -138,11 +138,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   onForwardMessage,
   onSaveDraft,
   onStartCall,
-  onStartGroupCall,
   onMessageSent,
   isBot = false,
   description,
+  onStartGroupCall,
 }) => {
+  const isPrivate = chatType === 'private';
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const inputTextRef = useRef('');
