@@ -6,7 +6,7 @@ const ASSETS = [
 ];
 
 // Keep-alive: пингуем бэкенд каждые 10 минут (для Render Free tier)
-const PING_URL = 'https://monogram-backend-dxv4.onrender.com/ping';
+const PING_URL = 'https://monogram-backend-dxv4.onrender.com/api/health';
 const PING_INTERVAL = 10 * 60 * 1000; // 10 минут
 
 setInterval(() => {
