@@ -886,9 +886,10 @@ const App: React.FC = () => {
         });
         
         await initE2EE(session.user.id);
-          await loadUserChats();
-        await loadPremiumStatus();
-        await checkNewDevice();
+        await Promise.all([
+          loadUserChats(),
+          loadPremiumStatus(),
+        ]);
         requestNotificationPermission();
         
         if (window.location.pathname === '/config') checkAdmin();
