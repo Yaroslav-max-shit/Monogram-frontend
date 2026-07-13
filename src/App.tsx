@@ -259,6 +259,8 @@ const App: React.FC = () => {
   // ============================================
 
   const loadUserChats = useCallback(async () => {
+    if (chatsLoadedRef.current) return;
+    chatsLoadedRef.current = true;
     // Сначала загружаем из кэша (мгновенно)
     const cached = await getCachedChats();
     if (cached.length > 0) {
@@ -1133,6 +1135,7 @@ const App: React.FC = () => {
     setSavedChats([]);
     setActiveChat(null);
     setShowLogoutConfirm(false);
+    chatsLoadedRef.current = false;
     window.location.href = '/';
   }, []);
 
