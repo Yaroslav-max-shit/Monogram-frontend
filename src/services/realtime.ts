@@ -20,20 +20,26 @@ class RealtimeService {
     this.isConnecting = true;
     this.userId = userId;
     this.reconnectAttempts = 0;
-    this.disconnect();
-
+    // Не вызываем disconnect() здесь — он закроет предыдущий WS
+    
     const wsUrl = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
 
     try {
+      // Закрываем предыдущий WS если есть
+      if (this.ws) {
+        this.ws.close();
+        this.ws = null;
+      }
+      
       this.ws = new WebSocket(`${wsUrl}/ws/${userId}`);
 
-      // Таймаут подключения — если WebSocket не открыл за 10 секунд, закрываем
+      // Таймаут подключения — 15 секунд (Render cold start ~30s)
       const connectTimeout = setTimeout(() => {
         if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
           console.warn('[WS] Connection timeout, closing');
           this.ws.close();
         }
-      }, 10000);
+      }, 15000);
 
       this.ws.onopen = () => {
         clearTimeout(connectTimeout);

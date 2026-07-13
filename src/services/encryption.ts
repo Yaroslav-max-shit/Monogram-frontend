@@ -165,23 +165,37 @@ const getPrivateKey = async (userId: number): Promise<CryptoKey | null> => {
   );
 };
 
+// Кэш публичных ключей чтобы не делать повторные запросы
+const publicKeyCache = new Map<number, CryptoKey | null>();
+
 // Получение публичного ключа собеседника с сервера
 const getRecipientPublicKey = async (userId: number): Promise<CryptoKey | null> => {
+  // Проверяем кэш
+  if (publicKeyCache.has(userId)) {
+    return publicKeyCache.get(userId) || null;
+  }
+  
   try {
     const response = await apiClient.get(`/e2ee/get-public-key/${userId}`);
     const publicKeyBase64 = response.data?.public_key;
     
-    if (!publicKeyBase64) return null;
+    if (!publicKeyBase64) {
+      publicKeyCache.set(userId, null);
+      return null;
+    }
     
     const publicKeyRaw = base64ToArrayBuffer(publicKeyBase64);
     
-    return crypto.subtle.importKey(
+    const key = await crypto.subtle.importKey(
       'raw',
       publicKeyRaw,
       { name: 'ECDH', namedCurve: 'P-256' },
       false,
       []
     );
+    
+    publicKeyCache.set(userId, key);
+    return key;
   } catch (error) {
     console.error('Ошибка получения публичного ключа:', error);
     return null;
