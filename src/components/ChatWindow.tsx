@@ -143,7 +143,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   description,
   onStartGroupCall,
 }) => {
-  const isPrivate = chatType === 'private';
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const inputTextRef = useRef('');
@@ -628,7 +627,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     // Объединённая загрузка: members + block check + draft за один проход
     const loadData = async () => {
       try {
-        const blockId = isPrivate && !isBot ? (chatMembers.find(m => m.id !== currentUserId)?.id || 0) : 0;
+        const blockId = (chatType === 'private') && !isBot ? (chatMembers.find(m => m.id !== currentUserId)?.id || 0) : 0;
         const requests: Promise<any>[] = [
           apiClient.get(`/chats/${chatId}/members`),
         ];

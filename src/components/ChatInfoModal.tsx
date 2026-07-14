@@ -20,7 +20,6 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
 
-  const isPrivate = chat.type === 'private' || chat.type === 'personal';
   const isGroup = chat.type === 'group';
   const isChannel = chat.type === 'channel';
   const isBot = (chat as any).isBot || false;
@@ -71,7 +70,7 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
   };
 
   // Для личного чата — показываем профиль собеседника
-  const otherMember = isPrivate ? members.find(m => m.user_id !== currentUserId) : null;
+  const otherMember = (chat.type === 'private' || chat.type === 'personal') ? members.find(m => m.user_id !== currentUserId) : null;
 
   const exportChat = async (format: 'json' | 'html' | 'txt') => {
     setExporting(true);
@@ -148,7 +147,7 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
               </div>
             </div>
           </div>
-        ) : isPrivate && otherMember ? (
+        ) : (chat.type === 'private' || chat.type === 'personal') && otherMember ? (
           // ПРОФИЛЬ ЛИЧНОГО ЧАТА
           <div className="profile-full">
             <div className="profile-avatar-large">
@@ -254,7 +253,7 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
         )}
 
         {/* Вкладки — скрыты для личных чатов и ботов */}
-        {!isPrivate && !isBot && (
+        {!(chat.type === 'private' || chat.type === 'personal') && !isBot && (
           <div className="chat-info-tabs">
             <button className={`tab ${activeTab === 'members' ? 'active' : ''}`} onClick={() => setActiveTab('members')}>
               <Icon name="profile" size={14} /> Участники ({members.length})
@@ -272,7 +271,7 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ onClose, chat, currentUse
         )}
 
         <div className="chat-info-body">
-          {activeTab === 'members' && !isPrivate && !isBot && (
+          {activeTab === 'members' && !(chat.type === 'private' || chat.type === 'personal') && !isBot && (
             loading ? (
               <div className="loading-members">Загрузка...</div>
             ) : (
