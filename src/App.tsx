@@ -261,14 +261,8 @@ const App: React.FC = () => {
   const loadUserChats = useCallback(async () => {
     if (chatsLoadedRef.current) return;
     chatsLoadedRef.current = true;
-    // Сначала загружаем из кэша (мгновенно)
-    const cached = await getCachedChats();
-    if (cached.length > 0) {
-      setSavedChats(cached);
-      setIsLoading(false);
-    }
     
-    // Потом синхронизируем с сервером в фоне
+    // Загружаем чаты с сервера
     try {
       const response = await apiClient.get('/chats/');
       setUserData(current => {
