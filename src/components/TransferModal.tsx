@@ -3,7 +3,7 @@ import { animate } from 'animejs';
 import apiClient from '../services/api';
 import './TransferModal.css';
 
-const QUARKPAY_DOMAIN = 'https://f1w6ggb2-5174.euw.devtunnels.ms';
+const QUARKPAY_DOMAIN = import.meta.env.VITE_QUARKPAY_URL || 'https://f1w6ggb2-5174.euw.devtunnels.ms';
 
 interface TransferModalProps {
   onClose: () => void;
@@ -58,7 +58,7 @@ const TransferModal: React.FC<TransferModalProps> = ({
           if (!recipientConnected) {
             setStep('recipient_not_connected');
           } else {
-            setStep('not_connected');
+            setStep('recipient_not_connected');
           }
         } catch {
           setStep('recipient_not_connected');
@@ -101,7 +101,7 @@ const TransferModal: React.FC<TransferModalProps> = ({
 
       const connectUrl = `${QUARKPAY_DOMAIN}/connect/${code}`;
 
-      await apiClient.post('/messages/send', {
+      await apiClient.post('/messages/', {
         chat_id: undefined,
         content: `💳 Предлагаю подключить QuarkPay для переводов!\n\nQuarkPay — это удобный способ отправлять деньги прямо в чатах Monogram.\n\nНажмите кнопку ниже, чтобы подключить:`,
         chat_name: toUsername,

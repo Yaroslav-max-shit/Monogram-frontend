@@ -104,6 +104,7 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
       if (isLogin) {
         const response = await apiClient.post('/auth/login', { username, password });
         const token = response.data.access_token;
+        const refreshToken = response.data.refresh_token;
         const payload = JSON.parse(atob(token.split('.')[1]));
         
         let userAvatar = '';
@@ -122,7 +123,7 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
           firstName: userFirstName || username,
           lastName: userLastName,
           avatar_url: userAvatar,
-        });
+        }, refreshToken);
         if (onLogin) onLogin();
       } else if (registerStep === 'data') {
         await apiClient.post('/auth/register/init', {
@@ -141,6 +142,7 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
           username: newUsername,
         });
         const token = res.data.access_token;
+        const refreshToken = res.data.refresh_token;
         const payload = JSON.parse(atob(token.split('.')[1]));
         await saveSession(token, {
           id: payload.user_id || res.data.user?.id || 1,
@@ -148,7 +150,7 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
           firstName: firstName,
           lastName: lastName,
           avatar_url: avatar || '',
-        });
+        }, refreshToken);
         if (onLogin) onLogin();
       }
     } catch (err: any) {
@@ -191,6 +193,7 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
       try {
         const res = await apiClient.post('/auth/google', { access_token: tokenResponse.access_token });
         const token = res.data.access_token;
+        const refreshToken = res.data.refresh_token;
         const payload = JSON.parse(atob(token.split('.')[1]));
         await saveSession(token, {
           id: payload.user_id || payload.sub || 1,
@@ -198,7 +201,7 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
           firstName: payload.first_name || '',
           lastName: payload.last_name || '',
           avatar_url: payload.avatar_url || '',
-        });
+        }, refreshToken);
         if (onLogin) onLogin();
       } catch (err: any) {
         setError(err.response?.data?.detail || 'Ошибка входа через Google');

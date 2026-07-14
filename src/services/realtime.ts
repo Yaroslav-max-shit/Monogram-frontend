@@ -14,13 +14,13 @@ class RealtimeService {
   private isConnecting = false;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
+  private connectTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
   async connect(userId: number, token: string) {
     if (this.isConnecting) return;
     this.isConnecting = true;
     this.userId = userId;
     this.reconnectAttempts = 0;
-    // Не вызываем disconnect() здесь — он закроет предыдущий WS
     
     const wsUrl = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
 
@@ -33,16 +33,16 @@ class RealtimeService {
       
       this.ws = new WebSocket(`${wsUrl}/ws/${userId}`);
 
-      // Таймаут подключения — 15 секунд (Render cold start ~30s)
-      const connectTimeout = setTimeout(() => {
+      // Таймаут подключения — 45 секунд (Render cold start ~30s)
+      this.connectTimeoutTimer = setTimeout(() => {
         if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
           console.warn('[WS] Connection timeout, closing');
           this.ws.close();
         }
-      }, 15000);
+      }, 45000);
 
       this.ws.onopen = () => {
-        clearTimeout(connectTimeout);
+        clearTimeout(this.connectTimeoutTimer!);
         this.isConnecting = false;
         this.reconnectAttempts = 0;
         this.ws?.send(JSON.stringify({ type: 'auth', token }));
@@ -57,6 +57,7 @@ class RealtimeService {
       };
 
       this.ws.onclose = (event) => {
+        clearTimeout(this.connectTimeoutTimer!);
         console.log(`[WS] Closed: ${event.code} ${event.reason}`);
         this.isConnecting = false;
         // WS закрылся — переподключаемся с backoff
@@ -72,8 +73,8 @@ class RealtimeService {
         }
       };
 
-      this.ws.onerror = (error) => {
-        console.error('[WS] Error:', error);
+      this.ws.onerror = () => {
+        // Ошибка WS — просто закрываем, onclose сработает автоматически
         this.ws?.close();
       };
     } catch (error) {
@@ -111,7 +112,10 @@ class RealtimeService {
       this.sseSource.onerror = () => {
         this.sseSource?.close();
         this.sseSource = null;
-        this.scheduleSSE(10000);
+        // Проверяем что пользователь всё ещё залогинен
+        if (this.userId && this.reconnectAttempts < this.maxReconnectAttempts + 5) {
+          this.scheduleSSE(10000);
+        }
       };
     } catch {
       this.scheduleSSE(10000);
@@ -140,6 +144,7 @@ class RealtimeService {
   }
 
   disconnect() {
+    clearTimeout(this.connectTimeoutTimer!);
     this.ws?.close();
     this.ws = null;
     this.sseSource?.close();

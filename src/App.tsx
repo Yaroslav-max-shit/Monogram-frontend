@@ -164,6 +164,11 @@ const App: React.FC = () => {
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
   
+  // Confirm modals
+  const [confirmDeleteChat, setConfirmDeleteChat] = useState<number | null>(null);
+  const [confirmBlockUser, setConfirmBlockUser] = useState<number | null>(null);
+  const [confirmClearHistory, setConfirmClearHistory] = useState<number | null>(null);
+  
   // Безопасность
   const [showNewDeviceAlert, setShowNewDeviceAlert] = useState(false);
   const [newDeviceInfo, setNewDeviceInfo] = useState<NewDeviceInfo | null>(null);
@@ -337,7 +342,7 @@ const App: React.FC = () => {
       hash = ((hash << 5) - hash) + str.charCodeAt(i);
       hash = hash & hash;
     }
-    return Math.abs(hash) % 900000 + 100000;
+    return Math.abs(hash) % 9000000000 + 1000000000;
   }, []);
 
   const handleDeleteChat = async (chatId: number) => {
@@ -472,7 +477,7 @@ const App: React.FC = () => {
       await apiClient.delete(`/auth/sessions/${newDeviceInfo?.sessionId}`);
       setShowNewDeviceAlert(false);
       setNewDeviceInfo(null);
-      alert('Сессия завершена. Неизвестное устройство отключено.');
+      addToast('Сессия завершена. Неизвестное устройство отключено.', 'info');
     } catch (error) {
       console.error('Ошибка завершения сессии:', error);
     }
@@ -718,7 +723,7 @@ const App: React.FC = () => {
             return;
           }
         } catch {}
-        alert('Ошибка входа через Google');
+        addToast('Ошибка входа через Google', 'error');
         window.location.href = '/';
         return;
       }
@@ -780,7 +785,7 @@ const App: React.FC = () => {
           }
         } catch {}
         const msg = params.get('message');
-        alert(msg || 'Ошибка входа через Яндекс');
+        addToast(msg || 'Ошибка входа через Яндекс', 'error');
         window.location.href = '/';
         return;
       }
@@ -851,14 +856,22 @@ const App: React.FC = () => {
 
       window.updatePreloadProgress?.(85, 'Подключение к серверу...');
       
+      let unsubMessage = () => {};
+      let unsubChat = () => {};
+      let unsubTyping = () => {};
+
       if (session) {
         setIsLoggedIn(true);
         setUserData(session.user);
         
         // Подключаем WebSocket через realtime.ts
-        realtime.connect(session.user.id, session.token);
-        const unsubMessage = realtime.on('new_message', handleIncomingMessage);
-        const unsubChat = realtime.on('new_chat', (data: any) => {
+        try {
+          realtime.connect(session.user.id, session.token);
+        } catch (e) {
+          console.warn('[WS] Failed to connect:', e);
+        }
+        unsubMessage = realtime.on('new_message', handleIncomingMessage);
+        unsubChat = realtime.on('new_chat', (data: any) => {
           // Новый чат от другого пользователя — добавляем в список
           const chatId = data.chat_id;
           if (!chatId) return;
@@ -875,7 +888,7 @@ const App: React.FC = () => {
             }, ...prev];
           });
         });
-        const unsubTyping = realtime.on('typing', (data: any) => {
+        unsubTyping = realtime.on('typing', (data: any) => {
           // Обработка typing индикаторов будет в ChatWindow
         });
         
@@ -943,6 +956,9 @@ const App: React.FC = () => {
       window.removeEventListener('navigate', navigateHandler as EventListener);
       window.removeEventListener('message', transferSuccessHandler);
       window.removeEventListener('popstate', popstateHandler);
+      unsubMessage();
+      unsubChat();
+      unsubTyping();
     };
   }, [handleIncomingMessage, loadUserChats, checkAdmin, biometricSupported, biometricEnabled, isMobile, biometricAuth, e2eeEnabled, loadPremiumStatus, checkNewDevice]);
 
@@ -1457,9 +1473,9 @@ const App: React.FC = () => {
                 onPinChat={handlePinChat}
                 onArchiveChat={handleArchiveChat}
                 onMuteChat={handleMuteChat}
-                onDeleteChat={(id) => { if (confirm('Удалить чат?')) handleDeleteChat(id); }}
-                onBlockUser={(id) => { if (confirm('Заблокировать пользователя?')) apiClient.post(`/users/block/${id}`).catch(() => {}); }}
-                onClearHistory={(id) => { if (confirm('Очистить историю?')) apiClient.delete(`/chats/${id}`).catch(() => {}); }}
+                onDeleteChat={(id) => setConfirmDeleteChat(id)}
+                onBlockUser={(id) => setConfirmBlockUser(id)}
+                onClearHistory={(id) => setConfirmClearHistory(id)}
                 onAddToFolder={(id) => { /* TODO: open folder modal */ }}
                 isOpen={sidebarOpen}
                 onClose={closeSidebar}
@@ -1491,9 +1507,9 @@ const App: React.FC = () => {
                 onPinChat={handlePinChat}
                 onArchiveChat={handleArchiveChat}
                 onMuteChat={handleMuteChat}
-                onDeleteChat={(id) => { if (confirm('Удалить чат?')) handleDeleteChat(id); }}
-                onBlockUser={(id) => { if (confirm('Заблокировать пользователя?')) apiClient.post(`/users/block/${id}`).catch(() => {}); }}
-                onClearHistory={(id) => { if (confirm('Очистить историю?')) apiClient.delete(`/chats/${id}`).catch(() => {}); }}
+                onDeleteChat={(id) => setConfirmDeleteChat(id)}
+                onBlockUser={(id) => setConfirmBlockUser(id)}
+                onClearHistory={(id) => setConfirmClearHistory(id)}
                 onAddToFolder={(id) => { /* TODO: open folder modal */ }}
                 isOpen={sidebarOpen}
                 onClose={closeSidebar}
@@ -1588,6 +1604,39 @@ const App: React.FC = () => {
           cancelText="Отмена"
           onConfirm={handleLogout}
           onCancel={() => setShowLogoutConfirm(false)}
+          danger
+        />
+      )}
+      {confirmDeleteChat !== null && (
+        <ConfirmModal
+          title="Удалить чат"
+          message="Вы уверены, что хотите удалить этот чат?"
+          confirmText="Удалить"
+          cancelText="Отмена"
+          onConfirm={() => { handleDeleteChat(confirmDeleteChat); setConfirmDeleteChat(null); }}
+          onCancel={() => setConfirmDeleteChat(null)}
+          danger
+        />
+      )}
+      {confirmBlockUser !== null && (
+        <ConfirmModal
+          title="Заблокировать пользователя"
+          message="Вы уверены, что хотите заблокировать этого пользователя?"
+          confirmText="Заблокировать"
+          cancelText="Отмена"
+          onConfirm={() => { apiClient.post(`/users/block/${confirmBlockUser}`).catch(() => {}); setConfirmBlockUser(null); }}
+          onCancel={() => setConfirmBlockUser(null)}
+          danger
+        />
+      )}
+      {confirmClearHistory !== null && (
+        <ConfirmModal
+          title="Очистить историю"
+          message="Вы уверены, что хотите очистить историю сообщений?"
+          confirmText="Очистить"
+          cancelText="Отмена"
+          onConfirm={() => { apiClient.delete(`/chats/${confirmClearHistory}`).catch(() => {}); setConfirmClearHistory(null); }}
+          onCancel={() => setConfirmClearHistory(null)}
           danger
         />
       )}

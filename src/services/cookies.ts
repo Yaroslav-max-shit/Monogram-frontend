@@ -11,19 +11,24 @@ interface UserData {
 
 interface Session {
   token: string;
+  refreshToken?: string;
   user: UserData;
 }
 
 // Save session - token goes to HttpOnly cookie (backend sets it), user data in sessionStorage (not localStorage)
 export const saveSession = async (
     token: string,
-    user: UserData
+    user: UserData,
+    refreshToken?: string
 ) => {
     // Token is set as HttpOnly cookie by backend via Set-Cookie header
     // We store minimal user data in sessionStorage (cleared on tab close)
     try {
         sessionStorage.setItem('monogram_user', JSON.stringify(user));
         sessionStorage.setItem('monogram_token', token);
+        if (refreshToken) {
+            sessionStorage.setItem('monogram_refresh_token', refreshToken);
+        }
     } catch (error) {
         console.error('Error saving session:', error);
     }
@@ -98,11 +103,22 @@ export const getSession = async (): Promise<Session | null> => {
 // Clear session
 export const clearSession = () => {
     sessionStorage.removeItem('monogram_token');
+    sessionStorage.removeItem('monogram_refresh_token');
     sessionStorage.removeItem('monogram_user');
     sessionStorage.removeItem('monogram_settings');
     
-    // Clear auth cookie
+    // Clear auth cookies
     document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; Secure';
+    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/auth; Secure';
+};
+
+// Get refresh token
+export const getRefreshToken = async (): Promise<string | null> => {
+    try {
+        return sessionStorage.getItem('monogram_refresh_token');
+    } catch {
+        return null;
+    }
 };
 
 // Settings (non-sensitive, can stay in localStorage)

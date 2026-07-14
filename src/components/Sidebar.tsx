@@ -94,7 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const focusModeActive = isFocusModeActive();
   const [orderedChats, setOrderedChats] = useState<any[]>([]);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ chatId: number; x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ chatId: number; x: number; y: number; isPinned: boolean } | null>(null);
 
   const displayName = userData?.first_name
     ? `${userData.first_name} ${userData.last_name || ''}`.trim()
@@ -288,7 +288,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => onChatSelect(chat.id, chat.name || chat.title || 'Чат')}
               onContextMenu={(e) => {
                 e.preventDefault();
-                setContextMenu({ chatId: chat.id, x: e.clientX, y: e.clientY });
+                setContextMenu({ chatId: chat.id, x: e.clientX, y: e.clientY, isPinned: chat.isPinned });
               }}
             >
               <div className="chat-avatar" style={{ background: color }}>
@@ -389,7 +389,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               zIndex: 10001,
             }}
           >
-            <button className="context-menu-item" onClick={() => { onPinChat(contextMenu.chatId, false); setContextMenu(null); }}>
+            <button className="context-menu-item" onClick={() => { onPinChat(contextMenu.chatId, !contextMenu.isPinned); setContextMenu(null); }}>
               <Icon name="pin" size={16} /> Закрепить
             </button>
             <button className="context-menu-item" onClick={() => { onMuteChat(contextMenu.chatId, 3600); setContextMenu(null); }}>

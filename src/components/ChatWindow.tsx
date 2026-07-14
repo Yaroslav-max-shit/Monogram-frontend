@@ -819,7 +819,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       realtime.send({
         type: 'new_message',
         chat_id: chatId,
-        content: inputText,
+        content: text,
         sender_id: currentUserId
       });
       if (onMessageSent) onMessageSent();
@@ -1269,7 +1269,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleWhoForwarded = async (message: Message) => {
     try {
       const res = await apiClient.get(`/messages/${message.id}/forwarded-by`);
-      const users = res.data.users || [];
+      const users = Array.isArray(res.data) ? res.data : (res.data.users || []);
       if (users.length === 0) {
         alert('Нет информации о пересылке');
       } else {
@@ -1319,40 +1319,35 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
     
     let voiceUrl = '';
+    let origParsed: any = null;
     try {
-      const parsed = JSON.parse(msg.content);
-      if (parsed.type === 'bot_inline' && parsed.buttons) {
-        botButtons = parsed.buttons;
-        botText = parsed.text || '';
-        content = parsed.text || '';
+      origParsed = JSON.parse(msg.content);
+      if (origParsed.type === 'bot_inline' && origParsed.buttons) {
+        botButtons = origParsed.buttons;
+        botText = origParsed.text || '';
+        content = origParsed.text || '';
       }
-      if (parsed.reply_to) {
-        content = parsed.text;
-        replyToMsg = messages.find(m => m.id === parsed.reply_to);
+      if (origParsed.reply_to) {
+        content = origParsed.text;
+        replyToMsg = messages.find(m => m.id === origParsed.reply_to);
       }
-      if (parsed.quote) {
-        content = parsed.text;
-        quoteMsg = { text: parsed.quote, author: parsed.quote_author };
+      if (origParsed.quote) {
+        content = origParsed.text;
+        quoteMsg = { text: origParsed.quote, author: origParsed.quote_author };
       }
-      if (parsed.type === 'voice') {
+      if (origParsed.type === 'voice') {
         isVoice = true;
-        voiceDuration = parsed.duration || 0;
-        voiceUrl = parsed.url || '';
+        voiceDuration = origParsed.duration || 0;
+        voiceUrl = origParsed.url || '';
         content = '🎤 Голосовое сообщение';
       }
-      if (parsed.type === 'forwarded') {
-        content = parsed.original_content || '';
-        if (parsed.comment) {
-          forwardedComment = parsed.comment;
+      if (origParsed.type === 'forwarded') {
+        content = origParsed.original_content || '';
+        if (origParsed.comment) {
+          forwardedComment = origParsed.comment;
         }
       }
-    } catch {}
-    
-    let isFile = false;
-    let fileData: any = null;
-    try {
-      const origParsed = JSON.parse(msg.content);
-      if (origParsed.type === 'file') {
+      if (origParsed.type === 'file' && origParsed.files) {
         isFile = true;
         fileData = origParsed;
       }

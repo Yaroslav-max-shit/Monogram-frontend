@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getSession, saveSession, clearSession } from './cookies';
+import { getSession, saveSession, clearSession, getRefreshToken } from './cookies';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://monogram-backend-dxv4.onrender.com';
 
@@ -21,24 +21,28 @@ const processQueue = (error: any, token: string | null = null) => {
     failedQueue = [];
 };
 
-// Прораннее обновление токена каждые 6 дней (токен живёт 7 дней)
+// Периодическое обновление access token через refresh token (каждые 25 минут)
 const scheduleTokenRefresh = () => {
     if (refreshTimer) clearTimeout(refreshTimer);
     refreshTimer = setTimeout(async () => {
         try {
             const session = await getSession();
             if (!session?.token) return;
+            const refreshToken = await getRefreshToken();
+            if (!refreshToken) return;
+            
             const response = await axios.post(`${API_URL}/auth/refresh`, {}, {
-                headers: { Authorization: `Bearer ${session.token}` }
+                headers: { Authorization: `Bearer ${refreshToken}` }
             });
             const newToken = response.data.access_token;
+            const newRefresh = response.data.refresh_token;
             if (newToken) {
-                await saveSession(newToken, session.user);
+                await saveSession(newToken, session.user, newRefresh);
                 apiClient.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
             }
         } catch {}
         scheduleTokenRefresh(); // Планируем следующее обновление
-    }, 6 * 24 * 60 * 60 * 1000); // 6 дней
+    }, 25 * 60 * 1000); // 25 минут
 };
 
 apiClient.interceptors.request.use(async (config) => {
@@ -68,18 +72,21 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
             
             try {
-                const session = await getSession();
-                if (!session?.token) {
-                    throw new Error('No token');
+                const refreshToken = await getRefreshToken();
+                if (!refreshToken) {
+                    throw new Error('No refresh token');
                 }
                 
                 const response = await axios.post(`${API_URL}/auth/refresh`, {}, {
-                    headers: { Authorization: `Bearer ${session.token}` }
+                    headers: { Authorization: `Bearer ${refreshToken}` }
                 });
                 
                 const newToken = response.data.access_token;
+                const newRefresh = response.data.refresh_token;
                 if (newToken) {
-                    await saveSession(newToken, session.user);
+                    const session = await getSession();
+                    const user = session?.user || { id: 0, username: '', firstName: '', lastName: '' };
+                    await saveSession(newToken, user, newRefresh);
                     apiClient.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
                     processQueue(null, newToken);
                     originalRequest.headers.Authorization = `Bearer ${newToken}`;
@@ -88,7 +95,7 @@ apiClient.interceptors.response.use(
                 }
             } catch (refreshError) {
                 processQueue(refreshError, null);
-                // Токен истёк — выходим из аккаунта
+                // Refresh токен истёк — выходим из аккаунта
                 clearSession();
                 window.location.href = '/';
             } finally {
@@ -100,8 +107,14 @@ apiClient.interceptors.response.use(
     }
 );
 
-// Запускаем прораннее обновление при старте
-scheduleTokenRefresh();
+// Запускаем прораннее обновление при старте (только если есть сессия)
+const initRefresh = async () => {
+    const session = await getSession();
+    if (session?.token) {
+        scheduleTokenRefresh();
+    }
+};
+initRefresh();
 
 export const searchUsers = async (query: string) => {
     const response = await apiClient.get(`/users/search?q=${query}`);

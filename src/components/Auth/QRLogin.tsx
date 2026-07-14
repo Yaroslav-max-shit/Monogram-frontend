@@ -66,11 +66,11 @@ const QRLogin: React.FC<QRLoginProps> = ({ onClose }) => {
             });
             if (!mountedRef.current) return;
             if (tokenRes.data.access_token) {
-              await saveSession(tokenRes.data.access_token, tokenRes.data.user || {});
+              await saveSession(tokenRes.data.access_token, tokenRes.data.user || {}, tokenRes.data.refresh_token);
               onClose();
               setTimeout(() => { window.location.href = '/'; }, 100);
             } else if (tokenRes.data.token) {
-              await saveSession(tokenRes.data.token, tokenRes.data.user || {});
+              await saveSession(tokenRes.data.token, tokenRes.data.user || {}, tokenRes.data.refresh_token);
               onClose();
               setTimeout(() => { window.location.href = '/'; }, 100);
             }
