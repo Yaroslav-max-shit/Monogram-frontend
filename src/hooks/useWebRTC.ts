@@ -21,12 +21,19 @@ export function useWebRTC({ userId, peerId, chatId, onStateChange }: WebRTCOptio
     onStateChange?.(state);
   }, [onStateChange]);
 
-  const connectWebSocket = useCallback(() => {
+  const connectWebSocket = useCallback(async () => {
+    const { getSession } = await import('../services/cookies');
+    const session = await getSession();
+    const token = session?.token || '';
+    
     const wsUrl = `wss://monogram-backend-dxv4.onrender.com/ws/${userId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
+      if (token) {
+        ws.send(JSON.stringify({ type: 'auth', token }));
+      }
       console.debug('WebRTC WS connected');
     };
 
