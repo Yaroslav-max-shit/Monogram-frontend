@@ -515,6 +515,10 @@ const App: React.FC = () => {
   // РРќРР¦РРђР›РР—РђР¦РРЇ РџР РР›РћР–Р•РќРРЇ
   // ============================================
   useEffect(() => {
+    let unsubMessage = () => {};
+    let unsubChat = () => {};
+    let unsubTyping = () => {};
+    
     // Timer для показа рисовалки через 10 секунд
     const timer = setTimeout(() => {
       if (isLoading) {
@@ -856,10 +860,6 @@ const App: React.FC = () => {
 
       window.updatePreloadProgress?.(85, 'Подключение к серверу...');
       
-      let unsubMessage = () => {};
-      let unsubChat = () => {};
-      let unsubTyping = () => {};
-
       if (session) {
         setIsLoggedIn(true);
         setUserData(session.user);
