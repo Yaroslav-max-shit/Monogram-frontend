@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { animate } from 'animejs';
 import apiClient from '../services/api';
 
-const QUARKPAY_DOMAIN = import.meta.env.VITE_QUARKPAY_URL || 'https://f1w6ggb2-5174.euw.devtunnels.ms';
+const QUARKPAY_DOMAIN = import.meta.env.VITE_QUARKPAY_URL || '';
 
 interface ConnectPageProps {
   code: string;

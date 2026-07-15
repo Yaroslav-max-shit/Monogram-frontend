@@ -3,7 +3,7 @@ import { animate } from 'animejs';
 import apiClient from '../services/api';
 import './TransferModal.css';
 
-const QUARKPAY_DOMAIN = import.meta.env.VITE_QUARKPAY_URL || 'https://f1w6ggb2-5174.euw.devtunnels.ms';
+const QUARKPAY_DOMAIN = import.meta.env.VITE_QUARKPAY_URL || '';
 
 interface TransferModalProps {
   onClose: () => void;

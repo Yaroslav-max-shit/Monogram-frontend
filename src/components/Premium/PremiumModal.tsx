@@ -13,7 +13,7 @@ const PremiumModal: React.FC<PremiumModalProps> = ({ onClose, initialPlan }) => 
   const [step, setStep] = useState<'payment' | 'success'>('payment');
   const [selectedPlan, setSelectedPlan] = useState<string>(initialPlan || 'month');
 
-  const QUARKPAY_DOMAIN = import.meta.env.VITE_QUARKPAY_URL || 'https://f1w6ggb2-5174.euw.devtunnels.ms';
+  const QUARKPAY_DOMAIN = import.meta.env.VITE_QUARKPAY_URL || '';
 
   const handleQuarkPay = () => {
     window.open(`${QUARKPAY_DOMAIN}/pay/${selectedPlan}`, '_blank');
