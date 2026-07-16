@@ -45,10 +45,10 @@ const scheduleTokenRefresh = () => {
     }, 25 * 60 * 1000); // 25 минут
 };
 
-apiClient.interceptors.request.use(async (config) => {
-    const session = await getSession();
-    if (session?.token) {
-        config.headers.Authorization = `Bearer ${session.token}`;
+apiClient.interceptors.request.use((config) => {
+    const cookieMatch = document.cookie.match(/(?:^|;\s*)access_token=([^;]*)/);
+    if (cookieMatch) {
+        config.headers.Authorization = `Bearer ${decodeURIComponent(cookieMatch[1])}`;
     }
     return config;
 });
@@ -59,6 +59,15 @@ apiClient.interceptors.response.use(
         const originalRequest = error.config;
         
         if (error.response?.status === 401 && !originalRequest._retry) {
+            // Не перехватываем 401 от login/register — показываем ошибку пользователю
+            if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/register')) {
+                return Promise.reject(error);
+            }
+            if (originalRequest.url === '/auth/refresh' || originalRequest._url?.includes('/auth/refresh')) {
+                clearSession();
+                window.location.href = '/';
+                return Promise.reject(error);
+            }
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });

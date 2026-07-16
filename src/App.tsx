@@ -154,6 +154,7 @@ const App: React.FC = () => {
   const [viewingStories, setViewingStories] = useState<StoryData[] | null>(null);
   const [viewingStoryIndex, setViewingStoryIndex] = useState(0);
   const chatsLoadedRef = useRef(false);
+  const appInitializedRef = useRef(false);
 
   // QuarkPay
   const [showQuarkPayConnect, setShowQuarkPayConnect] = useState(false);
@@ -348,6 +349,9 @@ const App: React.FC = () => {
   const handleDeleteChat = async (chatId: number) => {
     // Optimistic update — сразу убираем из списка
     recentlyDeletedRef.current.add(chatId);
+    const previousChats = savedChatsRef.current;
+    const removedChat = previousChats.find(c => c.id === chatId);
+    const previousActiveChat = activeChatRef.current;
     setSavedChats(prev => prev.filter(c => c.id !== chatId));
     if (activeChat?.id === chatId) {
       setActiveChat(null);
@@ -356,6 +360,17 @@ const App: React.FC = () => {
       await apiClient.post(`/chats/${chatId}/leave`);
     } catch (error) {
       console.log('Chat leave result:', error);
+      // Rollback on error
+      recentlyDeletedRef.current.delete(chatId);
+      if (removedChat) {
+        setSavedChats(prev => {
+          if (prev.find(c => c.id === chatId)) return prev;
+          return [...prev, removedChat];
+        });
+      }
+      if (previousActiveChat?.id === chatId) {
+        setActiveChat(previousActiveChat);
+      }
     }
   };
 
@@ -511,10 +526,47 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleOAuthCallback = async (provider: string, token: string | null, errorMsg: string) => {
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        // Refresh token из URL (backend устанавливает cookie, но нужен и для sessionStorage)
+        const urlParams = new URLSearchParams(window.location.search);
+        const refreshToken = urlParams.get('refresh_token') || undefined;
+        await saveSession(token, {
+          id: payload.user_id || payload.sub,
+          username: payload.username || '',
+          firstName: payload.first_name || '',
+          lastName: payload.last_name || '',
+        }, refreshToken);
+        window.location.href = '/';
+      } catch (e) {
+        console.error(`${provider} callback error:`, e);
+        window.location.href = '/';
+      }
+      return;
+    }
+    try {
+      const session = await getSession();
+      if (session) {
+        setIsLoggedIn(true);
+        setUserData(session.user);
+        await loadUserChats();
+        await loadPremiumStatus();
+        window.location.href = '/';
+        return;
+      }
+    } catch {}
+    addToast(errorMsg, 'error');
+    window.location.href = '/';
+  };
+
   // ============================================
   // РРќРР¦РРђР›РР—РђР¦РРЇ РџР РР›РћР–Р•РќРРЇ
   // ============================================
   useEffect(() => {
+    if (appInitializedRef.current) return;
+    appInitializedRef.current = true;
     let unsubMessage = () => {};
     let unsubChat = () => {};
     let unsubTyping = () => {};
@@ -696,39 +748,7 @@ const App: React.FC = () => {
       }
 
       if (path === '/google-success') {
-        // Токен в URL (cookie не работает кросс-доменно)
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
-        if (token) {
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            await saveSession(token, {
-              id: payload.user_id || payload.sub,
-              username: payload.username || '',
-              firstName: payload.first_name || '',
-              lastName: payload.last_name || '',
-            });
-            window.location.href = '/';
-          } catch (e) {
-            console.error('Google callback error:', e);
-            window.location.href = '/';
-          }
-          return;
-        }
-        // Fallback: try cookie
-        try {
-          const session = await getSession();
-          if (session) {
-            setIsLoggedIn(true);
-            setUserData(session.user);
-            await loadUserChats();
-            await loadPremiumStatus();
-            window.location.href = '/';
-            return;
-          }
-        } catch {}
-        addToast('Ошибка входа через Google', 'error');
-        window.location.href = '/';
+        await handleOAuthCallback('Google', params.get('token'), 'Ошибка входа через Google');
         return;
       }
 
@@ -757,40 +777,9 @@ const App: React.FC = () => {
       }
 
       if (path === '/ya-success') {
-        // Токен в URL (cookie не работает кросс-доменно)
         const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
-        if (token) {
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            await saveSession(token, {
-              id: payload.user_id || payload.sub,
-              username: payload.username || '',
-              firstName: payload.first_name || '',
-              lastName: payload.last_name || '',
-            });
-            window.location.href = '/';
-          } catch (e) {
-            console.error('Yandex callback error:', e);
-            window.location.href = '/';
-          }
-          return;
-        }
-        // Fallback: try cookie
-        try {
-          const session = await getSession();
-          if (session) {
-            setIsLoggedIn(true);
-            setUserData(session.user);
-            await loadUserChats();
-            await loadPremiumStatus();
-            window.location.href = '/';
-            return;
-          }
-        } catch {}
         const msg = params.get('message');
-        addToast(msg || 'Ошибка входа через Яндекс', 'error');
-        window.location.href = '/';
+        await handleOAuthCallback('Yandex', params.get('token'), msg || 'Ошибка входа через Яндекс');
         return;
       }
 
@@ -1033,7 +1022,7 @@ const App: React.FC = () => {
   // ============================================
   const handleToggleE2EE = async (enabled: boolean) => {
     setE2eeEnabled(enabled);
-    setE2EEEnabled(0, enabled);
+    localStorage.setItem('e2ee_enabled', enabled ? 'true' : 'false');
     if (isLoggedIn && userData) {
       await initE2EE(userData.id);
       disconnect();
