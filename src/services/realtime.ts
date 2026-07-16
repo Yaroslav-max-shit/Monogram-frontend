@@ -8,6 +8,7 @@ class RealtimeService {
   private ws: WebSocket | null = null;
   private handlers: Map<string, Set<RealtimeHandler>> = new Map();
   private userId: number | null = null;
+  private token: string = '';
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private sseSource: EventSource | null = null;
   private sseReconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -15,29 +16,32 @@ class RealtimeService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
   private connectTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+  private intentionallyClosed = false;
 
   async connect(userId: number, token: string) {
     if (this.isConnecting) return;
     this.isConnecting = true;
     this.userId = userId;
+    this.token = token;
     this.reconnectAttempts = 0;
+    this.intentionallyClosed = false;
     
     const wsUrl = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
 
     try {
-      // Закрываем предыдущий WS если есть
       if (this.ws) {
-        this.ws.close();
+        this.intentionallyClosed = true;
+        this.ws.close(1000, 'Reconnecting');
         this.ws = null;
+        this.intentionallyClosed = false;
       }
       
       this.ws = new WebSocket(`${wsUrl}/ws/${userId}`);
 
-      // Таймаут подключения — 45 секунд (Render cold start ~30s)
       this.connectTimeoutTimer = setTimeout(() => {
         if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
           console.warn('[WS] Connection timeout, closing');
-          this.ws.close();
+          this.ws.close(4008, 'Timeout');
         }
       }, 45000);
 
@@ -45,38 +49,57 @@ class RealtimeService {
         clearTimeout(this.connectTimeoutTimer!);
         this.isConnecting = false;
         this.reconnectAttempts = 0;
-        this.ws?.send(JSON.stringify({ type: 'auth', token }));
+        this.ws?.send(JSON.stringify({ type: 'auth', token: this.token }));
         console.log('[WS] Connected');
       };
 
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          if (data.type === 'ping') {
+            this.ws?.send(JSON.stringify({ type: 'pong' }));
+            return;
+          }
+          if (data.type === 'pong') return;
           this.emit(data.type, data);
         } catch {}
       };
 
       this.ws.onclose = (event) => {
         clearTimeout(this.connectTimeoutTimer!);
-        console.log(`[WS] Closed: ${event.code} ${event.reason}`);
         this.isConnecting = false;
-        // WS закрылся — переподключаемся с backoff
+        
+        if (this.intentionallyClosed) return;
+        
+        console.log(`[WS] Closed: ${event.code} ${event.reason}`);
+
+        if (event.code === 4001 || event.code === 4003) {
+          console.warn('[WS] Auth failed, not reconnecting');
+          return;
+        }
+
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
           this.reconnectAttempts++;
-          this.reconnectTimer = setTimeout(() => {
-            if (this.userId) this.connect(this.userId, token);
+          console.log(`[WS] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+          this.reconnectTimer = setTimeout(async () => {
+            if (!this.userId) return;
+            const session = await getSession();
+            if (!session?.token) {
+              console.warn('[WS] No valid token, stopping reconnection');
+              return;
+            }
+            this.token = session.token;
+            this.connect(this.userId, this.token);
           }, delay);
         } else {
-          // Переключаемся на SSE
+          console.warn('[WS] Max reconnect attempts reached, falling back to SSE');
           this.scheduleSSE(2000);
         }
       };
 
-      this.ws.onerror = () => {
-        // Ошибка WS — просто закрываем, onclose сработает автоматически
-        this.ws?.close();
-      };
+      this.ws.onerror = () => {};
+
     } catch (error) {
       console.error('[WS] Connect error:', error);
       this.isConnecting = false;
@@ -112,7 +135,6 @@ class RealtimeService {
       this.sseSource.onerror = () => {
         this.sseSource?.close();
         this.sseSource = null;
-        // Проверяем что пользователь всё ещё залогинен
         if (this.userId && this.reconnectAttempts < this.maxReconnectAttempts + 5) {
           this.scheduleSSE(10000);
         }
@@ -144,21 +166,21 @@ class RealtimeService {
   }
 
   disconnect() {
+    this.intentionallyClosed = true;
     clearTimeout(this.connectTimeoutTimer!);
-    this.ws?.close();
+    clearTimeout(this.reconnectTimer!);
+    clearTimeout(this.sseReconnectTimer!);
+    this.reconnectTimer = null;
+    this.sseReconnectTimer = null;
+    this.connectTimeoutTimer = null;
+    this.ws?.close(1000, 'Logout');
     this.ws = null;
     this.sseSource?.close();
     this.sseSource = null;
     this.isConnecting = false;
     this.reconnectAttempts = 0;
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    if (this.sseReconnectTimer) {
-      clearTimeout(this.sseReconnectTimer);
-      this.sseReconnectTimer = null;
-    }
+    this.userId = null;
+    this.token = '';
   }
 }
 
