@@ -46,9 +46,9 @@ const scheduleTokenRefresh = () => {
 };
 
 apiClient.interceptors.request.use((config) => {
-    const cookieMatch = document.cookie.match(/(?:^|;\s*)access_token=([^;]*)/);
-    if (cookieMatch) {
-        config.headers.Authorization = `Bearer ${decodeURIComponent(cookieMatch[1])}`;
+    const token = sessionStorage.getItem('monogram_token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 });
