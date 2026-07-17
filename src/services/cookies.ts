@@ -48,7 +48,7 @@ export const getSession = async (): Promise<Session | null> => {
             if (!user.avatar_url) {
                 try {
                     const { default: apiClient } = await import('./api');
-                    const res = await apiClient.get('/users/me');
+                    const res = await apiClient.get('/auth/me');
                     if (res.data?.avatar_url) {
                         user.avatar_url = res.data.avatar_url;
                         sessionStorage.setItem('monogram_user', JSON.stringify(user));
@@ -71,7 +71,7 @@ export const getSession = async (): Promise<Session | null> => {
                 sessionStorage.setItem('monogram_user', JSON.stringify(user));
                 try {
                     const { default: apiClient } = await import('./api');
-                    const res = await apiClient.get('/users/me');
+                    const res = await apiClient.get('/auth/me');
                     if (res.data?.avatar_url) {
                         user.avatar_url = res.data.avatar_url;
                         sessionStorage.setItem('monogram_user', JSON.stringify(user));
