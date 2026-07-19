@@ -1,6 +1,3 @@
-// Session management - tokens stored in HttpOnly cookies (set by backend)
-// No client-side encryption needed - cookies are HttpOnly + Secure + SameSite
-
 interface UserData {
   id: number;
   username: string;
@@ -11,7 +8,7 @@ interface UserData {
 
 interface Session {
   token: string;
-  refreshToken?: string;
+  refreshToken: string;
   user: UserData;
 }
 
@@ -33,56 +30,14 @@ export const saveSession = async (
 
 export const getSession = async (): Promise<Session | null> => {
     try {
-        let token: string | null = sessionStorage.getItem('monogram_token');
-
-        if (!token) {
-            const cookieMatch = document.cookie.match(/(?:^|;\s*)access_token=([^;]*)/);
-            if (cookieMatch) {
-                token = decodeURIComponent(cookieMatch[1]);
-            }
-        }
-
-        let userStr = sessionStorage.getItem('monogram_user');
+        const token = sessionStorage.getItem('monogram_token');
+        const refreshToken = sessionStorage.getItem('monogram_refresh_token');
+        const userStr = sessionStorage.getItem('monogram_user');
+        
         if (token && userStr) {
             const user = JSON.parse(userStr);
-            if (!user.avatar_url) {
-                try {
-                    const { default: apiClient } = await import('./api');
-                    const res = await apiClient.get('/auth/me');
-                    if (res.data?.avatar_url) {
-                        user.avatar_url = res.data.avatar_url;
-                        sessionStorage.setItem('monogram_user', JSON.stringify(user));
-                    }
-                } catch {}
-            }
-            return { token, user };
+            return { token, refreshToken: refreshToken || '', user };
         }
-
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const user: UserData = {
-                    id: payload.user_id || payload.sub,
-                    username: payload.username || '',
-                    firstName: payload.first_name || '',
-                    lastName: payload.last_name || '',
-                    avatar_url: payload.avatar_url || '',
-                };
-                sessionStorage.setItem('monogram_user', JSON.stringify(user));
-                try {
-                    const { default: apiClient } = await import('./api');
-                    const res = await apiClient.get('/auth/me');
-                    if (res.data?.avatar_url) {
-                        user.avatar_url = res.data.avatar_url;
-                        sessionStorage.setItem('monogram_user', JSON.stringify(user));
-                    }
-                } catch {}
-                return { token, user };
-            } catch {
-                // Invalid JWT format
-            }
-        }
-
         return null;
     } catch (error) {
         console.error('Error loading session:', error);
@@ -95,9 +50,6 @@ export const clearSession = () => {
     sessionStorage.removeItem('monogram_refresh_token');
     sessionStorage.removeItem('monogram_user');
     sessionStorage.removeItem('monogram_settings');
-    
-    document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; Secure';
-    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/auth; Secure';
 };
 
 export const getRefreshToken = async (): Promise<string | null> => {
@@ -108,7 +60,6 @@ export const getRefreshToken = async (): Promise<string | null> => {
     }
 };
 
-// Settings (non-sensitive, can stay in localStorage)
 export const saveSettings = (settings: any) => {
     localStorage.setItem('monogram_settings', JSON.stringify(settings));
 };

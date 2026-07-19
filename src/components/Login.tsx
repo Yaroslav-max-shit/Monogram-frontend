@@ -107,22 +107,12 @@ const Login: React.FC<{ onLogin?: () => void }> = ({ onLogin }) => {
         const refreshToken = response.data.refresh_token;
         const payload = JSON.parse(atob(token.split('.')[1]));
         
-        let userAvatar = '';
-        let userFirstName = '';
-        let userLastName = '';
-        try {
-          const meRes = await apiClient.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } });
-          userAvatar = meRes.data.avatar_url || '';
-          userFirstName = meRes.data.first_name || '';
-          userLastName = meRes.data.last_name || '';
-        } catch {}
-        
         await saveSession(token, {
           id: payload.user_id || payload.sub || 1,
           username: username,
-          firstName: userFirstName || username,
-          lastName: userLastName,
-          avatar_url: userAvatar,
+          firstName: payload.first_name || username,
+          lastName: payload.last_name || '',
+          avatar_url: payload.avatar_url || '',
         }, refreshToken);
         if (onLogin) onLogin();
       } else if (registerStep === 'data') {
