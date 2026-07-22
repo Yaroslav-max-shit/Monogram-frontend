@@ -34,16 +34,16 @@ class WebRTCService {
       { urls: 'stun:stun2.l.google.com:19302' },
       { urls: 'stun:stun3.l.google.com:19302' },
       { urls: 'stun:stun4.l.google.com:19302' },
-      {
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      }
+      ...(import.meta.env.VITE_TURN_URL ? [{
+        urls: import.meta.env.VITE_TURN_URL,
+        username: import.meta.env.VITE_TURN_USERNAME || '',
+        credential: import.meta.env.VITE_TURN_CREDENTIAL || ''
+      }] : []),
+      ...(import.meta.env.VITE_TURN_URL_TLS ? [{
+        urls: import.meta.env.VITE_TURN_URL_TLS,
+        username: import.meta.env.VITE_TURN_USERNAME || '',
+        credential: import.meta.env.VITE_TURN_CREDENTIAL || ''
+      }] : [])
     ],
     iceTransportPolicy: 'all',
     bundlePolicy: 'max-bundle',

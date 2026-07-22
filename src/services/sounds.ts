@@ -8,7 +8,8 @@ const DEFAULT_SOUNDS: Record<string, string> = {
 };
 
 export function playSound(type: keyof typeof DEFAULT_SOUNDS) {
-  const customSounds = JSON.parse(localStorage.getItem('custom_sounds') || '{}');
+  let customSounds: Record<string, string> = {};
+  try { customSounds = JSON.parse(localStorage.getItem('custom_sounds') || '{}'); } catch {}
   const src = customSounds[type] || DEFAULT_SOUNDS[type];
   let audio = AUDIO_CACHE.get(src);
   if (!audio) {
@@ -21,14 +22,16 @@ export function playSound(type: keyof typeof DEFAULT_SOUNDS) {
 }
 
 export function setCustomSound(type: string, url: string) {
-  const sounds = JSON.parse(localStorage.getItem('custom_sounds') || '{}');
+  let sounds: Record<string, string> = {};
+  try { sounds = JSON.parse(localStorage.getItem('custom_sounds') || '{}'); } catch {}
   sounds[type] = url;
   localStorage.setItem('custom_sounds', JSON.stringify(sounds));
   AUDIO_CACHE.delete(url);
 }
 
 export function resetCustomSound(type: string) {
-  const sounds = JSON.parse(localStorage.getItem('custom_sounds') || '{}');
+  let sounds: Record<string, string> = {};
+  try { sounds = JSON.parse(localStorage.getItem('custom_sounds') || '{}'); } catch {}
   delete sounds[type];
   localStorage.setItem('custom_sounds', JSON.stringify(sounds));
 }

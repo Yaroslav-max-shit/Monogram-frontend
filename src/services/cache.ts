@@ -29,18 +29,24 @@ const openDB = (): Promise<IDBDatabase> => {
   });
 };
 
+let _lastOp: Promise<any> = Promise.resolve();
+function _mutex<T>(fn: () => Promise<T>): Promise<T> {
+  const p = _lastOp.then(() => fn());
+  _lastOp = p.catch(() => {});
+  return p;
+}
+
 // ---- Chats ----
 
 export const cacheChats = async (chats: any[]): Promise<void> => {
   try {
     const db = await openDB();
-    const tx = db.transaction('chats', 'readwrite');
+    const tx = db.transaction(['chats', 'meta'], 'readwrite');
     const store = tx.objectStore('chats');
     for (const chat of chats) {
       store.put(chat);
     }
-    const metaTx = db.transaction('meta', 'readwrite');
-    metaTx.objectStore('meta').put(Date.now(), 'chats_updated');
+    tx.objectStore('meta').put(Date.now(), 'chats_updated');
     await new Promise(r => tx.oncomplete = r);
   } catch {}
 };
@@ -144,26 +150,28 @@ export const removeFromOutbox = async (tempId: number): Promise<void> => {
 };
 
 export const syncOutbox = async (sendFn: (msg: OutboxMessage) => Promise<boolean>): Promise<number> => {
-  const pending = await getOutbox();
-  let synced = 0;
-  for (const msg of pending) {
-    try {
-      const ok = await sendFn(msg);
-      if (ok) {
-        await removeFromOutbox(msg.tempId);
-        synced++;
-      } else {
+  return _mutex(async () => {
+    const pending = await getOutbox();
+    let synced = 0;
+    for (const msg of pending) {
+      try {
+        const ok = await sendFn(msg);
+        if (ok) {
+          await removeFromOutbox(msg.tempId);
+          synced++;
+        } else {
+          msg.retries = (msg.retries || 0) + 1;
+          if (msg.retries > 5) await removeFromOutbox(msg.tempId);
+          else await addToOutbox(msg);
+        }
+      } catch {
         msg.retries = (msg.retries || 0) + 1;
         if (msg.retries > 5) await removeFromOutbox(msg.tempId);
         else await addToOutbox(msg);
       }
-    } catch {
-      msg.retries = (msg.retries || 0) + 1;
-      if (msg.retries > 5) await removeFromOutbox(msg.tempId);
-      else await addToOutbox(msg);
     }
-  }
-  return synced;
+    return synced;
+  });
 };
 
 // ---- Online status ----

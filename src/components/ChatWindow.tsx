@@ -242,7 +242,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const readTimeoutRef = useRef<number>();
   const chatIdRef = useRef(chatId);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [scrollPosition, setScrollPosition] = useState(0);
+  const scrollPositionRef = useRef(0);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [selectedSticker, setSelectedSticker] = useState<string | null>(null);
   const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
@@ -257,8 +257,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleScroll = () => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const pos = container.scrollTop;
-    setScrollPosition(pos);
+    scrollPositionRef.current = container.scrollTop;
     const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
     setShowScrollButton(!atBottom);
   };
@@ -372,7 +371,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     scrollToBottom();
   }, [messages]);
 
+  const requestIdRef = useRef(0);
+
   const loadMessages = useCallback(async () => {
+    const thisRequestId = ++requestIdRef.current;
     // Сначала загружаем из кэша (мгновенно)
     const cached = await getCachedMessages(chatId);
     if (cached.length > 0) {
@@ -383,6 +385,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     // Потом синхронизируем с сервером
     try {
       const response = await apiClient.get(`/messages/chat/${chatId}?limit=20`);
+      if (thisRequestId !== requestIdRef.current) return;
       let msgs = response.data;
       
       // Always try to decrypt if content looks encrypted
@@ -561,6 +564,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }, [loadingMore, hasMoreMessages, loadMoreMessages]);
 
   // IntersectionObserver for message scroll animations
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
   useEffect(() => {
     if (isLoading) return;
     const container = messagesContainerRef.current;
@@ -576,7 +582,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               visibleMessages.current.add(id);
               const el = messageRefs.current.get(id);
               if (el) {
-                const msg = messages.find(m => m.id === id);
+                const msg = messagesRef.current.find(m => m.id === id);
                 const isOwn = msg?.sender_id === currentUserId;
                 el.classList.remove('msg-exit-right', 'msg-exit-left');
                 el.classList.add(isOwn ? 'msg-enter-right' : 'msg-enter-left');
@@ -587,7 +593,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               visibleMessages.current.delete(id);
               const el = messageRefs.current.get(id);
               if (el) {
-                const msg = messages.find(m => m.id === id);
+                const msg = messagesRef.current.find(m => m.id === id);
                 const isOwn = msg?.sender_id === currentUserId;
                 el.classList.remove('msg-enter-right', 'msg-enter-left');
                 el.classList.add(isOwn ? 'msg-exit-right' : 'msg-exit-left');
@@ -606,7 +612,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     msgElements.forEach(el => observer.observe(el));
 
     return () => observer.disconnect();
-  }, [isLoading, messages, currentUserId, chatId]);
+  }, [isLoading, currentUserId, chatId]);
   const loadChatMembers = useCallback(async () => {
     try {
       const res = await apiClient.get(`/chats/${chatId}/members`);
@@ -1313,6 +1319,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     let botButtons: any[] = null;
     let botText = '';
     let forwardedComment = '';
+    let isFile = false;
+    let fileData: any = null;
     
     if (msg.is_deleted) {
       content = "🗑 Сообщение удалено";
@@ -1437,17 +1445,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         ) : isVoice ? (
           <VoiceMessagePlayer url={voiceUrl} duration={voiceDuration} />
-        ) : (() => {
-          try {
-            const parsed = JSON.parse(content);
-            if (parsed.type === 'transfer') {
-              return <TransferCard amount={parsed.amount} toUsername={parsed.to_username} toAvatar={parsed.to_avatar} status={parsed.status || 'completed'} time={new Date(msg.timestamp).toLocaleString('ru-RU')} txId={parsed.tx_id} comment={parsed.comment} isOwn={isOwn} />;
-            }
-            if (parsed.type === 'poll') {
-              return <PollView poll={parsed} messageId={msg.id} currentUserId={currentUserId} />;
-            }
-            if (parsed.type === 'connect_proposal') {
-              return (
+        ) : origParsed?.type === 'transfer' ? (
+          <TransferCard amount={origParsed.amount} toUsername={origParsed.to_username} toAvatar={origParsed.to_avatar} status={origParsed.status || 'completed'} time={new Date(msg.timestamp).toLocaleString('ru-RU')} txId={origParsed.tx_id} comment={origParsed.comment} isOwn={isOwn} />
+        ) : origParsed?.type === 'poll' ? (
+          <PollView poll={origParsed} messageId={msg.id} currentUserId={currentUserId} />
+        ) : origParsed?.type === 'connect_proposal' ? (
                 <div style={{
                   background: 'linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1))',
                   border: '1px solid rgba(102,126,234,0.3)',
@@ -1468,7 +1470,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.4 }}>
                     Предлагаю подключить QuarkPay для удобных переводов прямо в чатах Monogram!
                   </p>
-                  <a href={parsed.connect_url} target="_blank" rel="noopener" style={{
+                  <a href={origParsed.connect_url} target="_blank" rel="noopener" style={{
                     display: 'block', width: '100%', padding: '10px',
                     background: 'linear-gradient(135deg, #00d4aa, #00b894)',
                     color: '#000', border: 'none', borderRadius: 10,
@@ -1478,9 +1480,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     Подключить
                   </a>
                 </div>
-              );
-            }
-            if (parsed.type === 'file' && parsed.files) {
+        ) : origParsed?.type === 'file' && origParsed.files ? (() => {
               const BACKEND_URL = 'https://monogram-backend-dxv4.onrender.com';
               const guessType = (name: string) => {
                 const ext = name.split('.').pop()?.toLowerCase() || '';
@@ -1494,7 +1494,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               };
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 220 }}>
-                  {parsed.files.map((f: any, idx: number) => {
+                  {origParsed.files.map((f: any, idx: number) => {
                     const fileUrl = f.url?.startsWith('http') ? f.url : `${BACKEND_URL}${f.url}`;
                     const fileType = guessType(f.name || '');
                     const isImage = fileType.startsWith('image/');
@@ -1535,10 +1535,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   })}
                 </div>
               );
-            }
-            if (parsed.type === 'location') {
-              const lat = parsed.lat;
-              const lng = parsed.lng;
+        })() : origParsed?.type === 'location' ? (() => {
+              const lat = origParsed.lat;
+              const lng = origParsed.lng;
               return (
                 <div style={{minWidth: 220}}>
                   <div style={{fontSize: '0.85rem', fontWeight: 600, marginBottom: 4}}>📍 Геолокация</div>
@@ -1551,10 +1550,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                   <a href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=15/${lat}/${lng}`} target="_blank" rel="noopener" style={{fontSize: '0.75rem', color: 'var(--accent)'}}>Открыть на карте</a>
                 </div>
               );
-            }
-          } catch {}
-          return <div className="message-text">{formatMessageText(content)}</div>;
-        })()}
+        })() : (
+          <div className="message-text">{formatMessageText(content)}</div>
+        )}
         
         {hasLinks && !isFile && (
           <div className="message-links">
@@ -1597,13 +1595,32 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     const t = document.createElement('div');
                     t.textContent = btn.text || 'Оплата';
                     t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-secondary);color:var(--text-primary);padding:24px;border-radius:16px;z-index:99999;font-size:14px;box-shadow:0 8px 32px rgba(0,0,0,0.4);min-width:280;text-align:center;';
-                    t.innerHTML = `
-                      <div style="margin-bottom:16px;font-weight:600;font-size:1rem;">${btn.text || 'Оплата'}</div>
-                      ${btn.description ? `<div style="margin-bottom:16px;color:var(--text-secondary);font-size:0.85rem;">${btn.description}</div>` : ''}
-                      ${btn.amount ? `<div style="margin-bottom:16px;font-size:1.2rem;font-weight:700;color:var(--accent);">${btn.amount}</div>` : ''}
-                      <button id="pay-confirm-btn" style="width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.9rem;">Оплатить</button>
-                      <button id="pay-cancel-btn" style="width:100%;padding:10px;background:transparent;color:var(--text-secondary);border:none;border-radius:10px;cursor:pointer;font-size:0.85rem;margin-top:8px;">Отмена</button>
-                    `;
+                    const titleDiv = document.createElement('div');
+                    titleDiv.style.cssText = 'margin-bottom:16px;font-weight:600;font-size:1rem;';
+                    titleDiv.textContent = btn.text || 'Оплата';
+                    t.appendChild(titleDiv);
+                    if (btn.description) {
+                      const descDiv = document.createElement('div');
+                      descDiv.style.cssText = 'margin-bottom:16px;color:var(--text-secondary);font-size:0.85rem;';
+                      descDiv.textContent = btn.description;
+                      t.appendChild(descDiv);
+                    }
+                    if (btn.amount) {
+                      const amountDiv = document.createElement('div');
+                      amountDiv.style.cssText = 'margin-bottom:16px;font-size:1.2rem;font-weight:700;color:var(--accent);';
+                      amountDiv.textContent = btn.amount;
+                      t.appendChild(amountDiv);
+                    }
+                    const confirmBtn = document.createElement('button');
+                    confirmBtn.id = 'pay-confirm-btn';
+                    confirmBtn.style.cssText = 'width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.9rem;';
+                    confirmBtn.textContent = 'Оплатить';
+                    t.appendChild(confirmBtn);
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.id = 'pay-cancel-btn';
+                    cancelBtn.style.cssText = 'width:100%;padding:10px;background:transparent;color:var(--text-secondary);border:none;border-radius:10px;cursor:pointer;font-size:0.85rem;margin-top:8px;';
+                    cancelBtn.textContent = 'Отмена';
+                    t.appendChild(cancelBtn);
                     document.body.appendChild(t);
                     const backdrop = document.createElement('div');
                     backdrop.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99998;';

@@ -119,16 +119,16 @@ export const useAdaptiveLayout = (initialSidebarState: boolean = false) => {
     if (state.isDesktop && state.sidebarOpen) {
       closeSidebar();
     }
-  }, [state.isDesktop]);
+  }, [state.isDesktop, state.sidebarOpen]);
 
   // На мобильном sidebar открыт только если пользователь залогинен
   // (не на экране логина/регистрации)
   useEffect(() => {
     const isLoginPage = !document.querySelector('.app-main-layout');
-    if (state.isMobile && !state.sidebarOpen && !isLoginPage) {
+    if (state.isMobile && !state.isDesktop && !state.sidebarOpen && !isLoginPage) {
       setState(prev => ({ ...prev, sidebarOpen: true }));
     }
-  }, [state.isMobile]);
+  }, [state.isMobile, state.isDesktop]);
 
   // Обработчик ресайза
   useEffect(() => {

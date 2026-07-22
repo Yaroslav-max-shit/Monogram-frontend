@@ -3,6 +3,7 @@ import apiClient from '../services/api';
 
 interface Props {
   messageId: number;
+  currentUserId: number;
   onClose: () => void;
   onDone: () => void;
 }
@@ -16,7 +17,7 @@ interface ChatMember {
   role?: string;
 }
 
-const ForwardDialog: React.FC<Props> = ({ messageId, onClose, onDone }) => {
+const ForwardDialog: React.FC<Props> = ({ messageId, currentUserId, onClose, onDone }) => {
   const [chats, setChats] = useState<any[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [search, setSearch] = useState('');
@@ -86,7 +87,7 @@ const ForwardDialog: React.FC<Props> = ({ messageId, onClose, onDone }) => {
         if (!selectEveryone && selectedMembers.length > 0) {
           // Forward to individual members (generate private chat IDs)
           for (const member of selectedMembers) {
-            const privateChatId = generatePrivateChatId(member.user_id);
+            const privateChatId = generatePrivateChatId(currentUserId, member.user_id);
             targetIds.push(privateChatId);
           }
           // Remove group ID from targets
@@ -96,7 +97,7 @@ const ForwardDialog: React.FC<Props> = ({ messageId, onClose, onDone }) => {
       }
 
       await apiClient.post('/messages/forward', {
-        message_id: messageId,
+        message_ids: [messageId],
         chat_ids: targetIds.length > 0 ? targetIds : selected,
         comment: comment.trim() || undefined
       });
@@ -105,8 +106,8 @@ const ForwardDialog: React.FC<Props> = ({ messageId, onClose, onDone }) => {
     setLoading(false);
   };
 
-  const generatePrivateChatId = (userId: number) => {
-    return 100000 + userId;
+  const generatePrivateChatId = (user1: number, user2: number) => {
+    return 100000 + Math.min(user1, user2) * 10000 + Math.max(user1, user2);
   };
 
   const toggle = (id: number) => {

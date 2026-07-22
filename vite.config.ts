@@ -16,7 +16,7 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
-    host: true,
+    host: 'localhost',
     strictPort: false,
     hmr: {
       protocol: 'ws',
@@ -26,26 +26,26 @@ export default defineConfig({
       timeout: 120000
     },
     proxy: {
-      '/api': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/auth': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/users': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/chats': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/messages': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/uploads': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/admin': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/settings': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/premium': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/payment': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/stickers': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/search': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/e2ee': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/bots': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/drafts': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/archive': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/folders': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/saved': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/polls': { target: 'https://f1w6ggb2-8000.euw.devtunnels.ms', changeOrigin: true },
-      '/ws': { target: 'wss://f1w6ggb2-8000.euw.devtunnels.ms', ws: true }
+      '/api': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/auth': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/users': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/chats': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/messages': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/uploads': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/admin': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/settings': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/premium': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/payment': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/stickers': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/search': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/e2ee': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/bots': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/drafts': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/archive': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/folders': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/saved': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/polls': { target: process.env.VITE_API_URL || 'http://localhost:8000', changeOrigin: true },
+      '/ws': { target: (process.env.VITE_API_URL || 'http://localhost:8000').replace(/^http/, 'ws'), ws: true }
     }
   },
   build: {
@@ -58,6 +58,6 @@ export default defineConfig({
   },
   preview: {
     port: 5173,
-    host: true
+    host: 'localhost'
   }
 })

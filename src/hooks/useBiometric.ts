@@ -20,6 +20,14 @@ export const useBiometric = () => {
   });
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
+  const hashPin = async (pin: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pin);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
   // Определение устройства
   const detectDevice = useCallback((): { isMobile: boolean; deviceType: BiometricState['deviceType'] } => {
     const ua = navigator.userAgent;
@@ -88,9 +96,14 @@ export const useBiometric = () => {
     
     setIsAuthenticating(true);
     
-    // На вебе биометрия не работает, просто запрашиваем PIN
     const pin = prompt('Введите PIN-код для входа:');
-    const success = pin === localStorage.getItem('user_pin');
+    const storedHash = localStorage.getItem('user_pin_hash');
+    if (!pin || !storedHash) {
+      setIsAuthenticating(false);
+      return false;
+    }
+    const pinHash = await hashPin(pin);
+    const success = pinHash === storedHash;
     
     setIsAuthenticating(false);
     return success;
@@ -103,12 +116,13 @@ export const useBiometric = () => {
     if (newValue && state.isSupported) {
       const pin = prompt('Создайте PIN-код для входа (запасной вариант):');
       if (pin && pin.length >= 4) {
-        localStorage.setItem('user_pin', pin);
+        const pinHash = await hashPin(pin);
+        localStorage.setItem('user_pin_hash', pinHash);
       } else {
         return;
       }
     } else if (!newValue) {
-      localStorage.removeItem('user_pin');
+      localStorage.removeItem('user_pin_hash');
     }
     
     setState(prev => ({ ...prev, isEnabled: newValue }));
@@ -118,7 +132,7 @@ export const useBiometric = () => {
   const reset = useCallback(() => {
     setState(prev => ({ ...prev, isEnabled: false }));
     localStorage.removeItem('biometric_enabled');
-    localStorage.removeItem('user_pin');
+    localStorage.removeItem('user_pin_hash');
   }, []);
 
   return {

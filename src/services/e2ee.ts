@@ -23,7 +23,8 @@ export function isE2EEEnabled(chatId: number): boolean {
 
 // Загрузка настроек E2EE
 export function loadE2EESettings(): { enabled: boolean } {
-  return { enabled: true };
+  const stored = localStorage.getItem('e2ee_enabled');
+  return { enabled: stored !== 'false' };
 }
 
 // Включение/выключение E2EE для чата

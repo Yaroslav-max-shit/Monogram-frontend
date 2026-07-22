@@ -1202,8 +1202,13 @@ body.dark-mode .context-menu {
   border-color: var(--danger);
 }
 
-/* Запрет выделения текста везде, кроме полей ввода и сообщений */
-* {
+/* Запрет выделения текста на интерактивных элементах */
+button, .chat-avatar, .chat-name, .chat-last-message,
+.icon, svg, img, .sidebar-avatar, .modal-header,
+.sidebar-footer-btn, .sidebar-action-btn,
+.chat-input-action, .chat-header-action,
+.context-menu-item, .add-chat-btn,
+.emoji-item, .toggle-slider, .preload-text {
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;

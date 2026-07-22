@@ -16,7 +16,7 @@ export function useToast() {
     return () => { mountedRef.current = false; };
   }, []);
 
-  const addToast = (type: Toast['type'], message: string, duration = 3000) => {
+  const addToast = (message: string, type: Toast['type'], duration = 3000) => {
     const id = Math.random().toString(36).substr(2, 9);
     setToasts(prev => [...prev, { id, type, message, duration }]);
     setTimeout(() => {
